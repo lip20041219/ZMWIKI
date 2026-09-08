@@ -1,0 +1,36 @@
+{
+  "cases": [
+    {
+      "query": "database B-tree index query",
+      "relevant_chunk_ids": ["doc_a::1"]
+    },
+    {
+      "query": "cache eviction memory",
+      "relevant_chunk_ids": ["doc_b::1"]
+    },
+    {
+      "query": "producer consumer message queue",
+      "relevant_chunk_ids": ["doc_c::0"]
+    },
+    {
+      "query": "embedding vector similarity retrieval",
+      "relevant_chunk_ids": ["doc_d::1"]
+    },
+    {
+      "query": "BM25 lexical vector ranking fusion",
+      "relevant_chunk_ids": ["doc_e::1", "doc_e::2"]
+    },
+    {
+      "query": "document chunk context",
+      "relevant_chunk_ids": ["doc_f::0"]
+    },
+    {
+      "query": "nearest neighbor search representation",
+      "relevant_chunk_ids": ["doc_d::2"]
+    },
+    {
+      "query": "quantum submarine agriculture",
+      "relevant_chunk_ids": ["missing::0"]
+    }
+  ]
+}

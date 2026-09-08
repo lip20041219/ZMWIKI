@@ -1,0 +1,16 @@
+{
+  "dataset": "benchmark/datasets/retrieval_small.json",
+  "corpus_documents": 6,
+  "corpus_chunks": 33,
+  "top_k": 33,
+  "candidate_k": 33,
+  "total_cases": 8,
+  "evaluated_cases": 8,
+  "hit_rate": 0.875,
+  "recall": 0.875,
+  "precision": 0.030303030303030304,
+  "mrr": 0.75,
+  "map": 0.7604166666666666,
+  "ndcg": 0.7905445196485911,
+  "deterministic": true
+}
