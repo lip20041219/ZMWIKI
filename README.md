@@ -1,148 +1,261 @@
 # ZMRAG
 
-An independent, engineering-grade **Knowledge / Retrieval Layer** — a reusable, testable, model-agnostic RAG foundation component.
+**Deterministic-first RAG Retrieval & Evaluation Layer**
 
-> ZMRAG = Knowledge / Retrieval
-> (ZMAI = Reasoning / Planning; ZMForge = Execution / Tools / Lifecycle)
-> ZMRAG is intentionally **decoupled** from ZMAI and ZMForge for now.
+A model-agnostic, deterministic-first retrieval / ranking / evaluation layer
+for RAG systems. It turns a collection of documents into an indexed, queryable
+corpus and answers "which chunks are most relevant to this query?" with ranked
+`SearchResult`s and offline evaluation metrics.
 
-## Pipeline
+ZMRAG focuses on **retrieval, ranking, context construction, and offline
+evaluation**. It is **not** a chatbot, an LLM answer-generation framework, or
+an Agent framework — those belong to upper-layer systems.
+
+## Features
+
+- Document ingestion (plain text, `.txt` files, directories)
+- Fixed-size chunking
+- Lexical (BM25) retrieval
+- Dense (embedding) retrieval
+- Hybrid retrieval (dense + lexical)
+- Weighted score fusion
+- Reciprocal Rank Fusion (RRF)
+- Deterministic reranking
+- Optional real semantic embeddings (sentence-transformers)
+- Optional Cross-Encoder reranking
+- Context building
+- Offline retrieval evaluation
+- Hit Rate / Recall / Precision / MRR / MAP / NDCG (optional `@K` cutoffs)
+- Dependency-injected, unit-tested, network-free by default
+
+## Architecture
 
 ```
-Document/Data
-→ Ingestion
-→ Chunking
-→ Embedding
-→ Indexing
-→ Retrieval
-→ Reranking
-→ Context Construction
-→ Evaluation
+Documents
+   ↓
+Ingestion            (text / .txt / directory → Document)
+   ↓
+Chunking             (Document → Chunk[])
+   ↓
+Embedding ───────────────►  Dense index    Lexical (BM25) index
+   │                                        │
+   └────────────►  Dense / Lexical / Hybrid Retrieval
+                               ↓
+                         Fusion (Weighted / RRF)
+                               ↓
+                        Optional Reranking
+                               ↓
+                       Context Construction
+                               ↓
+                             Evaluation
 ```
 
-## Status
+`retrieve()` runs the shared retrieval path and returns a ranked
+`list[SearchResult]`; `query()` is that same path followed by context packing,
+so the two never diverge.
 
-Phase 12 — Optional Semantic Cross-Encoder Reranking. On top of the
-Phase 11 semantic channel this adds an optional *two-stage* rerank profile:
-first-stage retrieval produces a candidate pool, then `CrossEncoderReranker`
-(`src/zmrag/semantic_rerank.py`, deliberately not part of the top-level public
-API and never imported by the default graph) scores each `(query, chunk.text)`
-pair with a real sentence-transformers `CrossEncoder` and returns the top
-`top_k` `SearchResult`s. It implements the existing `Reranker` contract: it only
-re-ranks the candidate pool it is given — it never recalls documents, never
-queries a store/retriever/index, and never changes candidate generation — so the
-deterministic core and its components are untouched. It reuses the Phase 11
-optional `semantic` extra (`pip install "zmrag[semantic]"`; `CrossEncoder` ships
-in the same `sentence-transformers` distribution), loads the model lazily at
-construction (a plain `import zmrag` stays torch/transformers-free), and needs
-no new dependency or core / `__init__.py` change. The locked runner
-(`benchmark/run_semantic_rerank_profile.py`) keeps the Phase 11 corpus / dataset
-/ chunking and embedding (`sentence-transformers/all-MiniLM-L6-v2`, 384-dim) and
-reranks with `cross-encoder/ms-marco-MiniLM-L-6-v2` over the same fixed
-6-document / 33-chunk / 8-case set: first stage to a candidate pool of 33, then
-rerank to `top_k` 8, in a locked R1 (dense) / R2 (hybrid + weighted) / R3
-(hybrid + RRF) matrix. Evidence is written to
-`benchmark/results/retrieval_semantic_rerank_profile.json`, explicitly
-`deterministic: false` (same-environment reproducible; reranking is
-non-deterministic evidence) and separate from the frozen Phase 10 / Phase 11
-evidence, all four of which stay byte-identical. Real-model integration was
-executed successfully. On this small lexical-overlap-heavy corpus — recall
-capped at 7/8 = 0.875 by one missing-ground-truth case — reranking moved R1 MRR
-from 0.708 to 0.8125 and R3 MRR from 0.729 to 0.8125, while R2 MRR stayed 0.8125
-with slightly lower MAP / NDCG (-0.031 / -0.018). These are observations on the
-fixed corpus, not a claim that CrossEncoder reranking is universally superior.
+## Installation
 
-Phase 11 — Optional Semantic Retrieval Profile. The deterministic
-retrieval / evaluation stack below remains the canonical, dependency-free
-profile; Phase 11 adds a separate *optional* real-embedding channel and does not
-change it. `SemanticEmbeddingProvider` (`src/zmrag/semantic.py`, deliberately
-not part of the top-level public API) implements the existing
-`EmbeddingProvider` contract over a lazily imported `sentence-transformers`
-backend, so a plain `import zmrag` never loads torch / transformers /
-sentence-transformers / fastembed and the deterministic profile keeps zero ML
-dependencies. The `semantic` extra (`pip install "zmrag[semantic]"`,
-`sentence-transformers>=2.0`) is optional — it is in neither `dependencies = []`
-nor the `dev` extra (pytest only), so default installs and CI stay ML-free.
-`benchmark/run_semantic_profile.py` drives the real model
-(`sentence-transformers/all-MiniLM-L6-v2`, 384-dim, normalized embeddings)
-through the unchanged public retrievers (`DenseRetriever` / `HybridRetriever` +
-`WeightedScoreFusion` / `RRFFusion`) and the real evaluator
-(`EvaluationHarness` → `RetrievalEvaluator`) over the same fixed Phase 10
-corpus / dataset / chunking, in a locked S1 (dense) / S2 (hybrid + weighted) /
-S3 (hybrid + RRF) matrix at `candidate_k` 33 / `top_k` 8 / no reranker. Real
-dense retrieval reaches the corpus 7/8 ceiling here (hit_rate / recall 0.875,
-MRR 0.708) — off the synthetic `DeterministicEmbedder` floor (dense@8 hit_rate /
-recall 0.25, MRR ~0.036, the frozen Phase 10D D1-t8 cell) — demonstrating
-semantic-provider integration, not semantic superiority. Evidence is written to
-`benchmark/results/retrieval_semantic_profile.json`, explicitly
-`deterministic: false` and separate from the frozen Phase 10 evidence (the three
-`benchmark/results/retrieval_small_*.json` files stay byte-identical): same-
-environment reproducible, but sensitive to model / torch / dependency versions.
-On this 6-document / 33-chunk / 8-case corpus (one deliberate
-missing-ground-truth case caps observable recall at 7/8 = 0.875), none of this
-is a claim of real-world or dense-vs-BM25 performance. ZMRAG remains retrieval /
-evaluation infrastructure — not a generated-answer RAG system, not an Agent
-system. No generation, agents, tools, MCP, memory, semantic reranking, or
-persistence was added in Phase 11.
+Default install — deterministic, **zero ML dependencies, no model download,
+no API key**:
 
-Phase 10D — Retrieval Truncation Study. Over the same fixed Phase 10C
-environment (local synthetic corpus, dataset, chunking, deterministic
-embedding, unchanged evaluator), a controlled study varies `candidate_k` in
-{4, 8, 16, 33} and `top_k` in {4, 8} to separate candidate selection from final
-ranking depth across an 18-cell matrix (D1 Dense-only, D2 Lexical-only, D3
-Hybrid + Weighted, D4 Hybrid + RRF; no reranker, no pipeline). Phase 10C ran the
-same environment at the full-pool depth `top_k`/`candidate_k` 33/33 (E1
-Dense-only, E2 Lexical-only, E3 Hybrid + Weighted, E4 Hybrid + RRF, E5 Hybrid +
-Weighted + DeterministicReranker, E6 Hybrid + RRF + DeterministicReranker).
-`benchmark/run_retrieval_experiments.py` composes each configuration directly
-from existing public retrieval/evaluation components — never through the
-pipeline, which cannot express single-source or no-reranker configurations —
-verifies same-instance and cross-instance determinism plus an E5 recompute
-guard against the frozen Phase 10B baseline, and writes machine-readable
-evidence (`benchmark/results/retrieval_small_experiments.json`) whose metrics
-come verbatim from `EvaluationResult.to_dict()`. Phase 10D's
-`benchmark/run_retrieval_truncation.py` composes each cell the same way, verifies
-same-instance and cross-instance determinism plus an E3 cross-phase guard
-against the frozen Phase 10C row, and writes machine-readable evidence
-(`benchmark/results/retrieval_truncation.json`) whose metrics come verbatim from
-`EvaluationResult.to_dict()`. The Phase 10B reproducible
-baseline (`benchmark/run_retrieval_small_baseline.py` →
-`benchmark/results/retrieval_small_baseline.json`) remains frozen and is never
-overwritten. Results are deterministic, reproducible local validation numbers
-on a small synthetic corpus; they are not a claim of real-world benchmark
-performance. The data-to-context pipeline is
-implemented end-to-end and tested: ingestion (text / `.txt` file / single
-directory) → Document → chunking → embedding → vector + lexical indexing →
-dense / lexical / hybrid retrieval → fusion → reranking → context building →
-`Context`, exposed both as `query()` (→ `Context`) and the evaluation-facing
-`retrieve()` (→ real ranked `SearchResult[]`, the single shared retrieval path).
-An offline, deterministic retrieval Evaluation layer (Hit Rate / Recall /
-Precision plus the ranking metrics MRR / MAP / NDCG with optional `@K` cutoffs,
-macro-averaged over queries) consumes pipeline output with no reverse coupling,
-wrapped by an `EvaluationHarness` that validates and runs prepared (cases,
-predictions) pairs against an injected evaluator. A `RetrievalEvaluationRunner`
-drives real pipelines through that harness: per `EvaluationCase` it calls
-`pipeline.retrieve` exactly once and hands the resulting predictions to
-`harness.run`, reporting results (`EvaluationResult.to_dict` / `summary`). An
-`EvaluationCaseSet` organizes cases as an ordered, immutable, JSON-friendly
-input contract, a `JsonEvaluationDatasetLoader` loads that set from a local,
-strictly-schema-checked JSON file, and a `BenchmarkRunner` now composes it all
-into one offline execution entry point (`EvaluationCaseSet → EvaluationResult`
-through an injected `RetrievalEvaluationRunner`, exactly-once, result passed
-through unchanged). A small, hand-written, fully local synthetic corpus (six
-`.txt` documents) and JSON evaluation cases now live under `benchmark/` and run
-through that same chain unchanged (`benchmark/datasets/retrieval_small.json`
-loads through `JsonEvaluationDatasetLoader`). No external benchmark datasets
-(BEIR / MS MARCO / HuggingFace), no Dataset framework, no remote download. All
-stages are deterministic, dependency-injected, network-free, and unit-tested.
-No LLM generation, benchmark scores, external evaluation frameworks,
-persistence, or external services yet.
+```bash
+pip install -e .
+```
 
-## Development
+Development (adds pytest):
 
 ```bash
 pip install -e ".[dev]"
-pytest
 ```
 
-See [docs/architecture.md](docs/architecture.md) for design intent.
+Semantic (adds `sentence-transformers` for the optional real-model features):
+
+```bash
+pip install -e ".[semantic]"
+```
+
+`sentence-transformers` is an optional dependency — it is not part of the
+default or `dev` installs, so default setups and CI stay ML-free.
+
+## Quick Start
+
+Deterministic retrieval end to end, no model, no network, no API key:
+
+```python
+from zmrag import (
+    DeterministicRAGPipeline,
+    DeterministicReranker,
+    DeterministicEmbedder,
+    DeterministicContextBuilder,
+    DenseRetriever,
+    LexicalRetriever,
+    HybridRetriever,
+    FixedSizeChunker,
+    InMemoryVectorStore,
+    InMemoryLexicalIndex,
+    WeightedScoreFusion,
+    PlainTextIngestor,
+)
+
+# text -> Document
+text = (
+    "ZMRAG is a deterministic retrieval and ranking layer for RAG systems. "
+    "Retrieval turns a query into ranked chunks. Chunking splits a document into pieces. "
+    "Embedding maps text to vectors for dense retrieval. Lexical retrieval uses BM25. "
+    "Hybrid retrieval fuses both dense and lexical signals."
+)
+doc = PlainTextIngestor().ingest(document_id="quickstart-1", text=text)
+
+# indexing + retrieval stages
+chunker = FixedSizeChunker(chunk_size=90)
+embedder = DeterministicEmbedder(dimension=8)   # deterministic stand-in, not a real model
+vector_store = InMemoryVectorStore()
+lexical_index = InMemoryLexicalIndex()
+dense = DenseRetriever(embedder=embedder, store=vector_store)
+lexical = LexicalRetriever(index=lexical_index)
+retriever = HybridRetriever(
+    dense_retriever=dense,
+    lexical_retriever=lexical,
+    fusion=WeightedScoreFusion(),
+)
+
+pipeline = DeterministicRAGPipeline(
+    chunker=chunker,
+    embedder=embedder,
+    vector_store=vector_store,
+    lexical_index=lexical_index,
+    retriever=retriever,
+    reranker=DeterministicReranker(),           # deterministic lexical-overlap reranker
+    context_builder=DeterministicContextBuilder(),
+)
+
+pipeline.ingest(doc)
+
+# query -> ranked SearchResult[]
+results = pipeline.retrieve(query="dense retrieval", top_k=3, candidate_k=33)
+for r in results:
+    print(r.chunk.id, round(r.score, 4), r.chunk.text[:40])
+```
+
+ZMRAG is a **library**, not a standalone command-line product. You compose the
+stages above through the Python API (or run the benchmark scripts in
+[Evaluation & Benchmarks](#evaluation--benchmarks)).
+
+## Retrieval
+
+- **Lexical** — BM25 over a lexical index; term-overlap based, no model.
+- **Dense** — embeddings plus cosine search in a vector store.
+- **Hybrid** — combines dense and lexical signals through a fusion strategy
+  (weighted score fusion or Reciprocal Rank Fusion) into one ranked list.
+
+A reranker narrows a candidate pool further. The default `DeterministicReranker`
+is a deterministic lexical-overlap stand-in for tests and local development —
+**not** a semantic reranker.
+
+## Semantic Retrieval (optional)
+
+Swap the deterministic embedder for real sentence-transformers embeddings:
+
+```python
+from zmrag.semantic import SemanticEmbeddingProvider  # not in the top-level public API
+
+embedder = SemanticEmbeddingProvider(
+    model_source="sentence-transformers/all-MiniLM-L6-v2"
+)
+```
+
+- Model: `sentence-transformers/all-MiniLM-L6-v2` (384-dim)
+- Install: `pip install -e ".[semantic]"`
+- The first run downloads the model; later runs use the local cache.
+- A plain `import zmrag` never loads torch / transformers — the semantic code
+  stays behind the optional extra.
+- Run the real-model profile: `python benchmark/run_semantic_profile.py`
+
+## Cross-Encoder Reranking (optional)
+
+True two-stage retrieval:
+
+```
+Query
+ ↓
+First-stage retrieval   (recall a candidate pool)
+ ↓
+CrossEncoder scoring    (per (query, chunk) pair)
+ ↓
+Top-K
+```
+
+```python
+from zmrag.semantic_rerank import CrossEncoderReranker  # not in the top-level public API
+
+reranker = CrossEncoderReranker(
+    model_source="cross-encoder/ms-marco-MiniLM-L-6-v2"
+)
+```
+
+The reranker **only re-scores the candidate pool it is given** — it never
+recalls documents or queries a store/index itself. The benchmark profile runs
+33 candidates → 8 results; that is a benchmark setting, not a fixed API limit.
+
+Run the real-model profile: `python benchmark/run_semantic_rerank_profile.py`
+
+## Evaluation & Benchmarks
+
+Offline, deterministic retrieval evaluation over prepared
+`(query, expected chunk ids)` cases, macro-averaged over queries:
+
+- Hit Rate / Recall / Precision
+- MRR / MAP / NDCG, with optional `@K` cutoffs
+
+The frozen benchmark corpus is **local, synthetic, and deliberately small** —
+6 documents, 33 chunks, 8 evaluation cases (one has no ground truth, capping
+observable recall at 7/8 = 0.875). It exists to verify that the retrieval /
+ranking / evaluation pipeline is correct and reproducible. It is **not** BEIR,
+**not** MS MARCO, **not** a large production dataset, and **not** a real-world
+or SOTA comparison.
+
+Phase 11 / Phase 12 MRR results (from the committed evidence JSON, same fixed
+corpus):
+
+| Retrieval config      | Semantic only | Semantic + CrossEncoder rerank |
+| --------------------- | ------------- | ------------------------------ |
+| Dense                 | 0.708         | 0.813                          |
+| Hybrid + weighted     | 0.813         | 0.813                          |
+| Hybrid + RRF          | 0.729         | 0.813                          |
+
+These are observations on this one fixed corpus — not a claim that semantic
+embeddings or CrossEncoder reranking are universally superior to BM25 / dense /
+hybrid.
+
+Evidence files: `benchmark/results/retrieval_small_*.json`,
+`benchmark/results/retrieval_semantic_profile.json`,
+`benchmark/results/retrieval_semantic_rerank_profile.json`.
+
+## Tests
+
+```bash
+python -m pytest -q
+```
+
+Current result: **879 passed, 3 skipped**.
+
+## Project Scope
+
+ZMRAG focuses on **retrieval, ranking, and evaluation**. Not in scope:
+
+- LLM answer generation
+- Agents
+- Tool calling
+- MCP
+- Memory
+- Runtime / serving
+- Chat UI
+
+## Documentation
+
+Design intent and per-stage contracts: [docs/architecture.md](docs/architecture.md)
+
+## License
+
+Proprietary.
