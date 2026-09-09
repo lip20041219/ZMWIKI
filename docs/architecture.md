@@ -1445,6 +1445,167 @@ is untouched by this phase.
 > measurement of truncation behavior, not an optimization, and not a claim of
 > real-world benchmark performance.
 
+## Semantic Retrieval Profile
+
+Phase 11 adds an *optional*, real-semantic-embedding channel on top of the
+unchanged deterministic retrieval / evaluation stack. It is a separate evidence
+channel only -- it changes no core module, adds no dependency to the default or
+dev install, and leaves the frozen deterministic profiles (Phases 10B / 10C /
+10D) byte-identical.
+
+### Motivation
+
+Every embedding ZMRAG shipped up to Phase 10D came from
+``DeterministicEmbedder`` -- a stdlib, sha256-derived *synthetic* vector that is
+byte-stable but has no semantic content. That made the deterministic local
+benchmarks reproducible, but it is deliberately unsuitable for any semantic-
+quality observation: dense retrieval on the synthetic floor cannot answer
+"does a real semantic embedding drive this stack?" Phase 11 adds a real provider
+without disturbing the deterministic path, so the two profiles are comparable
+only in how they exercise the same retrieval components -- never as competing
+claims.
+
+### Architecture
+
+The existing ``EmbeddingProvider`` abstraction (``embed`` / ``embed_many`` /
+``dimension`` -> ``Embedding``) is the integration seam and is reused unchanged:
+``SemanticEmbeddingProvider`` is a new *implementation* of it, and every stage
+downstream is the same public component the deterministic profile already used.
+No ABC, retriever, store, fusion, or evaluator was modified.
+
+```
+SemanticEmbeddingProvider
+        ↓
+Embedding
+        ↓
+InMemoryVectorStore
+        ↓
+DenseRetriever / HybridRetriever
+        ↓
+EvaluationHarness
+        ↓
+RetrievalEvaluator
+```
+
+``SemanticEmbeddingProvider`` (``src/zmrag/semantic.py``) wraps
+sentence-transformers behind a narrow backend adapter. Exactly one model source
+is required (``model_name`` or ``local_model_path``, validated before any
+backend work); results are converted to the library ``Embedding`` value object
+via ``tolist()``, so numpy / torch objects never leak into ZMRAG and never need
+to be imported. ``dimension`` is read from the loaded model at construction.
+
+### Optional dependency boundary
+
+- ``sentence-transformers`` is an **optional** extra only:
+  ``[project.optional-dependencies] semantic = ["sentence-transformers>=2.0"]``.
+- It is **not** in ``dependencies = []`` and **not** in the ``dev`` extra
+  (pytest only), so a default install and the CI test suite never import torch.
+- The heavy import happens inside ``_create_backend`` at instantiation time,
+  never at module scope -- importing ``zmrag`` or ``zmrag.semantic`` is always
+  safe, and constructing the provider without the dependency raises an
+  actionable ``ImportError`` naming ``pip install "zmrag[semantic]"``.
+- The deterministic profile therefore remains fully dependency-free and
+  byte-reproducible across environments.
+
+### Model
+
+``benchmark/run_semantic_profile.py`` pins exactly one model and never
+substitutes another:
+
+```
+sentence-transformers/all-MiniLM-L6-v2
+384 dimensions
+normalize_embeddings=True
+```
+
+Weights are downloaded on first use unless already cached by
+sentence-transformers. The runner records the installed ``python`` /
+``sentence_transformers`` / ``torch`` / ``numpy`` versions in the evidence (the
+facts that explain why a different environment may differ) -- never a hostname,
+username, path, timestamp, or credential.
+
+### Semantic benchmark
+
+The runner feeds the *same* canonical corpus / dataset / chunking the frozen
+deterministic profiles used (6 documents / 33 chunks, the 8-case
+``retrieval_small.json``, ``FixedSizeChunker(120, 20)``) through the real model
+and the unchanged public components. Only retrieval configuration varies, in a
+3-cell matrix locked before any run and never tuned: ``S1`` Dense-only,
+``S2`` Hybrid + ``WeightedScoreFusion``, ``S3`` Hybrid + ``RRFFusion``, at
+unified ``candidate_k`` 33 / ``top_k`` 8, no reranker. Metrics come verbatim
+from ``EvaluationResult.to_dict()``:
+
+```
+S1 dense             hit_rate 0.875  recall 0.875  precision 0.125  MRR 0.708  MAP 0.719  NDCG 0.756
+S2 hybrid+weighted   hit_rate 0.875  recall 0.875  precision 0.125  MRR 0.8125 MAP 0.823  NDCG 0.837
+S3 hybrid+rrf        hit_rate 0.875  recall 0.875  precision 0.125  MRR 0.729  MAP 0.740  NDCG 0.774
+```
+
+These are **bounded evidence on the fixed Phase 10 corpus/dataset** -- they
+observe that a real semantic embedding reaches and drives the existing retrieval
+stack, nothing more.
+
+### Evidence separation and reproducibility
+
+Semantic evidence lives in
+``benchmark/results/retrieval_semantic_profile.json`` and is labelled
+``deterministic: false`` at the top level and on every config row. The three
+frozen Phase 10 files (``retrieval_small_baseline.json`` /
+``retrieval_small_experiments.json`` / ``retrieval_truncation.json``) are never
+written by the semantic runner and stay byte-identical to HEAD. Semantic
+inference is *same-environment reproducible* -- the runner executes the whole
+profile twice on freshly constructed providers and records
+``same_environment_reproducible`` only when the two passes are exactly equal --
+but model output depends on the model / torch / dependency versions, so no
+byte-identical cross-machine reproduction is claimed and the evidence must never
+be merged or labelled as deterministic evidence.
+
+### Synthetic vs semantic
+
+On the same 33-chunk corpus at the same ``top_k = 8``:
+
+```
+DeterministicEmbedder dense@8   hit_rate/recall ≈ 0.25   MRR ≈ 0.036   (frozen Phase 10D D1-t8 cell)
+Semantic dense@8 (S1)           hit_rate/recall = 0.875  MRR = 0.708
+```
+
+This shows the real provider integrates correctly and moves dense retrieval off
+the synthetic ``DeterministicEmbedder`` floor. It is **not** general superiority
+over BM25 -- the lexical profile reaches the same 0.875 ceiling here, and this
+corpus cannot discriminate the two strategies.
+
+### Benchmark interpretation limits
+
+The evidence cannot support general claims:
+
+- only **6 documents / 33 chunks / 8 cases**;
+- case 8 references the deliberately unindexed ``missing::0`` chunk, so the
+  maximum observable recall of any configuration is 7/8 = 0.875;
+- most positive queries have strong lexical / topical overlap, so dense and
+  lexical retrieval largely agree at the top;
+
+this benchmark therefore cannot establish dense-vs-BM25 (or fusion) superiority
+in general, and makes no real-world performance claim.
+
+### Deterministic profile protection
+
+Phase 11 touches exactly one source file (``src/zmrag/semantic.py``, additive
+and never imported by the default graph) and adds optional ``pyproject.toml``
+extras plus tests, a benchmark runner, and evidence. ``embedders.py``,
+``retrievers.py``, ``stores.py``, ``fusion.py``, ``rerankers.py``,
+``pipeline.py``, ``evaluation.py``, ``evaluation_harness.py``, ``__init__.py``
+and the Phase 10 benchmark runners are unchanged; the public API is unchanged
+(``SemanticEmbeddingProvider`` is *not* exported at the package root).
+
+### Non-goals
+
+Phase 11 does **not** implement generation, answer / generated-answer
+evaluation, agents, tool calling, MCP, memory, semantic reranking, persistence,
+a new fusion strategy, new evaluation metrics, or a new corpus / dataset. The
+retrieval/evaluation stack still ends at ranked retrieval results and an
+offline metric result; ZMRAG remains a retrieval layer, not a generated-answer
+RAG or Agent system.
+
 ## Guiding constraints (development process)
 
 - Build in small phases; each phase is runnable and tested before the next.

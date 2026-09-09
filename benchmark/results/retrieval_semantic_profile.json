@@ -1,0 +1,68 @@
+{
+  "profile": "semantic",
+  "experiment": "retrieval_semantic_profile",
+  "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
+  "corpus_documents": 6,
+  "corpus_chunks": 33,
+  "candidate_k": 33,
+  "top_k": 8,
+  "total_cases": 8,
+  "evaluated_cases": 8,
+  "deterministic": false,
+  "environment": {
+    "python": "3.11.9",
+    "sentence_transformers": "6.0.1",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6"
+  },
+  "configs": [
+    {
+      "id": "S1",
+      "retriever": "dense",
+      "fusion": null,
+      "reranker": null,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.125,
+      "mrr": 0.7083333333333333,
+      "map": 0.71875,
+      "ndcg": 0.7562041988406616,
+      "total_cases": 8,
+      "evaluated_cases": 8,
+      "deterministic": false
+    },
+    {
+      "id": "S2",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": null,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.125,
+      "mrr": 0.8125,
+      "map": 0.8229166666666666,
+      "ndcg": 0.8366783004521589,
+      "total_cases": 8,
+      "evaluated_cases": 8,
+      "deterministic": false
+    },
+    {
+      "id": "S3",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": null,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.125,
+      "mrr": 0.7291666666666667,
+      "map": 0.7395833333333334,
+      "ndcg": 0.7741783004521589,
+      "total_cases": 8,
+      "evaluated_cases": 8,
+      "deterministic": false
+    }
+  ],
+  "same_environment_reproducible": true
+}

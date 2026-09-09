@@ -22,6 +22,39 @@ Document/Data
 
 ## Status
 
+Phase 11 — Optional Semantic Retrieval Profile. The deterministic
+retrieval / evaluation stack below remains the canonical, dependency-free
+profile; Phase 11 adds a separate *optional* real-embedding channel and does not
+change it. `SemanticEmbeddingProvider` (`src/zmrag/semantic.py`, deliberately
+not part of the top-level public API) implements the existing
+`EmbeddingProvider` contract over a lazily imported `sentence-transformers`
+backend, so a plain `import zmrag` never loads torch / transformers /
+sentence-transformers / fastembed and the deterministic profile keeps zero ML
+dependencies. The `semantic` extra (`pip install "zmrag[semantic]"`,
+`sentence-transformers>=2.0`) is optional — it is in neither `dependencies = []`
+nor the `dev` extra (pytest only), so default installs and CI stay ML-free.
+`benchmark/run_semantic_profile.py` drives the real model
+(`sentence-transformers/all-MiniLM-L6-v2`, 384-dim, normalized embeddings)
+through the unchanged public retrievers (`DenseRetriever` / `HybridRetriever` +
+`WeightedScoreFusion` / `RRFFusion`) and the real evaluator
+(`EvaluationHarness` → `RetrievalEvaluator`) over the same fixed Phase 10
+corpus / dataset / chunking, in a locked S1 (dense) / S2 (hybrid + weighted) /
+S3 (hybrid + RRF) matrix at `candidate_k` 33 / `top_k` 8 / no reranker. Real
+dense retrieval reaches the corpus 7/8 ceiling here (hit_rate / recall 0.875,
+MRR 0.708) — off the synthetic `DeterministicEmbedder` floor (dense@8 hit_rate /
+recall 0.25, MRR ~0.036, the frozen Phase 10D D1-t8 cell) — demonstrating
+semantic-provider integration, not semantic superiority. Evidence is written to
+`benchmark/results/retrieval_semantic_profile.json`, explicitly
+`deterministic: false` and separate from the frozen Phase 10 evidence (the three
+`benchmark/results/retrieval_small_*.json` files stay byte-identical): same-
+environment reproducible, but sensitive to model / torch / dependency versions.
+On this 6-document / 33-chunk / 8-case corpus (one deliberate
+missing-ground-truth case caps observable recall at 7/8 = 0.875), none of this
+is a claim of real-world or dense-vs-BM25 performance. ZMRAG remains retrieval /
+evaluation infrastructure — not a generated-answer RAG system, not an Agent
+system. No generation, agents, tools, MCP, memory, semantic reranking, or
+persistence was added.
+
 Phase 10D — Retrieval Truncation Study. Over the same fixed Phase 10C
 environment (local synthetic corpus, dataset, chunking, deterministic
 embedding, unchanged evaluator), a controlled study varies `candidate_k` in
