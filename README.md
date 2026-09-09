@@ -22,6 +22,36 @@ Document/Data
 
 ## Status
 
+Phase 12 — Optional Semantic Cross-Encoder Reranking. On top of the
+Phase 11 semantic channel this adds an optional *two-stage* rerank profile:
+first-stage retrieval produces a candidate pool, then `CrossEncoderReranker`
+(`src/zmrag/semantic_rerank.py`, deliberately not part of the top-level public
+API and never imported by the default graph) scores each `(query, chunk.text)`
+pair with a real sentence-transformers `CrossEncoder` and returns the top
+`top_k` `SearchResult`s. It implements the existing `Reranker` contract: it only
+re-ranks the candidate pool it is given — it never recalls documents, never
+queries a store/retriever/index, and never changes candidate generation — so the
+deterministic core and its components are untouched. It reuses the Phase 11
+optional `semantic` extra (`pip install "zmrag[semantic]"`; `CrossEncoder` ships
+in the same `sentence-transformers` distribution), loads the model lazily at
+construction (a plain `import zmrag` stays torch/transformers-free), and needs
+no new dependency or core / `__init__.py` change. The locked runner
+(`benchmark/run_semantic_rerank_profile.py`) keeps the Phase 11 corpus / dataset
+/ chunking and embedding (`sentence-transformers/all-MiniLM-L6-v2`, 384-dim) and
+reranks with `cross-encoder/ms-marco-MiniLM-L-6-v2` over the same fixed
+6-document / 33-chunk / 8-case set: first stage to a candidate pool of 33, then
+rerank to `top_k` 8, in a locked R1 (dense) / R2 (hybrid + weighted) / R3
+(hybrid + RRF) matrix. Evidence is written to
+`benchmark/results/retrieval_semantic_rerank_profile.json`, explicitly
+`deterministic: false` (same-environment reproducible; reranking is
+non-deterministic evidence) and separate from the frozen Phase 10 / Phase 11
+evidence, all four of which stay byte-identical. Real-model integration was
+executed successfully. On this small lexical-overlap-heavy corpus — recall
+capped at 7/8 = 0.875 by one missing-ground-truth case — reranking moved R1 MRR
+from 0.708 to 0.8125 and R3 MRR from 0.729 to 0.8125, while R2 MRR stayed 0.8125
+with slightly lower MAP / NDCG (-0.031 / -0.018). These are observations on the
+fixed corpus, not a claim that CrossEncoder reranking is universally superior.
+
 Phase 11 — Optional Semantic Retrieval Profile. The deterministic
 retrieval / evaluation stack below remains the canonical, dependency-free
 profile; Phase 11 adds a separate *optional* real-embedding channel and does not
@@ -53,7 +83,7 @@ missing-ground-truth case caps observable recall at 7/8 = 0.875), none of this
 is a claim of real-world or dense-vs-BM25 performance. ZMRAG remains retrieval /
 evaluation infrastructure — not a generated-answer RAG system, not an Agent
 system. No generation, agents, tools, MCP, memory, semantic reranking, or
-persistence was added.
+persistence was added in Phase 11.
 
 Phase 10D — Retrieval Truncation Study. Over the same fixed Phase 10C
 environment (local synthetic corpus, dataset, chunking, deterministic

@@ -1606,6 +1606,111 @@ retrieval/evaluation stack still ends at ranked retrieval results and an
 offline metric result; ZMRAG remains a retrieval layer, not a generated-answer
 RAG or Agent system.
 
+## Semantic Cross-Encoder Reranking Profile (Phase 12)
+
+Phase 12 adds an *optional* two-stage retrieval profile on top of Phase 11's
+semantic channel: a real cross-encoder re-scores the first-stage candidate pool
+before evaluation. Like Phase 11 it is a separate, non-deterministic evidence
+channel only -- it changes no core module, adds no new dependency or extra (it
+reuses Phase 11's `semantic` extra, since `CrossEncoder` ships in the same
+`sentence-transformers` distribution), and leaves the frozen deterministic
+profiles (Phases 10B / 10C / 10D) and the Phase 11 semantic evidence
+byte-identical.
+
+### Architecture
+
+The existing `Reranker` abstraction (`rerank(query, candidates, top_k)`) is the
+integration seam and is reused unchanged: `CrossEncoderReranker`
+(`src/zmrag/semantic_rerank.py`) is a new optional *implementation* of it. The
+two-stage shape:
+
+```
+retrieval -> candidate pool (up to candidate_k=33)
+CrossEncoderReranker.rerank -> CrossEncoder scoring of (query, chunk.text)
+                               for every candidate in the pool
+                            -> top-k SearchResult (top_k=8)
+```
+
+`CrossEncoderReranker` wraps sentence-transformers behind a narrow
+``score_pairs(query, texts) -> list[float]`` backend adapter (lazy
+`_create_backend`, exactly like `semantic.py`). Exactly one model source
+(`model_name` or `local_model_path`) is validated before any backend work;
+scores are coerced to finite floats (NaN / Inf and count mismatches are
+rejected). It honours the `Reranker` contract exactly: it is **subset-only** --
+it re-ranks the candidate pool it is given and never recalls, never queries a
+store / retriever / index, never generates candidates -- emits fresh
+`SearchResult`s, and sorts by `(-score, chunk.id)`.
+
+Nothing else changed: `retrievers.py`, `pipeline.py`, `evaluation.py`,
+`rerankers.py`, `stores.py`, `fusion.py`, `embedders.py`, `__init__.py`, and
+`pyproject.toml` are untouched. No core module imports `CrossEncoderReranker`,
+and it is *not* exported at the package root -- the public API is unchanged. The
+deterministic components are unchanged, and the Phase 10 and Phase 11 evidence
+files stay frozen (byte-identical to their prior commits).
+
+### Optional dependency and lazy model loading
+
+The reranker uses the same optional `semantic` extra already declared in Phase
+11 (`pip install "zmrag[semantic]"`, `sentence-transformers>=2.0`); no new extra
+or dependency is added. `CrossEncoder` is imported only inside `_create_backend`
+at construction time, never at module scope, so `import zmrag` /
+`import zmrag.semantic_rerank` never loads torch / transformers /
+sentence-transformers. Constructing the reranker without the dependency raises
+an actionable `ImportError`.
+
+### Locked benchmark
+
+`benchmark/run_semantic_rerank_profile.py` keeps the Phase 11 environment -- the
+same canonical corpus / dataset / chunking (6 documents / 33 chunks, the 8-case
+`retrieval_small.json`, `FixedSizeChunker(120, 20)`) and the same locked
+embedding (`sentence-transformers/all-MiniLM-L6-v2`, 384-dim) -- and reranks
+with one locked CrossEncoder model, `cross-encoder/ms-marco-MiniLM-L-6-v2`.
+First stage recalls a candidate pool of up to `candidate_k=33` (dense directly;
+hybrid via `top_k=candidate_k=33`, so fusion never truncates before the
+reranker), then the reranker narrows the pool to `top_k=8`. Matrix:
+
+```
+R1 dense                      -> CrossEncoder -> 8
+R2 hybrid + WeightedScoreFusion -> CrossEncoder -> 8
+R3 hybrid + RRFFusion         -> CrossEncoder -> 8
+```
+
+Metrics come verbatim from `EvaluationResult.to_dict()`:
+
+```
+R1 dense              hit_rate 0.875  recall 0.875  precision 0.125  MRR 0.8125  MAP 0.7916666666666666  NDCG 0.8188313178399557
+R2 hybrid + weighted   hit_rate 0.875  recall 0.875  precision 0.125  MRR 0.8125  MAP 0.7916666666666666  NDCG 0.8188313178399557
+R3 hybrid + rrf        hit_rate 0.875  recall 0.875  precision 0.125  MRR 0.8125  MAP 0.7916666666666666  NDCG 0.8188313178399557
+```
+
+Each row also records `delta_vs_phase11` versus the matching Phase 11 row
+(R1 -> S1, R2 -> S2, R3 -> S3) for MRR / MAP / NDCG:
+
+```
+R1  MRR +0.10417  MAP +0.07292  NDCG +0.06263
+R2  MRR 0.0       MAP -0.03125  NDCG -0.01785
+R3  MRR +0.08333  MAP +0.05208  NDCG +0.04465
+```
+
+These are **observations on the fixed corpus, not a superiority claim**: the
+corpus is only 6 documents / 33 chunks / 8 cases and is lexical-overlap-heavy,
+and recall is capped at 7/8 = 0.875 because one case references the deliberately
+unindexed `missing::0` chunk. The evidence demonstrates that the two-stage
+semantic reranking path (33 -> CrossEncoder -> 8) works end to end on the real
+model -- it does not show that CrossEncoder reranking universally improves
+retrieval quality.
+
+### Evidence separation and reproducibility
+
+Rerank evidence lives in
+`benchmark/results/retrieval_semantic_rerank_profile.json`, labelled
+`deterministic: false` (top level and every row), with an honest
+`same_environment_reproducible` flag recorded by running the whole matrix twice
+on freshly constructed providers / rerankers. The four prior evidence files
+(Phase 10 baseline / experiments / truncation and Phase 11 semantic) are never
+written by the runner and stay byte-identical to HEAD. Real-model integration
+was executed successfully (gated behind `ZMRAG_SEMANTIC_INTEGRATION=1`).
+
 ## Guiding constraints (development process)
 
 - Build in small phases; each phase is runnable and tested before the next.

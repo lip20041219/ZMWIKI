@@ -1,0 +1,95 @@
+{
+  "profile": "semantic_rerank",
+  "experiment": "retrieval_semantic_rerank_profile",
+  "embedding_model_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
+  "reranker_model_id": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+  "corpus_documents": 6,
+  "corpus_chunks": 33,
+  "candidate_k": 33,
+  "top_k": 8,
+  "total_cases": 8,
+  "evaluated_cases": 8,
+  "deterministic": false,
+  "notes": [
+    "plumbing and ranking-stage validation, not evidence that CrossEncoder reranking is universally superior",
+    "corpus is small (6 documents) and lexical-overlap-heavy",
+    "observable recall ceiling is 7/8 = 0.875 (one case is missing::0)"
+  ],
+  "environment": {
+    "python": "3.11.9",
+    "sentence_transformers": "6.0.1",
+    "torch": "2.14.0+cpu",
+    "numpy": "2.4.6",
+    "transformers": "5.16.1"
+  },
+  "configs": [
+    {
+      "id": "R1",
+      "retriever": "dense",
+      "fusion": null,
+      "reranker": "cross_encoder",
+      "candidate_k": 33,
+      "top_k": 8,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.125,
+      "mrr": 0.8125,
+      "map": 0.7916666666666666,
+      "ndcg": 0.8188313178399557,
+      "total_cases": 8,
+      "evaluated_cases": 8,
+      "deterministic": false,
+      "delta_vs_phase11": {
+        "mrr_delta": 0.10416666666666674,
+        "map_delta": 0.07291666666666663,
+        "ndcg_delta": 0.06262711899929407
+      }
+    },
+    {
+      "id": "R2",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "cross_encoder",
+      "candidate_k": 33,
+      "top_k": 8,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.125,
+      "mrr": 0.8125,
+      "map": 0.7916666666666666,
+      "ndcg": 0.8188313178399557,
+      "total_cases": 8,
+      "evaluated_cases": 8,
+      "deterministic": false,
+      "delta_vs_phase11": {
+        "mrr_delta": 0.0,
+        "map_delta": -0.03125,
+        "ndcg_delta": -0.01784698261220319
+      }
+    },
+    {
+      "id": "R3",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": "cross_encoder",
+      "candidate_k": 33,
+      "top_k": 8,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.125,
+      "mrr": 0.8125,
+      "map": 0.7916666666666666,
+      "ndcg": 0.8188313178399557,
+      "total_cases": 8,
+      "evaluated_cases": 8,
+      "deterministic": false,
+      "delta_vs_phase11": {
+        "mrr_delta": 0.08333333333333326,
+        "map_delta": 0.05208333333333326,
+        "ndcg_delta": 0.04465301738779681
+      }
+    }
+  ],
+  "same_environment_reproducible": true
+}
