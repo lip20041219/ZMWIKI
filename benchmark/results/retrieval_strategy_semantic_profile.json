@@ -1,0 +1,180 @@
+{
+  "experiment": "retrieval_strategy_semantic_profile",
+  "reference": "retrieval_semantic_rerank_profile",
+  "dataset": "benchmark/datasets/retrieval_small.json",
+  "corpus_documents": 6,
+  "corpus_chunks": 33,
+  "chunking": "FixedSizeChunker(chunk_size=120, overlap=20)",
+  "embedding_model_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "reranker_model_id": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+  "total_cases": 8,
+  "evaluated_cases": 8,
+  "candidate_k": 33,
+  "top_k": 8,
+  "historical_baseline_match": true,
+  "historical_comparisons": [
+    {
+      "strategy": "T6",
+      "reference": "retrieval_semantic_rerank_profile:R2",
+      "fields_compared": [
+        "hit_rate",
+        "recall",
+        "precision",
+        "mrr",
+        "map",
+        "ndcg"
+      ],
+      "match": true
+    }
+  ],
+  "strategies": [
+    {
+      "id": "T6",
+      "name": "hybrid_weighted_semantic_cross_encoder",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "cross_encoder",
+      "candidate_k": 33,
+      "top_k": 8,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.125,
+      "mrr": 0.8125,
+      "map": 0.7916666666666666,
+      "ndcg": 0.8188313178399557,
+      "deterministic": false
+    }
+  ],
+  "per_query": [
+    {
+      "query": "database B-tree index query",
+      "relevant_chunk_ids": [
+        "doc_a::1"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_a::1",
+        "doc_a::0",
+        "doc_a::4",
+        "doc_d::3",
+        "doc_a::2",
+        "doc_a::5",
+        "doc_e::1",
+        "doc_a::3"
+      ]
+    },
+    {
+      "query": "cache eviction memory",
+      "relevant_chunk_ids": [
+        "doc_b::1"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_b::1",
+        "doc_b::0",
+        "doc_b::2",
+        "doc_b::4",
+        "doc_d::5",
+        "doc_f::4",
+        "doc_e::4",
+        "doc_d::4"
+      ]
+    },
+    {
+      "query": "producer consumer message queue",
+      "relevant_chunk_ids": [
+        "doc_c::0"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_c::0",
+        "doc_c::4",
+        "doc_c::1",
+        "doc_c::2",
+        "doc_c::5",
+        "doc_c::3",
+        "doc_d::5",
+        "doc_f::4"
+      ]
+    },
+    {
+      "query": "embedding vector similarity retrieval",
+      "relevant_chunk_ids": [
+        "doc_d::1"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_e::1",
+        "doc_d::1",
+        "doc_d::0",
+        "doc_d::2",
+        "doc_e::0",
+        "doc_d::5",
+        "doc_d::3",
+        "doc_f::1"
+      ]
+    },
+    {
+      "query": "BM25 lexical vector ranking fusion",
+      "relevant_chunk_ids": [
+        "doc_e::1",
+        "doc_e::2"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_e::1",
+        "doc_e::0",
+        "doc_e::2",
+        "doc_d::1",
+        "doc_e::4",
+        "doc_d::3",
+        "doc_d::0",
+        "doc_e::3"
+      ]
+    },
+    {
+      "query": "document chunk context",
+      "relevant_chunk_ids": [
+        "doc_f::0"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_f::0",
+        "doc_f::3",
+        "doc_f::1",
+        "doc_f::2",
+        "doc_f::4",
+        "doc_d::5",
+        "doc_a::1",
+        "doc_a::0"
+      ]
+    },
+    {
+      "query": "nearest neighbor search representation",
+      "relevant_chunk_ids": [
+        "doc_d::2"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_d::2",
+        "doc_d::3",
+        "doc_d::0",
+        "doc_f::1",
+        "doc_d::5",
+        "doc_f::4",
+        "doc_b::2",
+        "doc_d::4"
+      ]
+    },
+    {
+      "query": "quantum submarine agriculture",
+      "relevant_chunk_ids": [
+        "missing::0"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_d::5",
+        "doc_f::4",
+        "doc_e::0",
+        "doc_c::5",
+        "doc_c::1",
+        "doc_a::5",
+        "doc_e::4",
+        "doc_f::0"
+      ]
+    }
+  ],
+  "deterministic": false
+}

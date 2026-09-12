@@ -1,0 +1,1038 @@
+{
+  "experiment": "retrieval_strategy_comparison",
+  "reference": "retrieval_small_baseline",
+  "dataset": "benchmark/datasets/retrieval_small.json",
+  "corpus_documents": 6,
+  "corpus_chunks": 33,
+  "chunking": "FixedSizeChunker(chunk_size=120, overlap=20)",
+  "embedding": "DeterministicEmbedder(dimension=8)",
+  "bm25_tokenizer": "SimpleTokenizer",
+  "total_cases": 8,
+  "evaluated_cases": 8,
+  "top_k": 5,
+  "candidate_k": 33,
+  "dataset_fingerprint": {
+    "queries": [
+      "database B-tree index query",
+      "cache eviction memory",
+      "producer consumer message queue",
+      "embedding vector similarity retrieval",
+      "BM25 lexical vector ranking fusion",
+      "document chunk context",
+      "nearest neighbor search representation",
+      "quantum submarine agriculture"
+    ],
+    "relevant_chunk_ids": [
+      [
+        "doc_a::1"
+      ],
+      [
+        "doc_b::1"
+      ],
+      [
+        "doc_c::0"
+      ],
+      [
+        "doc_d::1"
+      ],
+      [
+        "doc_e::1",
+        "doc_e::2"
+      ],
+      [
+        "doc_f::0"
+      ],
+      [
+        "doc_d::2"
+      ],
+      [
+        "missing::0"
+      ]
+    ]
+  },
+  "fairness": [
+    {
+      "id": "T1",
+      "compared_against": "T1",
+      "differing_keys": [],
+      "allowed_keys": [
+        "retriever",
+        "fusion",
+        "reranker",
+        "candidate_k"
+      ]
+    },
+    {
+      "id": "T2",
+      "compared_against": "T1",
+      "differing_keys": [
+        "retriever",
+        "fusion",
+        "candidate_k"
+      ],
+      "allowed_keys": [
+        "retriever",
+        "fusion",
+        "reranker",
+        "candidate_k"
+      ]
+    },
+    {
+      "id": "T3",
+      "compared_against": "T1",
+      "differing_keys": [
+        "retriever",
+        "fusion",
+        "candidate_k"
+      ],
+      "allowed_keys": [
+        "retriever",
+        "fusion",
+        "reranker",
+        "candidate_k"
+      ]
+    },
+    {
+      "id": "T4",
+      "compared_against": "T1",
+      "differing_keys": [
+        "retriever",
+        "fusion",
+        "reranker",
+        "candidate_k"
+      ],
+      "allowed_keys": [
+        "retriever",
+        "fusion",
+        "reranker",
+        "candidate_k"
+      ]
+    },
+    {
+      "id": "T5",
+      "compared_against": "T1",
+      "differing_keys": [
+        "retriever",
+        "fusion",
+        "reranker",
+        "candidate_k"
+      ],
+      "allowed_keys": [
+        "retriever",
+        "fusion",
+        "reranker",
+        "candidate_k"
+      ]
+    }
+  ],
+  "historical_baseline_match": true,
+  "historical_comparisons": [
+    {
+      "strategy": "T1",
+      "reference": "retrieval_small_experiments:E1",
+      "fields_compared": [
+        "hit_rate",
+        "recall",
+        "precision",
+        "mrr",
+        "map",
+        "ndcg"
+      ],
+      "match": true
+    },
+    {
+      "strategy": "T2",
+      "reference": "retrieval_small_experiments:E3",
+      "fields_compared": [
+        "hit_rate",
+        "recall",
+        "precision",
+        "mrr",
+        "map",
+        "ndcg"
+      ],
+      "match": true
+    },
+    {
+      "strategy": "T3",
+      "reference": "retrieval_small_experiments:E4",
+      "fields_compared": [
+        "hit_rate",
+        "recall",
+        "precision",
+        "mrr",
+        "map",
+        "ndcg"
+      ],
+      "match": true
+    },
+    {
+      "strategy": "T4",
+      "reference": "retrieval_small_experiments:E5",
+      "fields_compared": [
+        "hit_rate",
+        "recall",
+        "precision",
+        "mrr",
+        "map",
+        "ndcg"
+      ],
+      "match": true
+    },
+    {
+      "strategy": "T5",
+      "reference": "retrieval_small_experiments:E6",
+      "fields_compared": [
+        "hit_rate",
+        "recall",
+        "precision",
+        "mrr",
+        "map",
+        "ndcg"
+      ],
+      "match": true
+    },
+    {
+      "strategy": "T4",
+      "reference": "retrieval_small_baseline",
+      "fields_compared": [
+        "hit_rate",
+        "recall",
+        "precision",
+        "mrr",
+        "map",
+        "ndcg"
+      ],
+      "match": true
+    }
+  ],
+  "strategies": [
+    {
+      "id": "T1",
+      "name": "dense",
+      "retriever": "dense",
+      "fusion": null,
+      "reranker": null,
+      "candidate_k": null,
+      "top_k": 5,
+      "hit_rate_at_1": 0.0,
+      "recall_at_1": 0.0,
+      "recall_at_3": 0.0,
+      "recall_at_5": 0.0,
+      "precision_at_5": 0.0,
+      "mrr_at_5": 0.0,
+      "map_at_5": 0.0,
+      "ndcg_at_5": 0.0,
+      "full_pool_candidate_k": 33,
+      "full_pool_top_k": 33,
+      "full_pool_hit_rate": 0.875,
+      "full_pool_recall": 0.875,
+      "full_pool_precision": 0.030303030303030304,
+      "full_pool_mrr": 0.06600193107546048,
+      "full_pool_map": 0.06821152703505644,
+      "full_pool_ndcg": 0.2293550463813993,
+      "deterministic": true
+    },
+    {
+      "id": "T2",
+      "name": "hybrid_weighted",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": null,
+      "candidate_k": 33,
+      "top_k": 5,
+      "hit_rate_at_1": 0.625,
+      "recall_at_1": 0.625,
+      "recall_at_3": 0.8125,
+      "recall_at_5": 0.875,
+      "precision_at_5": 0.2,
+      "mrr_at_5": 0.75,
+      "map_at_5": 0.75,
+      "ndcg_at_5": 0.7852313354223238,
+      "full_pool_candidate_k": 33,
+      "full_pool_top_k": 33,
+      "full_pool_hit_rate": 0.875,
+      "full_pool_recall": 0.875,
+      "full_pool_precision": 0.030303030303030304,
+      "full_pool_mrr": 0.75,
+      "full_pool_map": 0.75,
+      "full_pool_ndcg": 0.7852313354223238,
+      "deterministic": true
+    },
+    {
+      "id": "T3",
+      "name": "hybrid_rrf",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": null,
+      "candidate_k": 33,
+      "top_k": 5,
+      "hit_rate_at_1": 0.125,
+      "recall_at_1": 0.125,
+      "recall_at_3": 0.5,
+      "recall_at_5": 0.75,
+      "precision_at_5": 0.175,
+      "mrr_at_5": 0.3270833333333333,
+      "map_at_5": 0.3364583333333333,
+      "ndcg_at_5": 0.4398810495184858,
+      "full_pool_candidate_k": 33,
+      "full_pool_top_k": 33,
+      "full_pool_hit_rate": 0.875,
+      "full_pool_recall": 0.875,
+      "full_pool_precision": 0.030303030303030304,
+      "full_pool_mrr": 0.34791666666666665,
+      "full_pool_map": 0.3572916666666667,
+      "full_pool_ndcg": 0.48440694790698857,
+      "deterministic": true
+    },
+    {
+      "id": "T4",
+      "name": "hybrid_weighted_reranked",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 5,
+      "hit_rate_at_1": 0.625,
+      "recall_at_1": 0.625,
+      "recall_at_3": 0.875,
+      "recall_at_5": 0.875,
+      "precision_at_5": 0.2,
+      "mrr_at_5": 0.75,
+      "map_at_5": 0.7604166666666666,
+      "ndcg_at_5": 0.7905445196485911,
+      "full_pool_candidate_k": 33,
+      "full_pool_top_k": 33,
+      "full_pool_hit_rate": 0.875,
+      "full_pool_recall": 0.875,
+      "full_pool_precision": 0.030303030303030304,
+      "full_pool_mrr": 0.75,
+      "full_pool_map": 0.7604166666666666,
+      "full_pool_ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "T5",
+      "name": "hybrid_rrf_reranked",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 5,
+      "hit_rate_at_1": 0.625,
+      "recall_at_1": 0.625,
+      "recall_at_3": 0.875,
+      "recall_at_5": 0.875,
+      "precision_at_5": 0.2,
+      "mrr_at_5": 0.75,
+      "map_at_5": 0.7604166666666666,
+      "ndcg_at_5": 0.7905445196485911,
+      "full_pool_candidate_k": 33,
+      "full_pool_top_k": 33,
+      "full_pool_hit_rate": 0.875,
+      "full_pool_recall": 0.875,
+      "full_pool_precision": 0.030303030303030304,
+      "full_pool_mrr": 0.75,
+      "full_pool_map": 0.7604166666666666,
+      "full_pool_ndcg": 0.7905445196485911,
+      "deterministic": true
+    }
+  ],
+  "rank_changes_vs_baseline": [
+    {
+      "id": "T1",
+      "queries_with_changed_ranking": 0,
+      "queries_with_changed_top_1": 0
+    },
+    {
+      "id": "T2",
+      "queries_with_changed_ranking": 7,
+      "queries_with_changed_top_1": 7
+    },
+    {
+      "id": "T3",
+      "queries_with_changed_ranking": 7,
+      "queries_with_changed_top_1": 6
+    },
+    {
+      "id": "T4",
+      "queries_with_changed_ranking": 8,
+      "queries_with_changed_top_1": 8
+    },
+    {
+      "id": "T5",
+      "queries_with_changed_ranking": 8,
+      "queries_with_changed_top_1": 8
+    }
+  ],
+  "per_query": [
+    {
+      "query": "database B-tree index query",
+      "relevant_chunk_ids": [
+        "doc_a::1"
+      ],
+      "strategies": {
+        "T1": {
+          "retrieved_chunk_ids": [
+            "doc_f::4",
+            "doc_c::0",
+            "doc_b::1",
+            "doc_e::3",
+            "doc_d::0"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T2": {
+          "retrieved_chunk_ids": [
+            "doc_a::1",
+            "doc_a::2",
+            "doc_f::4",
+            "doc_c::0",
+            "doc_b::1"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T3": {
+          "retrieved_chunk_ids": [
+            "doc_a::2",
+            "doc_a::0",
+            "doc_a::1",
+            "doc_a::4",
+            "doc_d::3"
+          ],
+          "rank_of_first_relevant": 3,
+          "hit_at_1": false,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T4": {
+          "retrieved_chunk_ids": [
+            "doc_a::1",
+            "doc_a::2",
+            "doc_a::4",
+            "doc_a::5",
+            "doc_a::0"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T5": {
+          "retrieved_chunk_ids": [
+            "doc_a::1",
+            "doc_a::2",
+            "doc_a::4",
+            "doc_a::5",
+            "doc_a::0"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        }
+      }
+    },
+    {
+      "query": "cache eviction memory",
+      "relevant_chunk_ids": [
+        "doc_b::1"
+      ],
+      "strategies": {
+        "T1": {
+          "retrieved_chunk_ids": [
+            "doc_c::0",
+            "doc_b::3",
+            "doc_b::2",
+            "doc_d::1",
+            "doc_d::5"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T2": {
+          "retrieved_chunk_ids": [
+            "doc_b::1",
+            "doc_b::0",
+            "doc_c::0",
+            "doc_b::3",
+            "doc_b::2"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T3": {
+          "retrieved_chunk_ids": [
+            "doc_b::2",
+            "doc_b::1",
+            "doc_b::4",
+            "doc_b::0",
+            "doc_c::0"
+          ],
+          "rank_of_first_relevant": 2,
+          "hit_at_1": false,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T4": {
+          "retrieved_chunk_ids": [
+            "doc_b::0",
+            "doc_b::1",
+            "doc_b::2",
+            "doc_b::4",
+            "doc_a::0"
+          ],
+          "rank_of_first_relevant": 2,
+          "hit_at_1": false,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T5": {
+          "retrieved_chunk_ids": [
+            "doc_b::0",
+            "doc_b::1",
+            "doc_b::2",
+            "doc_b::4",
+            "doc_a::0"
+          ],
+          "rank_of_first_relevant": 2,
+          "hit_at_1": false,
+          "hit_at_3": true,
+          "hit_at_5": true
+        }
+      }
+    },
+    {
+      "query": "producer consumer message queue",
+      "relevant_chunk_ids": [
+        "doc_c::0"
+      ],
+      "strategies": {
+        "T1": {
+          "retrieved_chunk_ids": [
+            "doc_f::1",
+            "doc_b::4",
+            "doc_a::3",
+            "doc_a::5",
+            "doc_c::4"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T2": {
+          "retrieved_chunk_ids": [
+            "doc_c::1",
+            "doc_c::0",
+            "doc_f::1",
+            "doc_c::4",
+            "doc_b::4"
+          ],
+          "rank_of_first_relevant": 2,
+          "hit_at_1": false,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T3": {
+          "retrieved_chunk_ids": [
+            "doc_c::4",
+            "doc_c::1",
+            "doc_c::2",
+            "doc_c::5",
+            "doc_c::0"
+          ],
+          "rank_of_first_relevant": 5,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": true
+        },
+        "T4": {
+          "retrieved_chunk_ids": [
+            "doc_c::0",
+            "doc_c::1",
+            "doc_c::4",
+            "doc_c::2",
+            "doc_c::5"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T5": {
+          "retrieved_chunk_ids": [
+            "doc_c::0",
+            "doc_c::1",
+            "doc_c::4",
+            "doc_c::2",
+            "doc_c::5"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        }
+      }
+    },
+    {
+      "query": "embedding vector similarity retrieval",
+      "relevant_chunk_ids": [
+        "doc_d::1"
+      ],
+      "strategies": {
+        "T1": {
+          "retrieved_chunk_ids": [
+            "doc_d::3",
+            "doc_c::2",
+            "doc_b::0",
+            "doc_c::0",
+            "doc_f::0"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T2": {
+          "retrieved_chunk_ids": [
+            "doc_d::1",
+            "doc_d::3",
+            "doc_d::5",
+            "doc_c::2",
+            "doc_b::0"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T3": {
+          "retrieved_chunk_ids": [
+            "doc_d::3",
+            "doc_d::4",
+            "doc_e::0",
+            "doc_d::5",
+            "doc_d::0"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T4": {
+          "retrieved_chunk_ids": [
+            "doc_d::1",
+            "doc_d::0",
+            "doc_d::2",
+            "doc_d::3",
+            "doc_d::4"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T5": {
+          "retrieved_chunk_ids": [
+            "doc_d::1",
+            "doc_d::0",
+            "doc_d::2",
+            "doc_d::3",
+            "doc_d::4"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        }
+      }
+    },
+    {
+      "query": "BM25 lexical vector ranking fusion",
+      "relevant_chunk_ids": [
+        "doc_e::1",
+        "doc_e::2"
+      ],
+      "strategies": {
+        "T1": {
+          "retrieved_chunk_ids": [
+            "doc_f::0",
+            "doc_c::2",
+            "doc_b::0",
+            "doc_c::3",
+            "doc_b::2"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T2": {
+          "retrieved_chunk_ids": [
+            "doc_e::0",
+            "doc_e::1",
+            "doc_f::0",
+            "doc_e::2",
+            "doc_c::2"
+          ],
+          "rank_of_first_relevant": 2,
+          "hit_at_1": false,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T3": {
+          "retrieved_chunk_ids": [
+            "doc_e::0",
+            "doc_d::3",
+            "doc_d::0",
+            "doc_e::1",
+            "doc_e::2"
+          ],
+          "rank_of_first_relevant": 4,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": true
+        },
+        "T4": {
+          "retrieved_chunk_ids": [
+            "doc_e::0",
+            "doc_e::1",
+            "doc_e::2",
+            "doc_d::0",
+            "doc_d::1"
+          ],
+          "rank_of_first_relevant": 2,
+          "hit_at_1": false,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T5": {
+          "retrieved_chunk_ids": [
+            "doc_e::0",
+            "doc_e::1",
+            "doc_e::2",
+            "doc_d::0",
+            "doc_d::1"
+          ],
+          "rank_of_first_relevant": 2,
+          "hit_at_1": false,
+          "hit_at_3": true,
+          "hit_at_5": true
+        }
+      }
+    },
+    {
+      "query": "document chunk context",
+      "relevant_chunk_ids": [
+        "doc_f::0"
+      ],
+      "strategies": {
+        "T1": {
+          "retrieved_chunk_ids": [
+            "doc_e::0",
+            "doc_e::1",
+            "doc_f::3",
+            "doc_f::1",
+            "doc_b::0"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T2": {
+          "retrieved_chunk_ids": [
+            "doc_f::0",
+            "doc_e::0",
+            "doc_e::1",
+            "doc_f::3",
+            "doc_f::1"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T3": {
+          "retrieved_chunk_ids": [
+            "doc_f::1",
+            "doc_f::3",
+            "doc_f::0",
+            "doc_e::0",
+            "doc_e::1"
+          ],
+          "rank_of_first_relevant": 3,
+          "hit_at_1": false,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T4": {
+          "retrieved_chunk_ids": [
+            "doc_f::0",
+            "doc_f::1",
+            "doc_f::3",
+            "doc_a::0",
+            "doc_a::1"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T5": {
+          "retrieved_chunk_ids": [
+            "doc_f::0",
+            "doc_f::1",
+            "doc_f::3",
+            "doc_a::0",
+            "doc_a::1"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        }
+      }
+    },
+    {
+      "query": "nearest neighbor search representation",
+      "relevant_chunk_ids": [
+        "doc_d::2"
+      ],
+      "strategies": {
+        "T1": {
+          "retrieved_chunk_ids": [
+            "doc_d::5",
+            "doc_a::3",
+            "doc_b::2",
+            "doc_b::4",
+            "doc_c::1"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T2": {
+          "retrieved_chunk_ids": [
+            "doc_d::2",
+            "doc_d::5",
+            "doc_a::3",
+            "doc_b::2",
+            "doc_b::4"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T3": {
+          "retrieved_chunk_ids": [
+            "doc_d::2",
+            "doc_d::4",
+            "doc_d::3",
+            "doc_d::0",
+            "doc_d::5"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T4": {
+          "retrieved_chunk_ids": [
+            "doc_d::2",
+            "doc_d::0",
+            "doc_d::3",
+            "doc_d::4",
+            "doc_a::0"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        },
+        "T5": {
+          "retrieved_chunk_ids": [
+            "doc_d::2",
+            "doc_d::0",
+            "doc_d::3",
+            "doc_d::4",
+            "doc_a::0"
+          ],
+          "rank_of_first_relevant": 1,
+          "hit_at_1": true,
+          "hit_at_3": true,
+          "hit_at_5": true
+        }
+      }
+    },
+    {
+      "query": "quantum submarine agriculture",
+      "relevant_chunk_ids": [
+        "missing::0"
+      ],
+      "strategies": {
+        "T1": {
+          "retrieved_chunk_ids": [
+            "doc_d::2",
+            "doc_e::1",
+            "doc_b::0",
+            "doc_d::4",
+            "doc_d::1"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T2": {
+          "retrieved_chunk_ids": [
+            "doc_d::2",
+            "doc_e::1",
+            "doc_b::0",
+            "doc_d::4",
+            "doc_d::1"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T3": {
+          "retrieved_chunk_ids": [
+            "doc_d::2",
+            "doc_e::1",
+            "doc_b::0",
+            "doc_d::4",
+            "doc_d::1"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T4": {
+          "retrieved_chunk_ids": [
+            "doc_a::0",
+            "doc_a::1",
+            "doc_a::2",
+            "doc_a::3",
+            "doc_a::4"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        },
+        "T5": {
+          "retrieved_chunk_ids": [
+            "doc_a::0",
+            "doc_a::1",
+            "doc_a::2",
+            "doc_a::3",
+            "doc_a::4"
+          ],
+          "rank_of_first_relevant": 0,
+          "hit_at_1": false,
+          "hit_at_3": false,
+          "hit_at_5": false
+        }
+      }
+    }
+  ],
+  "candidate_pool": [
+    {
+      "id": "T4",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "top_k": 5,
+      "candidate_k": 5,
+      "recall_at_5": 0.875,
+      "mrr_at_5": 0.75,
+      "ndcg_at_5": 0.7905445196485911
+    },
+    {
+      "id": "T4",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "top_k": 5,
+      "candidate_k": 10,
+      "recall_at_5": 0.875,
+      "mrr_at_5": 0.75,
+      "ndcg_at_5": 0.7905445196485911
+    },
+    {
+      "id": "T4",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "top_k": 5,
+      "candidate_k": 20,
+      "recall_at_5": 0.875,
+      "mrr_at_5": 0.75,
+      "ndcg_at_5": 0.7905445196485911
+    },
+    {
+      "id": "T4",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "top_k": 5,
+      "candidate_k": 33,
+      "recall_at_5": 0.875,
+      "mrr_at_5": 0.75,
+      "ndcg_at_5": 0.7905445196485911
+    },
+    {
+      "id": "T5",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "top_k": 5,
+      "candidate_k": 5,
+      "recall_at_5": 0.8125,
+      "mrr_at_5": 0.75,
+      "ndcg_at_5": 0.7522228201007499
+    },
+    {
+      "id": "T5",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "top_k": 5,
+      "candidate_k": 10,
+      "recall_at_5": 0.875,
+      "mrr_at_5": 0.75,
+      "ndcg_at_5": 0.7905445196485911
+    },
+    {
+      "id": "T5",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "top_k": 5,
+      "candidate_k": 20,
+      "recall_at_5": 0.875,
+      "mrr_at_5": 0.75,
+      "ndcg_at_5": 0.7905445196485911
+    },
+    {
+      "id": "T5",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "top_k": 5,
+      "candidate_k": 33,
+      "recall_at_5": 0.875,
+      "mrr_at_5": 0.75,
+      "ndcg_at_5": 0.7905445196485911
+    }
+  ],
+  "deterministic": true
+}
