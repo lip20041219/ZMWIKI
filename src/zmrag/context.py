@@ -1,10 +1,10 @@
 """Context building: ranked SearchResult[] -> Context (packed, within budget).
 
-ContextBuilder is the adapter between retrieval/reranking and a future
-Generator/LLM. It receives already-ordered SearchResults and assembles the
-chunks that fit into a character budget into one structured Context. It never
-retrieves, reranks, re-scores, summarizes, compresses, generates prompts, or
-calls a model. The reranker decides the order; ContextBuilder only packs.
+ContextBuilder is the adapter between retrieval/reranking and the Generator
+(``generators.py``). It receives already-ordered SearchResults and assembles
+the chunks that fit into a character budget into one structured Context. It
+never retrieves, reranks, re-scores, summarizes, compresses, generates prompts,
+or calls a model. The reranker decides the order; ContextBuilder only packs.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ _SEPARATOR = "\n\n"
 
 @dataclass(frozen=True)
 class Context:
-    """The text handed to a future Generator, plus the Chunks it came from.
+    """The text handed to a Generator, plus the Chunks it came from.
 
     ``text`` is the assembled, budget-bounded, human-readable context string.
     ``chunks`` is the ordered tuple of the exact Chunk objects whose text

@@ -510,7 +510,7 @@ Reranked SearchResults
         ↓
       Context
         ↓
-   Future Generator / LLM   (NOT implemented -- design intent only)
+   Generator (optional stage)
 ```
 
 `ContextBuilder` is the adapter between retrieval/reranking and a future
@@ -558,18 +558,113 @@ more. Chunk texts are emitted in input order as numbered entries
 Input `SearchResult`s / `Chunk`s are never mutated; output `Context.chunks`
 references the same Chunk objects (no copies).
 
-**Current limitations** — no prompt generation, no system prompts, no token
-budget, no summarization / compression / semantic filtering, no LLM / API
-calls, no Generator. End-to-end pipeline implemented through Context:
+**Current limitations** — no summarization / compression / semantic filtering,
+no token budget. End-to-end pipeline implemented through Context:
 
 ```
 Raw Text -> TextIngestor -> Document -> Chunker -> Chunk[]
         --(dense / lexical)--> HybridRetriever
-        -> Reranker -> ContextBuilder -> Context -> (Future Generator -> LLM)
+        -> Reranker -> ContextBuilder -> Context -> (Generator)
 ```
 
-The last two hops (Generator, LLM) are future design intent only and are not
-claimed as implemented anywhere in this repository.
+## Generation
+
+```
+Query + Context
+        ↓
+   Generator.generate(query, context) -> str
+        ↓
+      Answer
+```
+
+`Generator` (abstract: `generate(query, context) -> str`) is the last stage and
+the only one that produces user-facing text. Its inputs are the user's query
+and the packed `Context`; its output is the answer string. It never chunks,
+embeds, indexes, retrieves, fuses, reranks, packs, evaluates, or mutates the
+Context it is given — answering is the whole responsibility. `build_prompt(
+query, context)` is the minimal dependency-free prompt helper (explicitly
+delimited context and question sections, no template engine, no prompt
+registry); a real adapter reuses or replaces it.
+
+**Current implementation** — `DeterministicGenerator(tokenizer)`, a
+**test-only / local-development** stand-in. It is *not* a language model:
+generation is **extractive** — it returns the `chunk.text` of the context chunk
+with the highest count of distinct query tokens (the same interpretable lexical
+signal `DeterministicReranker` orders by, used to select rather than to sort),
+ties keeping the earliest/best-ranked chunk. No model, no network, no
+randomness, no temperature/max-tokens knobs, so it never pretends to be an LLM;
+being copy-only it cannot hallucinate. `Context(text="", chunks=())` yields
+`""` — no evidence, no fabricated answer.
+
+**Optional stage** — `generator=None` (the default) disables generation: the
+pipeline still ingests, retrieves, and packs Context exactly as before, and
+`answer()` reports that generation is unavailable instead of returning the raw
+Context as if it were an answer.
+
+**Real model adapters are not core runtime** — implementing a hosted or
+self-hosted LLM belongs behind this same `Generator` contract with its own
+optional dependency and import boundary, exactly as `semantic.py` /
+`semantic_rerank.py` do for embedders and cross-encoders. No LLM SDK, no
+LangChain, no LlamaIndex, and no HTTP client ships in the core (which remains
+stdlib-only). Not implemented here, and not claimed: streaming, multi-turn
+memory, query rewriting, HyDE, multi-query, agents.
+
+## Source Attribution
+
+```
+Query → Retrieval → Rerank → Context → Generation → Answer + Sources
+```
+
+```
+Context.chunks (the packing record)
+        ↓
+   citations_from_context
+        ↓
+   tuple[Citation, ...]   →   AnswerResult(answer, sources)
+```
+
+**Sources are derived from retrieved/context chunks, not generated or
+hallucinated by the Generator.** The Generator's contract is unchanged —
+`generate(query, context) -> str` — and it is never asked to report its own
+sources: a model can invent a citation, a packing record cannot. Attribution
+is a *projection* of `Context.chunks`, which are the exact `Chunk` objects whose
+`[n]` entries make up `Context.text` (see Context Building). No assembled
+context text is parsed to guess where a passage came from, no chunk is
+re-retrieved, and a chunk that never reached the Context cannot be cited.
+
+`Citation` (frozen dataclass, exported) is flat by design — it copies both
+identity levels out of the chunk rather than nesting or referencing it:
+`document_id` (source-level identity), `chunk_id` + `position` (chunk-level
+identity), `metadata` (shallow-copied, like every other metadata in the core),
+and `text` (the chunk text **verbatim** — never truncated, summarized, or
+rewritten, because a citation that does not quote its source is worse than
+none). Many chunks may share one `document_id`; grouping by document is a
+caller-side `groupby` on a field that is already present, so no nested
+source-tree type is invented, and nothing resembling a citation DSL exists.
+`Citation.from_chunk(chunk)` reads a Chunk and never mutates it.
+
+`AnswerResult` (frozen dataclass, exported) is `answer: str` (the Generator's
+return value, passed through verbatim — never edited, prefixed, or
+post-processed) plus `sources: tuple[Citation, ...]`, in Context order
+(best-ranked first) and deduplicated by `chunk_id`, so the same chunk is never
+cited twice. An empty context yields `AnswerResult(answer="", sources=())`:
+no fabricated source is ever added to justify an answer.
+
+`answer_with_sources(query, *, top_k, candidate_k, max_chars) -> AnswerResult`
+is `query(...)` followed by generation and attribution — one retrieval path and
+one packing path, so the Context cited is exactly the Context generated from.
+`answer(...) -> str` is unchanged and is now literally
+`answer_with_sources(...).answer`, so the two can never diverge. Like `answer`,
+the new entry point is concrete on `RAGPipeline` (raising `NotImplementedError`
+by default) so pipelines predating this phase stay valid, and it raises
+`ValueError` — not an answer without sources — when no generator is configured.
+Generator errors still propagate unchanged.
+
+**Current limitations** — attribution is chunk-level provenance, nothing more:
+no span-level offsets inside a chunk, no per-sentence citation, no answer
+verification / faithfulness scoring, no dedup across near-identical chunks (only
+exact `chunk_id`), no citation formatting for a UI, and no LLM-generated
+citations (deliberately, per above).
 
 ## Pipeline Orchestration
 
@@ -607,7 +702,7 @@ Query
    ↓
 HybridRetriever.retrieve(query, top_k=candidate_k, candidate_k=candidate_k)  (recall: candidate_k-wide pool)
    ↓  list[SearchResult]
-Reranker.rerank(query, candidates, top_k)                                    (order: narrow to best top_k)
+Reranker.rerank(query, candidates, top_k)      (optional stage: narrow to best top_k; skipped when no reranker is injected)
    ↓  list[SearchResult]
 ContextBuilder.build(reranked, max_chars)                                    (pack: budget-bound)
    ↓
@@ -615,34 +710,64 @@ Context
 ```
 
 `query(query, *, top_k=5, candidate_k=20, max_chars=2000) -> Context`.
-Retrieval is asked for a `candidate_k`-wide pool; the reranker narrows it to
-the best `top_k`; ContextBuilder packs whatever fits `max_chars`. Every stage
-returns "at most k", so `top_k > candidate_k` simply cannot be filled. All
-scores, ordering, and selection come from the injected stages; the pipeline
-never sorts, filters, re-scores, or re-packs results itself. The return value
-is the existing `Context` (text + chunks); no `Answer`/`RAGResponse` wrapper is
-invented.
+Retrieval is asked for a `candidate_k`-wide pool; the reranker -- when one is
+injected -- narrows it to the best `top_k`; ContextBuilder packs whatever fits
+`max_chars`. Without a reranker the retriever's own ranking stands, cut to
+`top_k`. Every stage returns "at most k", so `top_k > candidate_k` simply
+cannot be filled. All scores, ordering, and selection come from the injected
+stages; the pipeline never sorts, filters, re-scores, or re-packs results
+itself. The return value is the existing `Context` (text + chunks); no
+`Answer`/`RAGResponse` wrapper is invented.
+
+```
+Context
+   ↓
+Generator.generate(query, context)                                           (generate: optional stage)
+   ↓  str
+Answer  (+ Sources, via citations_from_context — see Source Attribution)
+```
+
+`answer(query, *, top_k=5, candidate_k=20, max_chars=2000) -> str` is exactly
+`query(...)` followed by the injected Generator -- one retrieval path and one
+packing path, so the Context a generator sees is the one `query` returns. The
+answer is the generator's own return value, passed through verbatim; generator
+errors propagate unchanged (nothing is caught, retried, or turned into a
+fallback answer), the same posture indexing failures already have. With
+`generator=None` (the default) `answer` raises `ValueError` rather than
+returning raw Context where an answer was expected. `RAGPipeline.answer` is
+concrete and raises `NotImplementedError` by default, so pipeline
+implementations predating this phase stay valid.
+
+`answer_with_sources(...) -> AnswerResult` adds the attribution for that same
+Context; `answer()` is now `answer_with_sources().answer` (see Source
+Attribution below).
 
 ### Dependency injection
 
-All seven collaborators are **required keyword arguments**, validated against
-their ABCs at construction and never constructed internally: `chunker`
-(`Chunker`), `embedder` (`EmbeddingProvider`), `vector_store` (`VectorStore`),
-`lexical_index` (`LexicalIndex`), `retriever` (`Retriever`, hybrid-shaped
-`retrieve(query, top_k, candidate_k)` -- `HybridRetriever` in practice),
-`reranker` (`Reranker`), and `context_builder` (`ContextBuilder`). The wiring
-contract is that the retriever searches the same `vector_store` /
-`lexical_index` that `ingest` writes to; the caller owns that wiring.
+Six collaborators are **required keyword arguments** and two are optional,
+validated against their ABCs at construction and never constructed internally:
+`chunker` (`Chunker`), `embedder` (`EmbeddingProvider`), `vector_store`
+(`VectorStore`), `lexical_index` (`LexicalIndex`), `retriever` (`Retriever`,
+hybrid-shaped `retrieve(query, top_k, candidate_k)` -- `HybridRetriever` in
+practice), `context_builder` (`ContextBuilder`), and the optional `reranker`
+(`Reranker | None = None`) and `generator` (`Generator | None = None`); `None`
+disables that stage, which is the default for both. The wiring contract is that
+the retriever searches the same `vector_store` / `lexical_index` that `ingest`
+writes to; the caller owns that wiring.
 
 ### Responsibilities
 
 Pipeline is responsible for: orchestration, dependency wiring, indexing
 coordination (chunk -> embed -> both stores), query coordination (retrieve ->
-rerank -> build).
+rerank -> build), generation coordination (query -> generate), and attribution
+coordination (Context -> sources).
 
 Pipeline is NOT responsible for (all delegated to injected stages): chunking
 algorithm, embedding algorithm, vector similarity, BM25, fusion algorithm,
-reranking algorithm, tokenization, context packing, LLM generation.
+reranking algorithm, tokenization, context packing, prompt construction, answer
+generation, and the *content* of a citation (== the injected stages' own
+Chunk objects -- the pipeline only projects them, and never asks a model for
+them).
 
 ### Determinism and atomicity
 

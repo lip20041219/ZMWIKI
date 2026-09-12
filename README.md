@@ -24,6 +24,8 @@ an Agent framework — those belong to upper-layer systems.
 - Optional real semantic embeddings (sentence-transformers)
 - Optional Cross-Encoder reranking
 - Context building
+- Optional answer generation (`Generator`; deterministic extractive stand-in)
+- Source attribution (`answer_with_sources()` → answer + cited chunks)
 - Offline retrieval evaluation
 - Hit Rate / Recall / Precision / MRR / MAP / NDCG (optional `@K` cutoffs)
 - Dependency-injected, unit-tested, network-free by default
@@ -47,12 +49,18 @@ Embedding ───────────────►  Dense index    Lexic
                                ↓
                        Context Construction
                                ↓
+                       Optional Generation
+                               ↓
+                        Answer + Sources
+                               ↓
                              Evaluation
 ```
 
 `retrieve()` runs the shared retrieval path and returns a ranked
-`list[SearchResult]`; `query()` is that same path followed by context packing,
-so the two never diverge.
+`list[SearchResult]`; `query()` is that same path followed by context packing;
+`answer()` is `query()` followed by generation; `answer_with_sources()` is
+`answer()` plus the source attribution for that same Context. One path, four
+entry points, so they never diverge.
 
 ## Installation
 
@@ -88,6 +96,7 @@ from zmrag import (
     DeterministicReranker,
     DeterministicEmbedder,
     DeterministicContextBuilder,
+    DeterministicGenerator,
     DenseRetriever,
     LexicalRetriever,
     HybridRetriever,
@@ -128,6 +137,7 @@ pipeline = DeterministicRAGPipeline(
     retriever=retriever,
     reranker=DeterministicReranker(),           # deterministic lexical-overlap reranker
     context_builder=DeterministicContextBuilder(),
+    generator=DeterministicGenerator(),         # optional; deterministic extractive stand-in
 )
 
 pipeline.ingest(doc)
@@ -136,6 +146,15 @@ pipeline.ingest(doc)
 results = pipeline.retrieve(query="dense retrieval", top_k=3, candidate_k=33)
 for r in results:
     print(r.chunk.id, round(r.score, 4), r.chunk.text[:40])
+
+# query -> ... -> Context -> Generator -> answer
+print(pipeline.answer(query="dense retrieval", top_k=3, candidate_k=33))
+
+# answer + the chunks it was grounded in
+result = pipeline.answer_with_sources(query="dense retrieval", top_k=3, candidate_k=33)
+print(result.answer)
+for source in result.sources:
+    print(source.document_id, source.chunk_id, source.position, source.text[:40])
 ```
 
 ZMRAG is a **library**, not a standalone command-line product. You compose the
@@ -151,7 +170,10 @@ stages above through the Python API (or run the benchmark scripts in
 
 A reranker narrows a candidate pool further. The default `DeterministicReranker`
 is a deterministic lexical-overlap stand-in for tests and local development —
-**not** a semantic reranker.
+**not** a semantic reranker. The stage is optional: omit `reranker` (or pass
+`reranker=None`) and the pipeline returns the retriever's own ranking cut to
+`top_k`. `candidate_k` (the recall pool handed to the reranker) and `top_k`
+(final result count) are configured independently either way.
 
 ## Semantic Retrieval (optional)
 
@@ -200,6 +222,53 @@ recalls documents or queries a store/index itself. The benchmark profile runs
 
 Run the real-model profile: `python benchmark/run_semantic_rerank_profile.py`
 
+## Generation (optional)
+
+```
+Query → Retrieval → Rerank → Context → Generator → Answer
+```
+
+`Generator.generate(query, context) -> str` is the last stage and the only one
+that produces user-facing text. It never retrieves, reranks, re-packs, or
+mutates the `Context` it is given. Generation is optional: with `generator=None`
+(the default) the pipeline stops at `query()`'s `Context`, and
+`pipeline.answer(...)` says so rather than returning context where an answer was
+expected.
+
+The bundled `DeterministicGenerator` is **extractive, not generative**: it
+returns the context chunk with the highest query-token overlap, verbatim, and
+`""` for an empty context. No model, no network, no dependency — for tests,
+quick start, and CI stability. Real LLM adapters belong behind the same
+`Generator` contract, carrying their own optional dependency (the posture of
+`semantic.py`); no LLM SDK is part of the core runtime. `build_prompt(query,
+context)` is the minimal, dependency-free prompt helper (delimited context and
+question sections) such an adapter reuses or replaces.
+
+## Source Attribution
+
+```
+Answer + Sources
+```
+
+RAG answers can expose where they came from: `answer_with_sources(...)` returns
+an `AnswerResult` — the generator's answer plus a `Citation` per chunk that
+actually reached the Context, in Context order (best-ranked first), each
+carrying `document_id` (source identity), `chunk_id` / `position` (chunk
+identity), the chunk's `metadata`, and its text verbatim.
+
+```python
+result: AnswerResult = pipeline.answer_with_sources(query="hybrid retrieval", top_k=2)
+result.answer          # -> str, the generator's own output, unmodified
+result.sources         # -> tuple[Citation, ...], empty when nothing was retrieved
+```
+
+Sources are **derived from the retrieved/context chunks, never generated**: the
+Generator is not asked for citations and its output is never parsed for them.
+`context.chunks` *is* the packing record, so a citation cannot name a chunk that
+did not participate in the answer's context. Empty retrieval → `answer == ""`
+and `sources == ()`; nothing is invented to justify an answer. `answer(...)`
+itself is unchanged and still returns a plain `str`.
+
 ## Evaluation & Benchmarks
 
 Offline, deterministic retrieval evaluation over prepared
@@ -238,7 +307,7 @@ Evidence files: `benchmark/results/retrieval_small_*.json`,
 python -m pytest -q
 ```
 
-Current result: **879 passed, 3 skipped**.
+Current result: **962 passed, 3 skipped**.
 
 ## Project Scope
 
