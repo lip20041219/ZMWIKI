@@ -7,6 +7,8 @@ query, determinism across runs and pipeline instances, and documented partial-
 failure (non-transactional indexing) behaviour.
 """
 
+import json
+
 import pytest
 
 from zmrag import (
@@ -27,11 +29,14 @@ from zmrag import (
     EmbeddingProvider,
     FixedSizeChunker,
     Generator,
+    GeneratorResponseError,
     HybridRetriever,
+    HttpResponse,
     InMemoryLexicalIndex,
     InMemoryVectorStore,
     LexicalIndex,
     LexicalRetriever,
+    OpenAICompatibleGenerator,
     QueryRewriter,
     RAGPipeline,
     Reranker,
@@ -429,6 +434,7 @@ def _real_pipeline(
     rerank=True,
     generate=True,
     rewriter=None,
+    generator=None,
 ):
     vstore, lindex = InMemoryVectorStore(), InMemoryLexicalIndex()
     embedder = DeterministicEmbedder(dimension=dimension)
@@ -438,7 +444,9 @@ def _real_pipeline(
     optional = {}
     if rerank:
         optional["reranker"] = DeterministicReranker()
-    if generate:
+    if generator is not None:
+        optional["generator"] = generator
+    elif generate:
         optional["generator"] = DeterministicGenerator()
     if rewriter is not None:
         optional["query_rewriter"] = rewriter
@@ -1313,3 +1321,124 @@ def test_deterministic_query_rewriter_is_stable_across_pipelines():
         return pipe.answer_with_sources("  needle   haystack  ", **kwargs)
 
     assert run() == run()  # same answer, same sources, across instances
+
+
+# --- L. real LLM generator through the pipeline (fake transport, no network) ---
+
+
+def _llm_transport(answer="LLM ANSWER", status=200, calls=None):
+    """A canned OpenAI-compatible transport: records requests, never dials out."""
+    requests = calls if calls is not None else []
+    payload = {"choices": [{"message": {"role": "assistant", "content": answer}}]}
+
+    def transport(request):
+        requests.append(request)
+        body = payload if status == 200 else {"error": {"message": "provider down"}}
+        return HttpResponse(status=status, body=json.dumps(body).encode("utf-8"))
+
+    transport.requests = requests
+    return transport
+
+
+def _llm_generator(transport, **kwargs):
+    settings = {"base_url": "https://provider.invalid/v1", "model": "test-model"}
+    settings.update(kwargs)
+    return OpenAICompatibleGenerator(transport=transport, **settings)
+
+
+def test_llm_generator_answer_becomes_answer_result_answer():
+    doc = _needle_doc()
+    transport = _llm_transport("A needle is hidden in this haystack.")
+    pipe = _real_pipeline(doc, generator=_llm_generator(transport))
+    kwargs = {"top_k": 2, "candidate_k": 10, "max_chars": 2000}
+
+    result = pipe.answer_with_sources("needle", **kwargs)
+
+    assert result.answer == "A needle is hidden in this haystack."
+    # Sources stay a projection of the Context the generator was given.
+    context = pipe.query("needle", **kwargs)
+    assert result.sources == citations_from_context(context)
+    assert [s.chunk_id for s in result.sources] == [c.id for c in context.chunks]
+
+
+def test_pipeline_sends_the_original_query_and_the_packed_context():
+    doc = _needle_doc()
+    transport = _llm_transport()
+    pipe = _real_pipeline(
+        doc, generator=_llm_generator(transport), rewriter=DeterministicQueryRewriter()
+    )
+    original = "  needle   haystack  "
+    kwargs = {"top_k": 2, "candidate_k": 10, "max_chars": 2000}
+
+    pipe.answer_with_sources(original, **kwargs)
+
+    assert len(transport.requests) == 1  # exactly one generation
+    messages = json.loads(transport.requests[0].body.decode("utf-8"))["messages"]
+    user_message = messages[1]["content"]
+    context = pipe.query(original, **kwargs)
+    assert original in user_message  # the caller's query, not a stripped copy
+    assert context.text in user_message  # the packed Context, verbatim
+    assert context.chunks  # there was something to ground on
+
+
+def test_pipeline_retrieves_once_and_generates_once():
+    doc = _needle_doc()
+    transport = _llm_transport()
+    pipe = _real_pipeline(doc, generator=_llm_generator(transport))
+    retriever = pipe.retriever
+
+    class CountingRetriever(Retriever):
+        calls = 0
+
+        def retrieve(self, query, top_k=10, candidate_k=50):
+            CountingRetriever.calls += 1
+            return retriever.retrieve(query, top_k=top_k, candidate_k=candidate_k)
+
+    pipe.retriever = CountingRetriever()
+    pipe.answer_with_sources("needle", top_k=2, candidate_k=10, max_chars=2000)
+
+    assert CountingRetriever.calls == 1  # one retrieval
+    assert len(transport.requests) == 1  # one generation
+
+
+def test_answer_still_returns_a_plain_str_with_an_llm_generator():
+    pipe = _real_pipeline(_needle_doc(), generator=_llm_generator(_llm_transport("plain")))
+    assert pipe.answer("needle", top_k=2, candidate_k=10, max_chars=2000) == "plain"
+
+
+def test_llm_generator_failures_propagate_through_the_pipeline():
+    doc = _needle_doc()
+    transport = _llm_transport(status=500)
+    pipe = _real_pipeline(doc, generator=_llm_generator(transport))
+
+    with pytest.raises(GeneratorResponseError, match="HTTP 500"):
+        pipe.answer("needle", top_k=2, candidate_k=10, max_chars=2000)
+
+    # Nothing is caught or retried: one request was made, retrieval already
+    # happened and is not rolled back (same posture as indexing failures).
+    assert len(transport.requests) == 1
+
+
+def test_pipeline_does_not_parse_citations_out_of_the_answer():
+    # A model that writes a chunk id into its prose must not create a source.
+    doc = _needle_doc()
+    transport = _llm_transport("According to doc_a::0 and missing::9, ...")
+    pipe = _real_pipeline(doc, generator=_llm_generator(transport))
+    kwargs = {"top_k": 2, "candidate_k": 10, "max_chars": 2000}
+
+    result = pipe.answer_with_sources("needle", **kwargs)
+
+    assert "doc_a::0" in result.answer
+    assert [s.chunk_id for s in result.sources] == [
+        c.id for c in pipe.query("needle", **kwargs).chunks
+    ]
+    assert "missing::9" not in [s.chunk_id for s in result.sources]
+
+
+def test_llm_generator_is_not_constructed_by_the_pipeline():
+    # Dependency injection still holds: the adapter is the caller's object.
+    transport = _llm_transport()
+    generator = _llm_generator(transport)
+    pipe = _real_pipeline(_needle_doc(), generator=generator)
+    assert pipe.generator is generator
+    assert pipe.generator.transport is transport

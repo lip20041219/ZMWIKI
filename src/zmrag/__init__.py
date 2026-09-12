@@ -26,6 +26,17 @@ from .fusion import FusionStrategy, RRFFusion, WeightedScoreFusion
 from .generators import DeterministicGenerator, Generator, build_prompt
 from .ingestion import PlainTextIngestor, TextIngestor
 from .lexical import InMemoryLexicalIndex, LexicalIndex
+from .llm_generators import (
+    GeneratorConfigError,
+    GeneratorError,
+    GeneratorResponseError,
+    GeneratorTransportError,
+    HttpRequest,
+    HttpResponse,
+    OpenAICompatibleGenerator,
+    Transport,
+    urllib_transport,
+)
 from .pipeline import DeterministicRAGPipeline, RAGPipeline
 from .rerankers import DeterministicReranker, Reranker
 from .retrievers import DenseRetriever, HybridRetriever, LexicalRetriever, Retriever
@@ -66,6 +77,12 @@ __all__ = [
     "FixedSizeChunker",
     "FusionStrategy",
     "Generator",
+    "GeneratorConfigError",
+    "GeneratorError",
+    "GeneratorResponseError",
+    "GeneratorTransportError",
+    "HttpRequest",
+    "HttpResponse",
     "HybridRetriever",
     "InMemoryLexicalIndex",
     "InMemoryVectorStore",
@@ -73,6 +90,7 @@ __all__ = [
     "LexicalIndex",
     "LexicalRetriever",
     "Metadata",
+    "OpenAICompatibleGenerator",
     "PlainTextDirectoryIngestor",
     "PlainTextFileIngestor",
     "PlainTextIngestor",
@@ -88,10 +106,12 @@ __all__ = [
     "Source",
     "TextIngestor",
     "Tokenizer",
+    "Transport",
     "VectorStore",
     "WeightedScoreFusion",
     "build_prompt",
     "citations_from_context",
+    "urllib_transport",
 ]
 
 __version__ = "0.1.0"

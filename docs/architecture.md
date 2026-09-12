@@ -655,28 +655,72 @@ query, context)` is the minimal dependency-free prompt helper (explicitly
 delimited context and question sections, no template engine, no prompt
 registry); a real adapter reuses or replaces it.
 
-**Current implementation** — `DeterministicGenerator(tokenizer)`, a
-**test-only / local-development** stand-in. It is *not* a language model:
-generation is **extractive** — it returns the `chunk.text` of the context chunk
-with the highest count of distinct query tokens (the same interpretable lexical
-signal `DeterministicReranker` orders by, used to select rather than to sort),
-ties keeping the earliest/best-ranked chunk. No model, no network, no
-randomness, no temperature/max-tokens knobs, so it never pretends to be an LLM;
-being copy-only it cannot hallucinate. `Context(text="", chunks=())` yields
-`""` — no evidence, no fabricated answer.
+**Two implementations ship, one contract** — the Generator is the pluggable
+boundary of this stage:
+
+```
+                         ┌─ DeterministicGenerator        (extractive, no model)
+Context ─────────────────┤
+                         └─ OpenAICompatibleGenerator     (real LLM over HTTP)
+                                    │
+                                    ▼
+                            OpenAI-compatible provider
+                            POST {base_url}/chat/completions
+```
+
+`DeterministicGenerator(tokenizer)` is the **test-only / local-development**
+stand-in. It is *not* a language model: generation is **extractive** — it
+returns the `chunk.text` of the context chunk with the highest count of
+distinct query tokens (the same interpretable lexical signal
+`DeterministicReranker` orders by, used to select rather than to sort), ties
+keeping the earliest/best-ranked chunk. No model, no network, no randomness, no
+temperature/max-tokens knobs, so it never pretends to be an LLM; being
+copy-only it cannot hallucinate. `Context(text="", chunks=())` yields `""` — no
+evidence, no fabricated answer.
+
+`OpenAICompatibleGenerator` (in `src/zmrag/llm_generators.py`) is the real
+adapter: it builds one request from the query and the Context (a fixed system
+instruction plus `build_prompt(query, context)` as the user message), sends it
+through an injected transport, and returns `choices[0].message.content`.
+
+**Provider-specific HTTP logic stays inside the Generator adapter. The Pipeline
+remains provider-agnostic** — it hands over a query and a `Context`, receives a
+`str`, and never sees a URL, a header, a JSON body, or a vendor name. One
+adapter reaches every server exposing the OpenAI-compatible chat completions
+shape (OpenAI, DeepSeek, Groq, Together, vLLM, llama.cpp, Ollama, LM Studio,
+LiteLLM, ...); no vendor SDK and no HTTP client library is involved — the
+transport is `urllib.request` + `json`, so the core stays stdlib-only.
+
+**The HTTP boundary is injectable** — `Transport = Callable[[HttpRequest],
+HttpResponse]`, defaulting to the stdlib `urllib_transport`. That is the only
+thing tests need to replace: the whole adapter (request shape, headers, auth,
+parsing, failure modes) is exercised with no socket, no key, no cost.
+
+**Failure posture** — enforced, never repaired. A non-2xx status, a provider
+`error` payload, invalid JSON, missing/empty `choices`, a missing `message`, or
+a non-string `content` all raise `GeneratorResponseError`; an unreachable host,
+DNS/TLS failure, or timeout raises `GeneratorTransportError` (with the
+underlying `urllib`/socket exception chained). There is no fallback answer, no
+default string, and no retry loop — `GeneratorError` is the shared base.
+
+**Credentials** — the key comes from the `api_key` argument or `ZMRAG_API_KEY`
+(one generic variable; no vendor-specific variable is read). It is resolved
+once at construction, sent only as a bearer header, and never rendered:
+`OpenAICompatibleGenerator.__repr__` reports only whether a key is set, and
+`HttpRequest.__repr__` masks credential headers, because a repr reaches logs
+and tracebacks.
 
 **Optional stage** — `generator=None` (the default) disables generation: the
 pipeline still ingests, retrieves, and packs Context exactly as before, and
 `answer()` reports that generation is unavailable instead of returning the raw
 Context as if it were an answer.
 
-**Real model adapters are not core runtime** — implementing a hosted or
-self-hosted LLM belongs behind this same `Generator` contract with its own
-optional dependency and import boundary, exactly as `semantic.py` /
-`semantic_rerank.py` do for embedders and cross-encoders. No LLM SDK, no
-LangChain, no LlamaIndex, and no HTTP client ships in the core (which remains
-stdlib-only). Not implemented here, and not claimed: streaming, multi-turn
-memory, query rewriting, HyDE, multi-query, agents.
+**Not implemented here, and not claimed** — streaming, retries/backoff,
+provider-specific parameters, function calling, multi-provider routing, token
+counting, multi-turn memory, agents, and citation generation (see Source
+Attribution: citations are projected from the Context, never produced by the
+model). Real *semantic* query rewriting is likewise still absent — the shipped
+rewriter normalizes whitespace only.
 
 ## Source Attribution
 
@@ -700,6 +744,13 @@ is a *projection* of `Context.chunks`, which are the exact `Chunk` objects whose
 `[n]` entries make up `Context.text` (see Context Building). No assembled
 context text is parsed to guess where a passage came from, no chunk is
 re-retrieved, and a chunk that never reached the Context cannot be cited.
+
+**This holds for the real LLM adapter too.** `OpenAICompatibleGenerator`
+returns a plain answer string and is never asked for a citations payload; the
+model's prose is never parsed for source ids, so a model that writes
+"according to `doc_a::0`" produces exactly that text and nothing else — the
+citations still come from the Context, unaffected. Keeping the answer a `str`
+is what makes attribution deterministic even when generation is not.
 
 `Citation` (frozen dataclass, exported) is flat by design — it copies both
 identity levels out of the chunk rather than nesting or referencing it:
@@ -868,10 +919,13 @@ recursive / PDF / Markdown / URL ingestion, no convenience ingestion beyond
 `pipeline.ingest(Document)` (Directory / File / Text ingestion already produce
 Documents, which the caller hands over).
 
-**Current limitations** -- no answer generation (LLM / prompt / generation /
-agent / query expansion / streaming), no persistence / external vector DB. The
-pipeline ends at `Context`, exactly as Context Building does; Evaluation (below)
-is a separate, offline consumer.
+**Current limitations** -- generation can call a real LLM
+(`OpenAICompatibleGenerator`, above), but the *bundled* default remains the
+extractive `DeterministicGenerator`, and query rewriting is whitespace
+normalization only: no semantic query rewriting / expansion / HyDE /
+multi-query, no agent, no streaming, no persistence / external vector DB.
+`query` still ends at `Context` and `answer` at a `str`; Evaluation (below) is a
+separate, offline consumer.
 
 ## Evaluation
 
