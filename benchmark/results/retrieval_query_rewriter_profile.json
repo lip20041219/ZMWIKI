@@ -1,0 +1,1011 @@
+{
+  "experiment": "retrieval_query_rewriter_profile",
+  "reference": "retrieval_small_baseline",
+  "dataset": "benchmark/datasets/retrieval_small.json",
+  "rewriter": "DeterministicQueryRewriter",
+  "only_variable": "query_rewriter",
+  "corpus_documents": 6,
+  "corpus_chunks": 33,
+  "candidate_k": 33,
+  "total_cases": 8,
+  "evaluated_cases": 8,
+  "queries_changed_by_rewriter": 0,
+  "variants_identical": true,
+  "deterministic": true,
+  "results": [
+    {
+      "id": "Q1-baseline-t1",
+      "variant": "baseline",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 1,
+      "hit_rate": 0.625,
+      "recall": 0.625,
+      "precision": 0.625,
+      "mrr": 0.625,
+      "map": 0.625,
+      "ndcg": 0.625,
+      "deterministic": true
+    },
+    {
+      "id": "Q1-baseline-t3",
+      "variant": "baseline",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 3,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.33333333333333337,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q1-baseline-t5",
+      "variant": "baseline",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 5,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.2,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q1-baseline-t33",
+      "variant": "baseline",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 33,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.030303030303030304,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q1-query_rewritten-t1",
+      "variant": "query_rewritten",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 1,
+      "hit_rate": 0.625,
+      "recall": 0.625,
+      "precision": 0.625,
+      "mrr": 0.625,
+      "map": 0.625,
+      "ndcg": 0.625,
+      "deterministic": true
+    },
+    {
+      "id": "Q1-query_rewritten-t3",
+      "variant": "query_rewritten",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 3,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.33333333333333337,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q1-query_rewritten-t5",
+      "variant": "query_rewritten",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 5,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.2,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q1-query_rewritten-t33",
+      "variant": "query_rewritten",
+      "retriever": "hybrid",
+      "fusion": "weighted",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 33,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.030303030303030304,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q2-baseline-t1",
+      "variant": "baseline",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 1,
+      "hit_rate": 0.625,
+      "recall": 0.625,
+      "precision": 0.625,
+      "mrr": 0.625,
+      "map": 0.625,
+      "ndcg": 0.625,
+      "deterministic": true
+    },
+    {
+      "id": "Q2-baseline-t3",
+      "variant": "baseline",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 3,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.33333333333333337,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q2-baseline-t5",
+      "variant": "baseline",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 5,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.2,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q2-baseline-t33",
+      "variant": "baseline",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 33,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.030303030303030304,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q2-query_rewritten-t1",
+      "variant": "query_rewritten",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 1,
+      "hit_rate": 0.625,
+      "recall": 0.625,
+      "precision": 0.625,
+      "mrr": 0.625,
+      "map": 0.625,
+      "ndcg": 0.625,
+      "deterministic": true
+    },
+    {
+      "id": "Q2-query_rewritten-t3",
+      "variant": "query_rewritten",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 3,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.33333333333333337,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q2-query_rewritten-t5",
+      "variant": "query_rewritten",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 5,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.2,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    },
+    {
+      "id": "Q2-query_rewritten-t33",
+      "variant": "query_rewritten",
+      "retriever": "hybrid",
+      "fusion": "rrf",
+      "reranker": "deterministic",
+      "candidate_k": 33,
+      "top_k": 33,
+      "hit_rate": 0.875,
+      "recall": 0.875,
+      "precision": 0.030303030303030304,
+      "mrr": 0.75,
+      "map": 0.7604166666666666,
+      "ndcg": 0.7905445196485911,
+      "deterministic": true
+    }
+  ],
+  "per_query": [
+    {
+      "query": "database B-tree index query",
+      "retrieval_query": "database B-tree index query",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_a::1"
+      ],
+      "baseline_top_5": [
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::4",
+        "doc_a::5",
+        "doc_a::0"
+      ],
+      "query_rewritten_top_5": [
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::4",
+        "doc_a::5",
+        "doc_a::0"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q1"
+    },
+    {
+      "query": "cache eviction memory",
+      "retrieval_query": "cache eviction memory",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_b::1"
+      ],
+      "baseline_top_5": [
+        "doc_b::0",
+        "doc_b::1",
+        "doc_b::2",
+        "doc_b::4",
+        "doc_a::0"
+      ],
+      "query_rewritten_top_5": [
+        "doc_b::0",
+        "doc_b::1",
+        "doc_b::2",
+        "doc_b::4",
+        "doc_a::0"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 2,
+      "hit_at_1": false,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q1"
+    },
+    {
+      "query": "producer consumer message queue",
+      "retrieval_query": "producer consumer message queue",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_c::0"
+      ],
+      "baseline_top_5": [
+        "doc_c::0",
+        "doc_c::1",
+        "doc_c::4",
+        "doc_c::2",
+        "doc_c::5"
+      ],
+      "query_rewritten_top_5": [
+        "doc_c::0",
+        "doc_c::1",
+        "doc_c::4",
+        "doc_c::2",
+        "doc_c::5"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q1"
+    },
+    {
+      "query": "embedding vector similarity retrieval",
+      "retrieval_query": "embedding vector similarity retrieval",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_d::1"
+      ],
+      "baseline_top_5": [
+        "doc_d::1",
+        "doc_d::0",
+        "doc_d::2",
+        "doc_d::3",
+        "doc_d::4"
+      ],
+      "query_rewritten_top_5": [
+        "doc_d::1",
+        "doc_d::0",
+        "doc_d::2",
+        "doc_d::3",
+        "doc_d::4"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q1"
+    },
+    {
+      "query": "BM25 lexical vector ranking fusion",
+      "retrieval_query": "BM25 lexical vector ranking fusion",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_e::1",
+        "doc_e::2"
+      ],
+      "baseline_top_5": [
+        "doc_e::0",
+        "doc_e::1",
+        "doc_e::2",
+        "doc_d::0",
+        "doc_d::1"
+      ],
+      "query_rewritten_top_5": [
+        "doc_e::0",
+        "doc_e::1",
+        "doc_e::2",
+        "doc_d::0",
+        "doc_d::1"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 2,
+      "hit_at_1": false,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q1"
+    },
+    {
+      "query": "document chunk context",
+      "retrieval_query": "document chunk context",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_f::0"
+      ],
+      "baseline_top_5": [
+        "doc_f::0",
+        "doc_f::1",
+        "doc_f::3",
+        "doc_a::0",
+        "doc_a::1"
+      ],
+      "query_rewritten_top_5": [
+        "doc_f::0",
+        "doc_f::1",
+        "doc_f::3",
+        "doc_a::0",
+        "doc_a::1"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q1"
+    },
+    {
+      "query": "nearest neighbor search representation",
+      "retrieval_query": "nearest neighbor search representation",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_d::2"
+      ],
+      "baseline_top_5": [
+        "doc_d::2",
+        "doc_d::0",
+        "doc_d::3",
+        "doc_d::4",
+        "doc_a::0"
+      ],
+      "query_rewritten_top_5": [
+        "doc_d::2",
+        "doc_d::0",
+        "doc_d::3",
+        "doc_d::4",
+        "doc_a::0"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q1"
+    },
+    {
+      "query": "quantum submarine agriculture",
+      "retrieval_query": "quantum submarine agriculture",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "missing::0"
+      ],
+      "baseline_top_5": [
+        "doc_a::0",
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::3",
+        "doc_a::4"
+      ],
+      "query_rewritten_top_5": [
+        "doc_a::0",
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::3",
+        "doc_a::4"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 0,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_k_changed": false,
+      "config": "Q1"
+    },
+    {
+      "query": "database B-tree index query",
+      "retrieval_query": "database B-tree index query",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_a::1"
+      ],
+      "baseline_top_5": [
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::4",
+        "doc_a::5",
+        "doc_a::0"
+      ],
+      "query_rewritten_top_5": [
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::4",
+        "doc_a::5",
+        "doc_a::0"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q2"
+    },
+    {
+      "query": "cache eviction memory",
+      "retrieval_query": "cache eviction memory",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_b::1"
+      ],
+      "baseline_top_5": [
+        "doc_b::0",
+        "doc_b::1",
+        "doc_b::2",
+        "doc_b::4",
+        "doc_a::0"
+      ],
+      "query_rewritten_top_5": [
+        "doc_b::0",
+        "doc_b::1",
+        "doc_b::2",
+        "doc_b::4",
+        "doc_a::0"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 2,
+      "hit_at_1": false,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q2"
+    },
+    {
+      "query": "producer consumer message queue",
+      "retrieval_query": "producer consumer message queue",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_c::0"
+      ],
+      "baseline_top_5": [
+        "doc_c::0",
+        "doc_c::1",
+        "doc_c::4",
+        "doc_c::2",
+        "doc_c::5"
+      ],
+      "query_rewritten_top_5": [
+        "doc_c::0",
+        "doc_c::1",
+        "doc_c::4",
+        "doc_c::2",
+        "doc_c::5"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q2"
+    },
+    {
+      "query": "embedding vector similarity retrieval",
+      "retrieval_query": "embedding vector similarity retrieval",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_d::1"
+      ],
+      "baseline_top_5": [
+        "doc_d::1",
+        "doc_d::0",
+        "doc_d::2",
+        "doc_d::3",
+        "doc_d::4"
+      ],
+      "query_rewritten_top_5": [
+        "doc_d::1",
+        "doc_d::0",
+        "doc_d::2",
+        "doc_d::3",
+        "doc_d::4"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q2"
+    },
+    {
+      "query": "BM25 lexical vector ranking fusion",
+      "retrieval_query": "BM25 lexical vector ranking fusion",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_e::1",
+        "doc_e::2"
+      ],
+      "baseline_top_5": [
+        "doc_e::0",
+        "doc_e::1",
+        "doc_e::2",
+        "doc_d::0",
+        "doc_d::1"
+      ],
+      "query_rewritten_top_5": [
+        "doc_e::0",
+        "doc_e::1",
+        "doc_e::2",
+        "doc_d::0",
+        "doc_d::1"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 2,
+      "hit_at_1": false,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q2"
+    },
+    {
+      "query": "document chunk context",
+      "retrieval_query": "document chunk context",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_f::0"
+      ],
+      "baseline_top_5": [
+        "doc_f::0",
+        "doc_f::1",
+        "doc_f::3",
+        "doc_a::0",
+        "doc_a::1"
+      ],
+      "query_rewritten_top_5": [
+        "doc_f::0",
+        "doc_f::1",
+        "doc_f::3",
+        "doc_a::0",
+        "doc_a::1"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q2"
+    },
+    {
+      "query": "nearest neighbor search representation",
+      "retrieval_query": "nearest neighbor search representation",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "doc_d::2"
+      ],
+      "baseline_top_5": [
+        "doc_d::2",
+        "doc_d::0",
+        "doc_d::3",
+        "doc_d::4",
+        "doc_a::0"
+      ],
+      "query_rewritten_top_5": [
+        "doc_d::2",
+        "doc_d::0",
+        "doc_d::3",
+        "doc_d::4",
+        "doc_a::0"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_k_changed": false,
+      "config": "Q2"
+    },
+    {
+      "query": "quantum submarine agriculture",
+      "retrieval_query": "quantum submarine agriculture",
+      "rewrite_identical": true,
+      "relevant_chunk_ids": [
+        "missing::0"
+      ],
+      "baseline_top_5": [
+        "doc_a::0",
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::3",
+        "doc_a::4"
+      ],
+      "query_rewritten_top_5": [
+        "doc_a::0",
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::3",
+        "doc_a::4"
+      ],
+      "ranking_identical": true,
+      "rank_of_first_relevant": 0,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_k_changed": false,
+      "config": "Q2"
+    }
+  ],
+  "mechanism_probe": {
+    "note": "Diagnostic only: de-normalized queries derived from the benchmark queries, never used for any metric and never replacing a dataset query. Shows what the rewriter does when it actually fires, and where a whitespace difference is visible at all.",
+    "queries": [
+      {
+        "query": "database B-tree index query",
+        "denormalized_query": "  database  B-tree  index  query  ",
+        "retrieval_query": "database B-tree index query",
+        "rewrite_changed_the_string": true,
+        "pipeline_ranking_identical": true,
+        "dense_top_5_dirty": [
+          "doc_c::0",
+          "doc_d::3",
+          "doc_d::5",
+          "doc_b::0",
+          "doc_e::0"
+        ],
+        "dense_top_5_normalized": [
+          "doc_f::4",
+          "doc_c::0",
+          "doc_b::1",
+          "doc_e::3",
+          "doc_d::0"
+        ],
+        "lexical_top_5_dirty": [
+          "doc_a::1",
+          "doc_a::5",
+          "doc_a::4",
+          "doc_a::2",
+          "doc_a::0"
+        ],
+        "lexical_top_5_normalized": [
+          "doc_a::1",
+          "doc_a::5",
+          "doc_a::4",
+          "doc_a::2",
+          "doc_a::0"
+        ]
+      },
+      {
+        "query": "cache eviction memory",
+        "denormalized_query": "  cache  eviction  memory  ",
+        "retrieval_query": "cache eviction memory",
+        "rewrite_changed_the_string": true,
+        "pipeline_ranking_identical": true,
+        "dense_top_5_dirty": [
+          "doc_f::0",
+          "doc_f::1",
+          "doc_c::4",
+          "doc_d::0",
+          "doc_e::0"
+        ],
+        "dense_top_5_normalized": [
+          "doc_c::0",
+          "doc_b::3",
+          "doc_b::2",
+          "doc_d::1",
+          "doc_d::5"
+        ],
+        "lexical_top_5_dirty": [
+          "doc_b::1",
+          "doc_b::0",
+          "doc_b::4",
+          "doc_b::2"
+        ],
+        "lexical_top_5_normalized": [
+          "doc_b::1",
+          "doc_b::0",
+          "doc_b::4",
+          "doc_b::2"
+        ]
+      },
+      {
+        "query": "producer consumer message queue",
+        "denormalized_query": "  producer  consumer  message  queue  ",
+        "retrieval_query": "producer consumer message queue",
+        "rewrite_changed_the_string": true,
+        "pipeline_ranking_identical": true,
+        "dense_top_5_dirty": [
+          "doc_a::5",
+          "doc_b::2",
+          "doc_b::3",
+          "doc_a::2",
+          "doc_d::1"
+        ],
+        "dense_top_5_normalized": [
+          "doc_f::1",
+          "doc_b::4",
+          "doc_a::3",
+          "doc_a::5",
+          "doc_c::4"
+        ],
+        "lexical_top_5_dirty": [
+          "doc_c::0",
+          "doc_c::1",
+          "doc_c::5",
+          "doc_c::4",
+          "doc_c::2"
+        ],
+        "lexical_top_5_normalized": [
+          "doc_c::0",
+          "doc_c::1",
+          "doc_c::5",
+          "doc_c::4",
+          "doc_c::2"
+        ]
+      },
+      {
+        "query": "embedding vector similarity retrieval",
+        "denormalized_query": "  embedding  vector  similarity  retrieval  ",
+        "retrieval_query": "embedding vector similarity retrieval",
+        "rewrite_changed_the_string": true,
+        "pipeline_ranking_identical": true,
+        "dense_top_5_dirty": [
+          "doc_b::1",
+          "doc_a::0",
+          "doc_d::1",
+          "doc_c::0",
+          "doc_f::3"
+        ],
+        "dense_top_5_normalized": [
+          "doc_d::3",
+          "doc_c::2",
+          "doc_b::0",
+          "doc_c::0",
+          "doc_f::0"
+        ],
+        "lexical_top_5_dirty": [
+          "doc_d::1",
+          "doc_d::5",
+          "doc_d::2",
+          "doc_d::4",
+          "doc_e::0"
+        ],
+        "lexical_top_5_normalized": [
+          "doc_d::1",
+          "doc_d::5",
+          "doc_d::2",
+          "doc_d::4",
+          "doc_e::0"
+        ]
+      },
+      {
+        "query": "BM25 lexical vector ranking fusion",
+        "denormalized_query": "  BM25  lexical  vector  ranking  fusion  ",
+        "retrieval_query": "BM25 lexical vector ranking fusion",
+        "rewrite_changed_the_string": true,
+        "pipeline_ranking_identical": true,
+        "dense_top_5_dirty": [
+          "doc_b::4",
+          "doc_a::3",
+          "doc_c::1",
+          "doc_f::2",
+          "doc_a::5"
+        ],
+        "dense_top_5_normalized": [
+          "doc_f::0",
+          "doc_c::2",
+          "doc_b::0",
+          "doc_c::3",
+          "doc_b::2"
+        ],
+        "lexical_top_5_dirty": [
+          "doc_e::0",
+          "doc_e::1",
+          "doc_e::2",
+          "doc_e::4",
+          "doc_e::3"
+        ],
+        "lexical_top_5_normalized": [
+          "doc_e::0",
+          "doc_e::1",
+          "doc_e::2",
+          "doc_e::4",
+          "doc_e::3"
+        ]
+      },
+      {
+        "query": "document chunk context",
+        "denormalized_query": "  document  chunk  context  ",
+        "retrieval_query": "document chunk context",
+        "rewrite_changed_the_string": true,
+        "pipeline_ranking_identical": true,
+        "dense_top_5_dirty": [
+          "doc_c::4",
+          "doc_e::1",
+          "doc_e::2",
+          "doc_d::2",
+          "doc_d::4"
+        ],
+        "dense_top_5_normalized": [
+          "doc_e::0",
+          "doc_e::1",
+          "doc_f::3",
+          "doc_f::1",
+          "doc_b::0"
+        ],
+        "lexical_top_5_dirty": [
+          "doc_f::0",
+          "doc_f::1",
+          "doc_f::3"
+        ],
+        "lexical_top_5_normalized": [
+          "doc_f::0",
+          "doc_f::1",
+          "doc_f::3"
+        ]
+      },
+      {
+        "query": "nearest neighbor search representation",
+        "denormalized_query": "  nearest  neighbor  search  representation  ",
+        "retrieval_query": "nearest neighbor search representation",
+        "rewrite_changed_the_string": true,
+        "pipeline_ranking_identical": true,
+        "dense_top_5_dirty": [
+          "doc_d::5",
+          "doc_a::0",
+          "doc_a::4",
+          "doc_c::0",
+          "doc_b::2"
+        ],
+        "dense_top_5_normalized": [
+          "doc_d::5",
+          "doc_a::3",
+          "doc_b::2",
+          "doc_b::4",
+          "doc_c::1"
+        ],
+        "lexical_top_5_dirty": [
+          "doc_d::2",
+          "doc_d::0",
+          "doc_d::4",
+          "doc_d::3"
+        ],
+        "lexical_top_5_normalized": [
+          "doc_d::2",
+          "doc_d::0",
+          "doc_d::4",
+          "doc_d::3"
+        ]
+      },
+      {
+        "query": "quantum submarine agriculture",
+        "denormalized_query": "  quantum  submarine  agriculture  ",
+        "retrieval_query": "quantum submarine agriculture",
+        "rewrite_changed_the_string": true,
+        "pipeline_ranking_identical": true,
+        "dense_top_5_dirty": [
+          "doc_f::0",
+          "doc_f::1",
+          "doc_d::2",
+          "doc_a::1",
+          "doc_f::3"
+        ],
+        "dense_top_5_normalized": [
+          "doc_d::2",
+          "doc_e::1",
+          "doc_b::0",
+          "doc_d::4",
+          "doc_d::1"
+        ],
+        "lexical_top_5_dirty": [],
+        "lexical_top_5_normalized": []
+      }
+    ],
+    "probes": 8,
+    "probes_where_rewrite_changed_the_string": 8,
+    "probes_where_pipeline_ranking_changed": 0,
+    "probes_where_lexical_ranking_changed": 0,
+    "probes_where_dense_ranking_changed": 8
+  }
+}

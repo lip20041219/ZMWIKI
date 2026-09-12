@@ -215,7 +215,11 @@ than silently falling back to the original query.
 
 Because the rewriter is a pipeline collaborator, an evaluation run is
 "baseline" or "query-rewritten" purely by which pipeline you inject into
-`RetrievalEvaluationRunner` -- no metric, harness, or dataset change.
+`RetrievalEvaluationRunner` -- no metric, harness, or dataset change. That
+comparison was run on the frozen benchmark: see
+[Query Rewriter Benchmark](docs/query_rewriter_benchmark.md)
+(`python benchmark/run_query_rewriter_profile.py`) -- it reports identical
+metrics for both variants, and explains why normalization cannot move them.
 
 ## Retrieval
 
@@ -355,7 +359,11 @@ hybrid.
 
 Evidence files: `benchmark/results/retrieval_small_*.json`,
 `benchmark/results/retrieval_semantic_profile.json`,
-`benchmark/results/retrieval_semantic_rerank_profile.json`.
+`benchmark/results/retrieval_semantic_rerank_profile.json`,
+`benchmark/results/retrieval_query_rewriter_*.json`.
+
+The query rewriter was measured against that frozen benchmark in a controlled
+baseline-vs-rewritten run: [Query Rewriter Benchmark](docs/query_rewriter_benchmark.md).
 
 ## Tests
 
