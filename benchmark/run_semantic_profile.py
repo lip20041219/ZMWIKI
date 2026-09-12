@@ -25,7 +25,19 @@ separate, non-deterministic evidence channel:
   no new metric -- the six Phase 8 metrics come verbatim from
   ``EvaluationResult.to_dict()``);
 - metrics are computed by the real evaluator (``EvaluationHarness`` ->
-  ``RetrievalEvaluator`` -> ``EvaluationResult``); nothing is hand-computed;
+  ``RetrievalEvaluator`` -> ``EvaluationResult``); nothing is hand-computed.
+  Besides each configuration's serving-depth row (``top_k=8``), every row also
+  carries the Phase 10D @K columns -- ``hit_rate_at_1`` / ``recall_at_1`` /
+  ``recall_at_3`` / ``recall_at_5`` / ``precision_at_5`` / ``mrr_at_5`` /
+  ``map_at_5`` / ``ndcg_at_5`` -- each read from an evaluator run at *that*
+  depth (``candidate_k`` is held at 33 for all of them, so only the serving
+  depth varies). No metric is re-implemented here;
+- the optional dependency or the local model may simply be absent. That is a
+  normal outcome, not a crash: ``main`` returns ``{"available": False,
+  "reason": ..., "install_hint": ...}``, exits 0, and **writes no evidence at
+  all**. A missing model is never reported as zeros and never triggers a
+  download. Absence of the ``available`` key in written evidence means "the
+  model loaded and these numbers are real";
 - because the model is an external dependency, this profile is *not* promised
   byte-identical across environments. The runner runs the whole profile twice
   on two freshly constructed providers/paths, compares the two evidence
@@ -41,10 +53,18 @@ real semantic embedding reach and drive the retrieval stack?" -- never
 "Dense > Lexical". The evidence records ``deterministic=false`` even though
 the same machine re-runs identically.
 
-Run from the repository root (the model is downloaded on first run unless
-already cached):
+Run from the repository root (requires the ``semantic`` optional dependency;
+the model is downloaded on first run unless already cached):
 
     python benchmark/run_semantic_profile.py
+
+With the dependency absent it prints the reason plus the install hint and
+exits 0, writing nothing:
+
+    semantic profile unavailable: ImportError: SemanticEmbeddingProvider
+    requires the 'semantic' optional dependency (sentence-transformers +
+    torch). Install it with: pip install "zmrag[semantic]"
+    install with: pip install "zmrag[semantic]"
 
 An optional positional output path overrides the default evidence location
 (used by the integration tests so they never overwrite the committed file).
@@ -111,6 +131,38 @@ CONFIGS = (
     {"id": "S3", "retriever": "hybrid", "fusion": "rrf", "reranker": None},
 )
 
+#: Serving depths whose evaluator run supplies the @K columns. ``TOP_K`` (the
+#: serving depth) is run separately and is not one of these -- the requested
+#: @1 / @3 / @5 cutoffs are read from their own runs.
+CUTOFF_DEPTHS = (1, 3, 5)
+
+#: The @K columns of a semantic row, each read from the evaluator at its depth.
+#: Identical names to the Phase 10D headline table, so the two tables can be
+#: read side by side without a translation step.
+CUTOFF_FIELDS = (
+    "hit_rate_at_1",
+    "recall_at_1",
+    "recall_at_3",
+    "recall_at_5",
+    "precision_at_5",
+    "mrr_at_5",
+    "map_at_5",
+    "ndcg_at_5",
+)
+
+#: Printed (and returned) when the optional dependency or the model is missing.
+UNAVAILABLE_HINT = 'pip install "zmrag[semantic]"'
+
+#: A missing optional dependency or model -- distinct from a broken experiment.
+#: Only these failures degrade to ``available: false``; a wrong corpus or
+#: dataset still raises, so a real bug is never reported as "unavailable".
+_UNAVAILABLE_ERRORS = (ImportError, OSError, RuntimeError, ValueError)
+
+
+class _Unavailable(RuntimeError):
+    """The optional dependency or the local model could not be loaded."""
+
+
 #: Environment facts recorded for reproducibility. No host / user / path /
 #: timestamp -- only versions that explain why a re-run may differ.
 _ENV_DEPENDENCIES = ("sentence_transformers", "torch", "numpy")
@@ -167,30 +219,56 @@ class RetrievalPath:
             )
             self._hybrid = HybridRetriever(dense, lexical, fusion)
 
-    def run_case(self, query: str) -> list:
+    def run_case(self, query: str, top_k: int = TOP_K) -> list:
         """Ordered ``SearchResult`` list for one query under this configuration.
 
         Single-source retrievers are asked for ``top_k`` directly; hybrid
         retrieval widens to ``candidate_k`` then fuses down to ``top_k``.
-        No reranker exists in this profile.
+        ``candidate_k`` is fixed for every depth, so varying ``top_k`` changes
+        the serving depth and nothing else. No reranker exists in this profile.
         """
         if self._hybrid is not None:
-            return self._hybrid.retrieve(query, top_k=TOP_K, candidate_k=CANDIDATE_K)
-        return self._retrieve(query, top_k=TOP_K)
+            return self._hybrid.retrieve(query, top_k=top_k, candidate_k=CANDIDATE_K)
+        return self._retrieve(query, top_k=top_k)
 
 
-def _evaluate(retrieval: RetrievalPath, case_set) -> object:
+def _evaluate(retrieval: RetrievalPath, case_set, top_k: int = TOP_K) -> object:
     """Run every case through ``retrieval`` and delegate to the real evaluator."""
     predictions = []
     for case in case_set:
         predictions.append(
-            EvaluationPrediction(query=case.query, results=retrieval.run_case(case.query))
+            EvaluationPrediction(
+                query=case.query, results=retrieval.run_case(case.query, top_k=top_k)
+            )
         )
     harness = EvaluationHarness(RetrievalEvaluator())
     return harness.run(list(case_set.cases), predictions)
 
 
-def build_row(spec: dict, result) -> dict:
+def _cutoff_metrics(retrieval: RetrievalPath, case_set) -> dict:
+    """The @K columns, each read from the evaluator run at that depth.
+
+    One evaluator run per cutoff, same corpus / queries / ground truth /
+    ``candidate_k`` as the serving-depth row -- only the depth differs.
+    """
+    at_depth = {
+        depth: _evaluate(retrieval, case_set, top_k=depth).to_dict()
+        for depth in CUTOFF_DEPTHS
+    }
+    one, three, five = at_depth[1], at_depth[3], at_depth[5]
+    return {
+        "hit_rate_at_1": one["hit_rate"],
+        "recall_at_1": one["recall"],
+        "recall_at_3": three["recall"],
+        "recall_at_5": five["recall"],
+        "precision_at_5": five["precision"],
+        "mrr_at_5": five["mrr"],
+        "map_at_5": five["map"],
+        "ndcg_at_5": five["ndcg"],
+    }
+
+
+def build_row(spec: dict, result, cutoffs: dict) -> dict:
     """Assemble one evidence row: fixed config description + real metrics."""
     row = {
         "id": spec["id"],
@@ -199,13 +277,26 @@ def build_row(spec: dict, result) -> dict:
         "reranker": spec["reranker"],
     }
     row.update(result.to_dict())
+    row.update(cutoffs)
     row["deterministic"] = False
     return row
 
 
+def _load_provider() -> SemanticEmbeddingProvider:
+    """Build the real semantic provider, or raise :class:`_Unavailable`.
+
+    The only place a missing dependency / model is turned into a reportable
+    state instead of an exception.
+    """
+    try:
+        return SemanticEmbeddingProvider(model_name=MODEL_NAME)
+    except _UNAVAILABLE_ERRORS as error:
+        raise _Unavailable(f"{type(error).__name__}: {error}") from error
+
+
 def _run_profile() -> dict:
     """One full semantic pass: fresh provider + fresh dataset, all 3 configs."""
-    provider = SemanticEmbeddingProvider(model_name=MODEL_NAME)
+    provider = _load_provider()
     case_set = JsonEvaluationDatasetLoader().load(DATASET_PATH)
     if len(case_set) != EXPECTED_CASES:
         raise RuntimeError(
@@ -214,7 +305,13 @@ def _run_profile() -> dict:
     rows = []
     for spec in CONFIGS:
         retrieval = RetrievalPath(spec, provider)
-        rows.append(build_row(spec, _evaluate(retrieval, case_set)))
+        rows.append(
+            build_row(
+                spec,
+                _evaluate(retrieval, case_set),
+                _cutoff_metrics(retrieval, case_set),
+            )
+        )
 
     first = rows[0]
     return {
@@ -227,6 +324,7 @@ def _run_profile() -> dict:
         "corpus_chunks": EXPECTED_TOTAL_CHUNKS,
         "candidate_k": CANDIDATE_K,
         "top_k": TOP_K,
+        "cutoff_depths": list(CUTOFF_DEPTHS),
         "total_cases": first["total_cases"],
         "evaluated_cases": first["evaluated_cases"],
         "deterministic": False,
@@ -236,11 +334,24 @@ def _run_profile() -> dict:
 
 
 def main(out_path: str | Path = DEFAULT_EVIDENCE_PATH) -> dict:
-    """Run the semantic matrix twice, compare passes, write honest evidence."""
+    """Run the semantic matrix twice, compare passes, write honest evidence.
+
+    Returns ``{"available": False, "reason": ..., "install_hint": ...}`` and
+    writes nothing when the optional dependency or the model is missing. No
+    zeros are substituted for metrics that were never measured.
+    """
     output = Path(out_path)
 
-    evidence1 = _run_profile()
-    evidence2 = _run_profile()
+    try:
+        evidence1 = _run_profile()
+        evidence2 = _run_profile()
+    except _Unavailable as error:
+        return {
+            "available": False,
+            "reason": str(error),
+            "install_hint": UNAVAILABLE_HINT,
+        }
+
     reproducible = evidence1 == evidence2
     evidence = dict(evidence1)
     evidence["same_environment_reproducible"] = reproducible
@@ -261,6 +372,12 @@ def main(out_path: str | Path = DEFAULT_EVIDENCE_PATH) -> dict:
 if __name__ == "__main__":
     target = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_EVIDENCE_PATH
     evidence = main(target)
+    if not evidence.get("available", True):
+        # A missing model is a normal outcome, not a failure: report it and
+        # exit 0. Nothing was written, and nothing was faked.
+        print(f"semantic profile unavailable: {evidence['reason']}")
+        print(f"install with: {evidence['install_hint']}")
+        raise SystemExit(0)
     print(
         f"Evidence written to: {target} "
         f"[same_environment_reproducible="

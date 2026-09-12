@@ -46,6 +46,8 @@ from pathlib import Path
 
 import pytest
 
+from zmrag import JsonEvaluationDatasetLoader
+
 # Make benchmark/ (and the sibling baseline runner) importable under pytest.
 BENCH_DIR = Path(__file__).resolve().parents[1] / "benchmark"
 sys.path.insert(0, str(BENCH_DIR))
@@ -185,6 +187,145 @@ def test_frozen_deterministic_evidence_unchanged(name):
     assert digest == FROZEN_EVIDENCE_SHA256[name], (
         f"{name} changed vs HEAD 03c093f -- frozen evidence must not be modified"
     )
+
+
+# --- 10. @K cutoff columns (runner-side; no model, fake backend seam) ---------
+
+
+class _FakeBackend:
+    """Narrow backend seam stand-in: dimension + encode(list[str]).
+
+    ML-free and deterministic; the provider contract is exercised without
+    sentence-transformers, a model, or a network call.
+    """
+
+    dimension = 8
+
+    def encode(self, texts: list[str]) -> list[tuple[float, ...]]:
+        from zmrag import DeterministicEmbedder
+
+        embedder = DeterministicEmbedder(dimension=self.dimension)
+        return [embedder.embed(text).vector for text in texts]
+
+
+@pytest.fixture
+def profiled(monkeypatch):
+    """One real ``_run_profile()`` pass over the fake backend."""
+    import zmrag.semantic as semantic
+
+    monkeypatch.setattr(semantic, "_create_backend", lambda **kwargs: _FakeBackend())
+    return semantic_profile._run_profile()
+
+
+def test_runner_emits_every_cutoff_column(profiled):
+    assert profiled["cutoff_depths"] == [1, 3, 5]
+    for row in profiled["configs"]:
+        for key in semantic_profile.CUTOFF_FIELDS:
+            assert key in row, f"row {row['id']} missing {key!r}"
+            value = row[key]
+            assert isinstance(value, (int, float)) and not isinstance(value, bool)
+            assert 0.0 <= value <= 1.0, f"{key} out of [0,1]: {value!r}"
+        # The serving-depth row is still there alongside the cutoffs.
+        for key in METRIC_KEYS + COUNT_KEYS:
+            assert key in row
+
+
+def test_cutoff_columns_match_an_independent_evaluator_run(profiled, monkeypatch):
+    """@K is read from a real evaluator run at that depth, not re-implemented.
+
+    Rebuild S1's path and evaluate at depth 5 directly; the row's @5 columns
+    must equal that run field for field.
+    """
+    import zmrag.semantic as semantic
+
+    monkeypatch.setattr(semantic, "_create_backend", lambda **kwargs: _FakeBackend())
+    provider = semantic.SemanticEmbeddingProvider(model_name="unused/fake-model")
+    case_set = JsonEvaluationDatasetLoader().load(semantic_profile.DATASET_PATH)
+    path = semantic_profile.RetrievalPath(semantic_profile.CONFIGS[0], provider)
+    five = semantic_profile._evaluate(path, case_set, top_k=5).to_dict()
+
+    row = profiled["configs"][0]
+    for field in ("recall_at_5", "precision_at_5", "mrr_at_5", "map_at_5", "ndcg_at_5"):
+        assert row[field] == five[field.removesuffix("_at_5")]
+
+
+def test_cutoff_candidate_pool_is_held_constant(profiled):
+    """Only the serving depth varies: candidate_k stays the locked value."""
+    assert profiled["candidate_k"] == 33
+    assert semantic_profile.CANDIDATE_K == 33
+    assert profiled["top_k"] == 8
+    for row in profiled["configs"]:
+        assert row["reranker"] is None
+
+
+# --- 11. unavailable: no dependency / no model -> no evidence, exit 0 ---------
+
+
+def test_missing_dependency_degrades_without_writing_evidence(tmp_path):
+    """A missing model is reported, never faked, and never written to disk."""
+    out = tmp_path / "should_not_exist.json"
+    evidence = semantic_profile.main(out)
+
+    if evidence.get("available", True):
+        pytest.skip("semantic dependency present; unavailable path not reachable")
+    assert evidence["available"] is False
+    assert isinstance(evidence["reason"], str) and evidence["reason"]
+    assert evidence["install_hint"] == semantic_profile.UNAVAILABLE_HINT
+    assert "zmrag[semantic]" in evidence["install_hint"]
+    # No metrics, no zeros, and above all no file.
+    assert "configs" not in evidence and "hit_rate" not in evidence
+    assert not out.exists()
+
+
+def test_unavailable_provider_short_circuits_main(tmp_path, monkeypatch):
+    """``_load_provider`` raising ``_Unavailable`` yields the same clean report."""
+    out = tmp_path / "should_not_exist.json"
+
+    def boom():
+        raise semantic_profile._Unavailable("ImportError: simulated absent model")
+
+    monkeypatch.setattr(semantic_profile, "_load_provider", boom)
+    evidence = semantic_profile.main(out)
+
+    assert evidence["available"] is False
+    assert "simulated absent model" in evidence["reason"]
+    assert not out.exists()
+
+
+def test_broken_experiment_is_not_reported_as_unavailable(monkeypatch):
+    """A wrong corpus/dataset is a bug, not an absent model: it must raise."""
+    import zmrag.semantic as semantic
+
+    monkeypatch.setattr(semantic, "_create_backend", lambda **kwargs: _FakeBackend())
+    monkeypatch.setattr(
+        semantic_profile.JsonEvaluationDatasetLoader,
+        "load",
+        lambda self, path: [],
+    )
+    with pytest.raises(RuntimeError, match="dataset has 0 cases"):
+        semantic_profile.main()
+
+
+# --- 12. committed evidence: schema-conditional, never assumed ---------------
+
+
+def test_committed_evidence_cutoff_columns_if_present():
+    """Validate the @K columns when the committed file carries them.
+
+    ``retrieval_semantic_profile.json`` is SHA-256 pinned by
+    ``test_semantic_rerank_profile`` and was produced before the @K extension,
+    so it currently predates these columns. This test asserts the file is
+    *either* the old schema *or* a complete new one -- never a half-written
+    mixture -- and it does not fabricate the missing numbers.
+    """
+    for row in _evidence()["configs"]:
+        present = [k for k in semantic_profile.CUTOFF_FIELDS if k in row]
+        assert present in ([], list(semantic_profile.CUTOFF_FIELDS)), (
+            f"row {row['id']} has a partial @K schema: {present}"
+        )
+        for key in present:
+            value = row[key]
+            assert isinstance(value, (int, float)) and 0.0 <= value <= 1.0
 
 
 # ---------------------------------------------------------------------------

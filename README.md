@@ -244,7 +244,7 @@ Swap the deterministic embedder for real sentence-transformers embeddings:
 from zmrag.semantic import SemanticEmbeddingProvider  # not in the top-level public API
 
 embedder = SemanticEmbeddingProvider(
-    model_source="sentence-transformers/all-MiniLM-L6-v2"
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
 )
 ```
 
@@ -273,7 +273,7 @@ Top-K
 from zmrag.semantic_rerank import CrossEncoderReranker  # not in the top-level public API
 
 reranker = CrossEncoderReranker(
-    model_source="cross-encoder/ms-marco-MiniLM-L-6-v2"
+    model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"
 )
 ```
 
