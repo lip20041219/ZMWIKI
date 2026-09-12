@@ -1200,6 +1200,77 @@ runner, no query rewriting / expansion, no report files, no benchmark / dataset
 drivers, no parallelism, and no persistent state between runs. The public
 surface grows by exactly one class, `RetrievalEvaluationRunner`.
 
+## Answer Evaluation
+
+```
+Query
+ ↓
+Retrieval → Reranking → Context → Generation → Answer + Sources
+ ↓                                                  ↓
+Retrieval Evaluation                        Answer Evaluation
+(did we retrieve the right context?)   (did the answer cover the reference
+                                        and stay grounded in the context?)
+```
+
+Two evaluation layers, deliberately separate, sharing no metric and no code path:
+
+| Layer | Module | Question |
+| --- | --- | --- |
+| Retrieval Evaluation | `evaluation.py` (+ harness / runner) | Did we retrieve the right context? |
+| Answer Evaluation | `answer_evaluation.py` | Did the generated answer cover the expected answer, and stay grounded in the context it was given? |
+
+`AnswerEvaluator.evaluate(query_id, query, answer, context, reference_answer,
+sources) -> AnswerEvaluation` scores **one already-produced answer**. It never
+retrieves, reranks, packs context, generates, cites, or reads a store, and the
+pipeline knows nothing about it: evaluation stays a consumer that runs *after*
+`answer_with_sources`, so the same evaluator can score a deterministic answer or
+a real LLM's answer without either side changing.
+
+**Three deterministic lexical baselines ship. None of them is a judge.**
+
+- **lexical reference coverage** = `matched / |unique reference tokens|`, where a
+  reference token is matched when the answer contains it. Unique tokens only: a
+  word repeated in the reference is one fact. An answer that paraphrases
+  correctly but shares no vocabulary scores 0 -- the documented ceiling.
+- **lexical groundedness** = `grounded sentences / answer sentences`. A sentence
+  is grounded when at least `groundedness_threshold` (default 0.5, fixed, never
+  tuned) of its unique tokens appear in the context. An empty answer has zero
+  sentences and scores 0.0; an empty context grounds nothing; no denominator is
+  ever zero, so no NaN can be produced.
+- **source-level citation coverage** = the same sentence measure computed against
+  the concatenated `Citation.text` of the `AnswerResult`'s sources. It is
+  **source-level, not claim-level**: a `Citation` carries no mapping from a
+  sentence to the source that supports it, so this layer never attributes one
+  sentence to one source, and never parses an answer for citation markers.
+
+Token identity comes from the existing `SimpleTokenizer` after NFC
+normalization, so case, whitespace, and punctuation never count as differences
+and CJK matches at character granularity.
+
+**The baselines cannot see meaning, and the profile records that rather than
+hiding it.** A sentence and its negation score identically (both fully covered,
+both fully grounded), because every token is present either way. Likewise a
+perfectly grounded sentence that answers a different question is grounded and
+uncovered at once. This is why the naming is exact: *lexical* coverage,
+*lexical* groundedness, *source-level* citation coverage -- never "semantic
+correctness", "faithfulness", or an LLM judge. A real judge belongs behind the
+same value type, carrying its own optional dependency, the way `semantic.py`
+carries sentence-transformers.
+
+**Evidence** -- `benchmark/run_answer_evaluation.py` runs the deterministic
+pipeline over `benchmark/datasets/answer_small.json` (12 cases: the eight answer
+shapes plus the negative probes) and writes
+`benchmark/results/answer_evaluation_profile.json` with aggregates, per-kind
+means, per-query rows, and a retrieval-outcome join. Cases may carry
+`answer_override` / `drop_sources` to construct probes the pipeline would never
+produce; those rows are labelled `answer_source: "override"` and are excluded
+from the retrieval join. The profile is offline, key-free, model-free, and
+refuses to write evidence unless two fresh runs agree exactly.
+
+**Not implemented here** -- no LLM judge, no semantic answer similarity, no
+embedding-based scoring, no claim extraction, no automated fact checking, no
+RAGAS / DeepEval-style framework, and no faithfulness claim of any kind.
+
 ## Evaluation Case Set
 
 Phase 9B (in `src/zmrag/evaluation_dataset.py`, exported at the package root)

@@ -1,0 +1,104 @@
+{
+  "dataset": "answer_small",
+  "description": "Answer-evaluation cases over the frozen Phase 10A corpus. Separate from retrieval_small.json, which stays a retrieval benchmark.",
+  "cases": [
+    {
+      "id": "a01_btree_single_fact",
+      "kind": "single_fact",
+      "query": "database B-tree index query",
+      "reference_answer": "A B-tree index keeps keys sorted and balanced, turning an expensive full scan into a short path to the target record.",
+      "relevant_chunk_ids": ["doc_a::1"]
+    },
+    {
+      "id": "a02_cache_multi_fact",
+      "kind": "multi_fact",
+      "query": "cache eviction memory",
+      "reference_answer": "Because the cache is bounded, a full cache must evict an entry, and LRU evicts the least recently used one.",
+      "relevant_chunk_ids": ["doc_b::1"]
+    },
+    {
+      "id": "a03_queue_other_document",
+      "kind": "different_document",
+      "query": "producer consumer message queue",
+      "reference_answer": "A message queue decouples producers from consumers by buffering messages between them.",
+      "relevant_chunk_ids": ["doc_c::0"]
+    },
+    {
+      "id": "a04_vector_search_other_document",
+      "kind": "different_document",
+      "query": "embedding vector similarity retrieval",
+      "reference_answer": "Each item is mapped to an embedding vector, and similar items have vectors that point in similar directions, measured by cosine similarity.",
+      "relevant_chunk_ids": ["doc_d::1"]
+    },
+    {
+      "id": "a05_hybrid_multi_chunk",
+      "kind": "multi_chunk_support",
+      "query": "BM25 lexical vector ranking fusion",
+      "reference_answer": "Lexical matching scores exact term overlap with BM25, semantic matching uses vector embeddings, and a fusion step merges the two ranked lists.",
+      "relevant_chunk_ids": ["doc_e::1", "doc_e::2"]
+    },
+    {
+      "id": "a06_chunking_partial",
+      "kind": "context_partial",
+      "query": "document chunk context",
+      "reference_answer": "Chunking splits a long document into smaller pieces that fit a fixed context window, and every chunk is embedded into a vector database.",
+      "relevant_chunk_ids": ["doc_f::0"],
+      "note": "The second clause is deliberately absent from the corpus: this case measures a reference that is only partly answerable from the corpus."
+    },
+    {
+      "id": "a07_unanswerable",
+      "kind": "unanswerable",
+      "query": "quantum submarine agriculture",
+      "reference_answer": "No passage in the corpus describes quantum submarines or agriculture.",
+      "relevant_chunk_ids": ["missing::0"],
+      "note": "missing::0 is the retrieval dataset's sentinel for 'no relevant chunk exists'; no chunk can ever be retrieved for this case."
+    },
+
+    {
+      "id": "n01_grounded_but_off_topic",
+      "kind": "negative_grounded_wrong",
+      "query": "database B-tree index query",
+      "reference_answer": "A B-tree index keeps keys sorted and balanced.",
+      "relevant_chunk_ids": ["doc_a::1"],
+      "answer_override": "The query planner chooses which index to use based on selectivity and cost.",
+      "note": "Negative case B: the answer is taken verbatim from the retrieved context, so it is fully grounded, but it does not answer the reference question."
+    },
+    {
+      "id": "n02_correct_but_ungrounded",
+      "kind": "negative_correct_ungrounded",
+      "query": "quantum submarine agriculture",
+      "reference_answer": "Quantum submarines navigate using agricultural sensor arrays.",
+      "relevant_chunk_ids": ["missing::0"],
+      "answer_override": "Quantum submarines navigate using agricultural sensor arrays.",
+      "note": "Negative case C: the answer matches the reference exactly, but the retrieved context is unrelated to it -- the classic unsupported-answer shape."
+    },
+    {
+      "id": "n03_correct_with_sources",
+      "kind": "negative_correct_cited",
+      "query": "database B-tree index query",
+      "reference_answer": "A B-tree index keeps keys sorted and balanced, turning an expensive full scan into a short path to the target record.",
+      "relevant_chunk_ids": ["doc_a::1"],
+      "answer_override": "A B-tree index keeps keys sorted and balanced, turning a full scan into a short path to the target record.",
+      "note": "Negative case D: a covering answer with the real citations kept."
+    },
+    {
+      "id": "n04_correct_without_sources",
+      "kind": "negative_correct_uncited",
+      "query": "database B-tree index query",
+      "reference_answer": "A B-tree index keeps keys sorted and balanced, turning an expensive full scan into a short path to the target record.",
+      "relevant_chunk_ids": ["doc_a::1"],
+      "answer_override": "A B-tree index keeps keys sorted and balanced, turning a full scan into a short path to the target record.",
+      "drop_sources": true,
+      "note": "Negative case E: the same covering answer as n03, with the citations dropped -- isolates source presence from answer quality."
+    },
+    {
+      "id": "n05_negation_grounded",
+      "kind": "negative_negation",
+      "query": "cache eviction memory",
+      "reference_answer": "LRU evicts the least recently used entry.",
+      "relevant_chunk_ids": ["doc_b::1"],
+      "answer_override": "LRU never evicts the least recently used entry.",
+      "note": "Limitation probe: one word flips the meaning, and no token-overlap baseline can see it -- coverage and groundedness both stay near perfect."
+    }
+  ]
+}

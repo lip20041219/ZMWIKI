@@ -4,6 +4,11 @@ Public API (kept deliberately small): the core data contract. Internal
 modules are not re-exported until they become stable public surface.
 """
 
+from .answer_evaluation import (
+    AnswerEvaluation,
+    AnswerEvaluator,
+    aggregate_evaluations,
+)
 from .benchmark import BenchmarkRunner, DeterministicBenchmarkRunner
 from .chunkers import Chunker, FixedSizeChunker
 from .citations import AnswerResult, Citation, citations_from_context
@@ -46,6 +51,8 @@ from .stores import InMemoryVectorStore, SearchResult, VectorStore
 from .tokenizers import SimpleTokenizer, Tokenizer
 
 __all__ = [
+    "AnswerEvaluation",
+    "AnswerEvaluator",
     "AnswerResult",
     "BenchmarkRunner",
     "Chunk",
@@ -109,6 +116,7 @@ __all__ = [
     "Transport",
     "VectorStore",
     "WeightedScoreFusion",
+    "aggregate_evaluations",
     "build_prompt",
     "citations_from_context",
     "urllib_transport",

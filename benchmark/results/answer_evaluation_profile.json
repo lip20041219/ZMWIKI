@@ -1,0 +1,503 @@
+{
+  "experiment": "answer_evaluation_profile",
+  "dataset": "benchmark/datasets/answer_small.json",
+  "corpus_documents": 6,
+  "corpus_chunks": 33,
+  "chunking": "FixedSizeChunker(chunk_size=120, overlap=20)",
+  "embedding": "DeterministicEmbedder(dimension=8)",
+  "retriever": "HybridRetriever(dense + bm25, WeightedScoreFusion)",
+  "reranker": "DeterministicReranker",
+  "generator": "DeterministicGenerator",
+  "evaluator": "AnswerEvaluator",
+  "tokenizer": "SimpleTokenizer",
+  "groundedness_threshold": 0.5,
+  "top_k": 5,
+  "candidate_k": 33,
+  "total_cases": 12,
+  "evaluated_cases": 12,
+  "aggregate": {
+    "mean_reference_coverage": 0.6533068783068784,
+    "mean_groundedness": 0.9166666666666666,
+    "mean_citation_coverage": 0.8333333333333334,
+    "answer_rate": 1.0,
+    "source_presence_rate": 0.9166666666666666,
+    "mean_source_count": 4.583333333333333
+  },
+  "by_kind": {
+    "context_partial": {
+      "cases": 1,
+      "mean_reference_coverage": 0.8,
+      "mean_groundedness": 1.0,
+      "mean_citation_coverage": 1.0,
+      "answer_rate": 1.0
+    },
+    "different_document": {
+      "cases": 2,
+      "mean_reference_coverage": 0.8095238095238095,
+      "mean_groundedness": 1.0,
+      "mean_citation_coverage": 1.0,
+      "answer_rate": 1.0
+    },
+    "multi_chunk_support": {
+      "cases": 1,
+      "mean_reference_coverage": 0.38095238095238093,
+      "mean_groundedness": 1.0,
+      "mean_citation_coverage": 1.0,
+      "answer_rate": 1.0
+    },
+    "multi_fact": {
+      "cases": 1,
+      "mean_reference_coverage": 0.3888888888888889,
+      "mean_groundedness": 1.0,
+      "mean_citation_coverage": 1.0,
+      "answer_rate": 1.0
+    },
+    "negative_correct_cited": {
+      "cases": 1,
+      "mean_reference_coverage": 0.9047619047619048,
+      "mean_groundedness": 1.0,
+      "mean_citation_coverage": 1.0,
+      "answer_rate": 1.0
+    },
+    "negative_correct_uncited": {
+      "cases": 1,
+      "mean_reference_coverage": 0.9047619047619048,
+      "mean_groundedness": 1.0,
+      "mean_citation_coverage": 0.0,
+      "answer_rate": 1.0
+    },
+    "negative_correct_ungrounded": {
+      "cases": 1,
+      "mean_reference_coverage": 1.0,
+      "mean_groundedness": 0.0,
+      "mean_citation_coverage": 0.0,
+      "answer_rate": 1.0
+    },
+    "negative_grounded_wrong": {
+      "cases": 1,
+      "mean_reference_coverage": 0.2222222222222222,
+      "mean_groundedness": 1.0,
+      "mean_citation_coverage": 1.0,
+      "answer_rate": 1.0
+    },
+    "negative_negation": {
+      "cases": 1,
+      "mean_reference_coverage": 1.0,
+      "mean_groundedness": 1.0,
+      "mean_citation_coverage": 1.0,
+      "answer_rate": 1.0
+    },
+    "single_fact": {
+      "cases": 1,
+      "mean_reference_coverage": 0.6190476190476191,
+      "mean_groundedness": 1.0,
+      "mean_citation_coverage": 1.0,
+      "answer_rate": 1.0
+    },
+    "unanswerable": {
+      "cases": 1,
+      "mean_reference_coverage": 0.0,
+      "mean_groundedness": 1.0,
+      "mean_citation_coverage": 1.0,
+      "answer_rate": 1.0
+    }
+  },
+  "retrieval_answer_join": {
+    "cases_considered": 7,
+    "cases_excluded_as_probes": 5,
+    "cases_with_retrieval_hit": 6,
+    "cases_with_retrieval_miss": 1,
+    "hit_mean_reference_coverage": 0.6346560846560846,
+    "miss_mean_reference_coverage": 0.0,
+    "hit_mean_groundedness": 1.0,
+    "miss_mean_groundedness": 1.0
+  },
+  "per_query": [
+    {
+      "id": "a01_btree_single_fact",
+      "kind": "single_fact",
+      "query": "database B-tree index query",
+      "answer_source": "pipeline",
+      "sources_dropped": false,
+      "answer": "o scanning every row for one record is wasteful. A B-tree index keeps keys sorted and balanced, turning an expensive ful",
+      "reference_answer": "A B-tree index keeps keys sorted and balanced, turning an expensive full scan into a short path to the target record.",
+      "relevant_chunk_ids": [
+        "doc_a::1"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::4",
+        "doc_a::5",
+        "doc_a::0"
+      ],
+      "retrieval_hit_at_5": true,
+      "query_id": "a01_btree_single_fact",
+      "reference_coverage": 0.6190476190476191,
+      "groundedness": 1.0,
+      "citation_coverage": 1.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 2,
+      "grounded_sentences": 2,
+      "cited_sentences": 2,
+      "reference_tokens": 21,
+      "matched_reference_tokens": 13
+    },
+    {
+      "id": "a02_cache_multi_fact",
+      "kind": "multi_fact",
+      "query": "cache eviction memory",
+      "answer_source": "pipeline",
+      "sources_dropped": false,
+      "answer": "A cache stores recently used data in fast memory so later lookups avoid a slow backend. Its size is bounded, so when the",
+      "reference_answer": "Because the cache is bounded, a full cache must evict an entry, and LRU evicts the least recently used one.",
+      "relevant_chunk_ids": [
+        "doc_b::1"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_b::0",
+        "doc_b::1",
+        "doc_b::2",
+        "doc_b::4",
+        "doc_a::0"
+      ],
+      "retrieval_hit_at_5": true,
+      "query_id": "a02_cache_multi_fact",
+      "reference_coverage": 0.3888888888888889,
+      "groundedness": 1.0,
+      "citation_coverage": 1.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 2,
+      "grounded_sentences": 2,
+      "cited_sentences": 2,
+      "reference_tokens": 18,
+      "matched_reference_tokens": 7
+    },
+    {
+      "id": "a03_queue_other_document",
+      "kind": "different_document",
+      "query": "producer consumer message queue",
+      "answer_source": "pipeline",
+      "sources_dropped": false,
+      "answer": "A message queue decouples producers from consumers by buffering messages between them. A producer appends a message to t",
+      "reference_answer": "A message queue decouples producers from consumers by buffering messages between them.",
+      "relevant_chunk_ids": [
+        "doc_c::0"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_c::0",
+        "doc_c::1",
+        "doc_c::4",
+        "doc_c::2",
+        "doc_c::5"
+      ],
+      "retrieval_hit_at_5": true,
+      "query_id": "a03_queue_other_document",
+      "reference_coverage": 1.0,
+      "groundedness": 1.0,
+      "citation_coverage": 1.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 2,
+      "grounded_sentences": 2,
+      "cited_sentences": 2,
+      "reference_tokens": 12,
+      "matched_reference_tokens": 12
+    },
+    {
+      "id": "a04_vector_search_other_document",
+      "kind": "different_document",
+      "query": "embedding vector similarity retrieval",
+      "answer_source": "pipeline",
+      "sources_dropped": false,
+      "answer": "tem is mapped to an embedding vector, a list of numbers that capture semantics. Similar items have vectors that point in",
+      "reference_answer": "Each item is mapped to an embedding vector, and similar items have vectors that point in similar directions, measured by cosine similarity.",
+      "relevant_chunk_ids": [
+        "doc_d::1"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_d::1",
+        "doc_d::0",
+        "doc_d::2",
+        "doc_d::3",
+        "doc_d::4"
+      ],
+      "retrieval_hit_at_5": true,
+      "query_id": "a04_vector_search_other_document",
+      "reference_coverage": 0.6190476190476191,
+      "groundedness": 1.0,
+      "citation_coverage": 1.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 2,
+      "grounded_sentences": 2,
+      "cited_sentences": 2,
+      "reference_tokens": 21,
+      "matched_reference_tokens": 13
+    },
+    {
+      "id": "a05_hybrid_multi_chunk",
+      "kind": "multi_chunk_support",
+      "query": "BM25 lexical vector ranking fusion",
+      "answer_source": "pipeline",
+      "sources_dropped": false,
+      "answer": "Hybrid retrieval combines lexical and semantic signals to improve ranking. Lexical matching scores exact term overlap, f",
+      "reference_answer": "Lexical matching scores exact term overlap with BM25, semantic matching uses vector embeddings, and a fusion step merges the two ranked lists.",
+      "relevant_chunk_ids": [
+        "doc_e::1",
+        "doc_e::2"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_e::0",
+        "doc_e::1",
+        "doc_e::2",
+        "doc_d::0",
+        "doc_d::1"
+      ],
+      "retrieval_hit_at_5": true,
+      "query_id": "a05_hybrid_multi_chunk",
+      "reference_coverage": 0.38095238095238093,
+      "groundedness": 1.0,
+      "citation_coverage": 1.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 2,
+      "grounded_sentences": 2,
+      "cited_sentences": 2,
+      "reference_tokens": 21,
+      "matched_reference_tokens": 8
+    },
+    {
+      "id": "a06_chunking_partial",
+      "kind": "context_partial",
+      "query": "document chunk context",
+      "answer_source": "pipeline",
+      "sources_dropped": false,
+      "answer": "Chunking splits a long document into smaller pieces that fit a fixed context window. Each chunk is stored separately and",
+      "reference_answer": "Chunking splits a long document into smaller pieces that fit a fixed context window, and every chunk is embedded into a vector database.",
+      "relevant_chunk_ids": [
+        "doc_f::0"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_f::0",
+        "doc_f::1",
+        "doc_f::3",
+        "doc_a::0",
+        "doc_a::1"
+      ],
+      "retrieval_hit_at_5": true,
+      "query_id": "a06_chunking_partial",
+      "reference_coverage": 0.8,
+      "groundedness": 1.0,
+      "citation_coverage": 1.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 2,
+      "grounded_sentences": 2,
+      "cited_sentences": 2,
+      "reference_tokens": 20,
+      "matched_reference_tokens": 16
+    },
+    {
+      "id": "a07_unanswerable",
+      "kind": "unanswerable",
+      "query": "quantum submarine agriculture",
+      "answer_source": "pipeline",
+      "sources_dropped": false,
+      "answer": "Database indexes make lookups fast by imposing order on records. A relational table can grow huge, so scanning every row",
+      "reference_answer": "No passage in the corpus describes quantum submarines or agriculture.",
+      "relevant_chunk_ids": [
+        "missing::0"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_a::0",
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::3",
+        "doc_a::4"
+      ],
+      "retrieval_hit_at_5": false,
+      "query_id": "a07_unanswerable",
+      "reference_coverage": 0.0,
+      "groundedness": 1.0,
+      "citation_coverage": 1.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 2,
+      "grounded_sentences": 2,
+      "cited_sentences": 2,
+      "reference_tokens": 10,
+      "matched_reference_tokens": 0
+    },
+    {
+      "id": "n01_grounded_but_off_topic",
+      "kind": "negative_grounded_wrong",
+      "query": "database B-tree index query",
+      "answer_source": "override",
+      "sources_dropped": false,
+      "answer": "The query planner chooses which index to use based on selectivity and cost.",
+      "reference_answer": "A B-tree index keeps keys sorted and balanced.",
+      "relevant_chunk_ids": [
+        "doc_a::1"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::4",
+        "doc_a::5",
+        "doc_a::0"
+      ],
+      "retrieval_hit_at_5": true,
+      "query_id": "n01_grounded_but_off_topic",
+      "reference_coverage": 0.2222222222222222,
+      "groundedness": 1.0,
+      "citation_coverage": 1.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 1,
+      "grounded_sentences": 1,
+      "cited_sentences": 1,
+      "reference_tokens": 9,
+      "matched_reference_tokens": 2
+    },
+    {
+      "id": "n02_correct_but_ungrounded",
+      "kind": "negative_correct_ungrounded",
+      "query": "quantum submarine agriculture",
+      "answer_source": "override",
+      "sources_dropped": false,
+      "answer": "Quantum submarines navigate using agricultural sensor arrays.",
+      "reference_answer": "Quantum submarines navigate using agricultural sensor arrays.",
+      "relevant_chunk_ids": [
+        "missing::0"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_a::0",
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::3",
+        "doc_a::4"
+      ],
+      "retrieval_hit_at_5": false,
+      "query_id": "n02_correct_but_ungrounded",
+      "reference_coverage": 1.0,
+      "groundedness": 0.0,
+      "citation_coverage": 0.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 1,
+      "grounded_sentences": 0,
+      "cited_sentences": 0,
+      "reference_tokens": 7,
+      "matched_reference_tokens": 7
+    },
+    {
+      "id": "n03_correct_with_sources",
+      "kind": "negative_correct_cited",
+      "query": "database B-tree index query",
+      "answer_source": "override",
+      "sources_dropped": false,
+      "answer": "A B-tree index keeps keys sorted and balanced, turning a full scan into a short path to the target record.",
+      "reference_answer": "A B-tree index keeps keys sorted and balanced, turning an expensive full scan into a short path to the target record.",
+      "relevant_chunk_ids": [
+        "doc_a::1"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::4",
+        "doc_a::5",
+        "doc_a::0"
+      ],
+      "retrieval_hit_at_5": true,
+      "query_id": "n03_correct_with_sources",
+      "reference_coverage": 0.9047619047619048,
+      "groundedness": 1.0,
+      "citation_coverage": 1.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 1,
+      "grounded_sentences": 1,
+      "cited_sentences": 1,
+      "reference_tokens": 21,
+      "matched_reference_tokens": 19
+    },
+    {
+      "id": "n04_correct_without_sources",
+      "kind": "negative_correct_uncited",
+      "query": "database B-tree index query",
+      "answer_source": "override",
+      "sources_dropped": true,
+      "answer": "A B-tree index keeps keys sorted and balanced, turning a full scan into a short path to the target record.",
+      "reference_answer": "A B-tree index keeps keys sorted and balanced, turning an expensive full scan into a short path to the target record.",
+      "relevant_chunk_ids": [
+        "doc_a::1"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_a::1",
+        "doc_a::2",
+        "doc_a::4",
+        "doc_a::5",
+        "doc_a::0"
+      ],
+      "retrieval_hit_at_5": true,
+      "query_id": "n04_correct_without_sources",
+      "reference_coverage": 0.9047619047619048,
+      "groundedness": 1.0,
+      "citation_coverage": 0.0,
+      "has_answer": true,
+      "has_sources": false,
+      "source_count": 0,
+      "answer_sentences": 1,
+      "grounded_sentences": 1,
+      "cited_sentences": 0,
+      "reference_tokens": 21,
+      "matched_reference_tokens": 19
+    },
+    {
+      "id": "n05_negation_grounded",
+      "kind": "negative_negation",
+      "query": "cache eviction memory",
+      "answer_source": "override",
+      "sources_dropped": false,
+      "answer": "LRU never evicts the least recently used entry.",
+      "reference_answer": "LRU evicts the least recently used entry.",
+      "relevant_chunk_ids": [
+        "doc_b::1"
+      ],
+      "retrieved_chunk_ids": [
+        "doc_b::0",
+        "doc_b::1",
+        "doc_b::2",
+        "doc_b::4",
+        "doc_a::0"
+      ],
+      "retrieval_hit_at_5": true,
+      "query_id": "n05_negation_grounded",
+      "reference_coverage": 1.0,
+      "groundedness": 1.0,
+      "citation_coverage": 1.0,
+      "has_answer": true,
+      "has_sources": true,
+      "source_count": 5,
+      "answer_sentences": 1,
+      "grounded_sentences": 1,
+      "cited_sentences": 1,
+      "reference_tokens": 7,
+      "matched_reference_tokens": 7
+    }
+  ],
+  "deterministic": true
+}
