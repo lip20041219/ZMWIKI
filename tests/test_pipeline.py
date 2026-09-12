@@ -18,6 +18,7 @@ from zmrag import (
     DeterministicContextBuilder,
     DeterministicEmbedder,
     DeterministicGenerator,
+    DeterministicQueryRewriter,
     DeterministicRAGPipeline,
     DeterministicReranker,
     DenseRetriever,
@@ -31,6 +32,7 @@ from zmrag import (
     InMemoryVectorStore,
     LexicalIndex,
     LexicalRetriever,
+    QueryRewriter,
     RAGPipeline,
     Reranker,
     Retriever,
@@ -175,6 +177,23 @@ class FakeGenerator(Generator):
         return self.preset
 
 
+class FakeRewriter(QueryRewriter):
+    """Records the query it was handed and returns a preset retrieval query."""
+
+    def __init__(self, rewritten="REWRITTEN", error=None):
+        self.preset = rewritten
+        self.error = error
+        self.calls = 0
+        self.last_query = None
+
+    def rewrite(self, query):
+        self.calls += 1
+        self.last_query = query
+        if self.error is not None:
+            raise self.error
+        return self.preset
+
+
 class FakeContextBuilder(ContextBuilder):
     def __init__(self, context=None):
         self.preset = context if context is not None else Context(text="", chunks=())
@@ -215,7 +234,7 @@ def _fake_pipeline(**overrides):
         "context_builder": FakeContextBuilder(),
     }
     deps.update(overrides)
-    for optional in ("reranker", "generator"):
+    for optional in ("reranker", "generator", "query_rewriter"):
         # explicit None -> omitted -> pipeline default: that stage is disabled
         if deps.get(optional) is None and optional in deps:
             del deps[optional]
@@ -402,7 +421,14 @@ def test_query_threads_results_through_stages_without_reordering_or_filtering():
 
 
 def _real_pipeline(
-    doc, *, fusion=None, chunk_size=20, dimension=8, rerank=True, generate=True
+    doc,
+    *,
+    fusion=None,
+    chunk_size=20,
+    dimension=8,
+    rerank=True,
+    generate=True,
+    rewriter=None,
 ):
     vstore, lindex = InMemoryVectorStore(), InMemoryLexicalIndex()
     embedder = DeterministicEmbedder(dimension=dimension)
@@ -414,6 +440,8 @@ def _real_pipeline(
         optional["reranker"] = DeterministicReranker()
     if generate:
         optional["generator"] = DeterministicGenerator()
+    if rewriter is not None:
+        optional["query_rewriter"] = rewriter
     pipe = DeterministicRAGPipeline(
         chunker=FixedSizeChunker(chunk_size=chunk_size),
         embedder=embedder,
@@ -1031,3 +1059,257 @@ def test_public_import_answer_result():
 
     assert {"Citation", "AnswerResult", "citations_from_context"} <= set(__all__)
     assert "answer_with_sources" in dir(DeterministicRAGPipeline)
+
+
+# --- K. optional query rewriter: off (default) vs on ---
+
+
+def _rewriter_pipeline(*, rewriter, results=(), generator=None, context=None):
+    """Pipeline over fakes with a rewriter injected, plus its recording deps."""
+    kwargs = {
+        "retriever": FakeRetriever(results=list(results)),
+        "query_rewriter": rewriter,
+    }
+    if generator is not None:
+        kwargs["generator"] = generator
+        kwargs["context_builder"] = FakeContextBuilder(context=context)
+    return _fake_pipeline(**kwargs)
+
+
+def test_query_rewriter_omitted_disables_the_stage():
+    pipe, deps = _fake_pipeline(retriever=FakeRetriever(results=_scored(("doc::0", 1.0))))
+
+    assert pipe.query_rewriter is None  # stage off, not a null-object stand-in
+    assert "query_rewriter" not in deps  # nothing was constructed
+    pipe.retrieve("  raw   query  ", top_k=1, candidate_k=1)
+    assert deps["retriever"].last_query == "  raw   query  "  # searched verbatim
+
+
+def test_query_rewriter_wrong_type_rejected():
+    with pytest.raises(TypeError):
+        _fake_pipeline(query_rewriter="not a stage")
+
+
+def test_disabled_rewriter_leaves_query_and_answer_unchanged():
+    # Baseline equivalence: with no rewriter the caller's query reaches both the
+    # retriever and the generator exactly as passed, untrimmed.
+    chunk = _chunk("doc::0")
+    ctx = Context(text="[1] doc::0", chunks=(chunk,))
+    pipe, deps = _fake_pipeline(
+        retriever=FakeRetriever(results=[SearchResult(chunk=chunk, score=1.0)]),
+        generator=FakeGenerator(),
+        context_builder=FakeContextBuilder(context=ctx),
+    )
+
+    pipe.query("  spaced  query  ", top_k=1, candidate_k=1)
+    assert deps["retriever"].last_query == "  spaced  query  "
+    assert pipe.answer("  spaced  query  ", top_k=1, candidate_k=1) == "ANSWER"
+    assert deps["generator"].last_query == "  spaced  query  "
+
+
+def test_enabled_rewriter_decides_what_the_retriever_searches_for():
+    rewriter = FakeRewriter(rewritten="rewritten query")
+    pipe, deps = _rewriter_pipeline(rewriter=rewriter, results=_scored(("doc::0", 1.0)))
+
+    pipe.retrieve("original   query", top_k=1, candidate_k=1)
+
+    assert deps["retriever"].last_query == "rewritten query"
+    assert rewriter.last_query == "original   query"  # its input, never its own output
+    assert rewriter.calls == 1  # exactly once per retrieval
+
+
+def test_rewriter_runs_before_the_retriever():
+    order = []
+
+    class OrderedRetriever(FakeRetriever):
+        def retrieve(self, query, top_k=10, candidate_k=50):
+            order.append(("retrieve", query))
+            return super().retrieve(query, top_k=top_k, candidate_k=candidate_k)
+
+    class OrderedRewriter(FakeRewriter):
+        def rewrite(self, query):
+            order.append(("rewrite", query))
+            return super().rewrite(query)
+
+    pipe, _ = _fake_pipeline(
+        retriever=OrderedRetriever(), query_rewriter=OrderedRewriter(rewritten="rw")
+    )
+    pipe.retrieve("orig", top_k=1, candidate_k=1)
+
+    assert order == [("rewrite", "orig"), ("retrieve", "rw")]
+
+
+def test_reranker_scores_against_the_retrieval_query():
+    pool = _scored(("doc::0", 1.0))
+    pipe, deps = _fake_pipeline(
+        retriever=FakeRetriever(results=pool),
+        reranker=FakeReranker(results=pool),
+        query_rewriter=FakeRewriter(rewritten="rw"),
+    )
+
+    pipe.retrieve("orig", top_k=1, candidate_k=1)
+
+    # The candidates were recalled with the retrieval query, so the whole
+    # retrieval path scores against it.
+    assert deps["reranker"].last_query == "rw"
+
+
+def test_generator_receives_the_original_query_not_the_retrieval_query():
+    original = "  How does Python work?  "
+    chunk = _chunk("doc::0")
+    ctx = Context(text="[1] doc::0", chunks=(chunk,))
+    pipe, deps = _rewriter_pipeline(
+        rewriter=FakeRewriter(rewritten="How does Python work?"),
+        results=[SearchResult(chunk=chunk, score=1.0)],
+        generator=FakeGenerator(),
+        context=ctx,
+    )
+
+    result = pipe.answer_with_sources(original, top_k=1, candidate_k=1)
+
+    assert deps["retriever"].last_query == "How does Python work?"  # looked up rewritten
+    assert deps["generator"].last_query == original  # answered for the original, verbatim
+    assert result.answer == "ANSWER"
+    assert [c.chunk_id for c in result.sources] == ["doc::0"]  # attribution unaffected
+
+
+def test_rewriter_is_called_once_per_answer_not_once_per_stage():
+    chunk = _chunk("doc::0")
+    rewriter = FakeRewriter(rewritten="rw")
+    pipe, deps = _rewriter_pipeline(
+        rewriter=rewriter,
+        results=[SearchResult(chunk=chunk, score=1.0)],
+        generator=FakeGenerator(),
+        context=Context(text="[1] doc::0", chunks=(chunk,)),
+    )
+
+    pipe.answer_with_sources("orig", top_k=1, candidate_k=1)
+
+    assert rewriter.calls == 1
+    assert deps["retriever"].calls == 1
+
+
+def test_rewriter_exception_propagates_unchanged():
+    class Boom(Exception):
+        pass
+
+    boom = Boom("rewriter exploded")
+    pipe, deps = _rewriter_pipeline(rewriter=FakeRewriter(error=boom))
+
+    with pytest.raises(Boom) as excinfo:
+        pipe.retrieve("q", top_k=1, candidate_k=1)
+
+    assert excinfo.value is boom
+    assert deps["retriever"].calls == 0  # nothing downstream ran
+
+
+def test_retrieval_exception_propagates_unchanged_with_a_rewriter():
+    class Boom(Exception):
+        pass
+
+    boom = Boom("retriever exploded")
+
+    class ExplodingRetriever(Retriever):
+        def retrieve(self, query, top_k=10, candidate_k=50):
+            raise boom
+
+    pipe, deps = _fake_pipeline(
+        retriever=ExplodingRetriever(),
+        generator=FakeGenerator(),
+        query_rewriter=FakeRewriter(rewritten="rw"),
+    )
+    with pytest.raises(Boom) as excinfo:
+        pipe.answer("q", top_k=1, candidate_k=1, max_chars=100)
+
+    assert excinfo.value is boom
+    assert deps["generator"].calls == 0  # the chain stopped where it broke
+
+
+@pytest.mark.parametrize("bad", [42, None, "", "   ", ["q"]])
+def test_invalid_rewriter_output_fails_instead_of_falling_back(bad):
+    pipe, deps = _rewriter_pipeline(rewriter=FakeRewriter(rewritten=bad))
+
+    with pytest.raises(TypeError):
+        pipe.retrieve("q", top_k=1, candidate_k=1)
+
+    assert deps["retriever"].calls == 0  # never silently searched the original
+
+
+def test_query_validation_happens_before_the_rewriter_runs():
+    rewriter = FakeRewriter()
+    pipe, deps = _rewriter_pipeline(rewriter=rewriter)
+
+    with pytest.raises(TypeError):
+        pipe.retrieve("   \n\t")  # type: ignore[arg-type]
+    with pytest.raises(ValueError):
+        pipe.retrieve("q", top_k=0)
+
+    assert rewriter.calls == 0
+    assert deps["retriever"].calls == 0
+
+
+def test_end_to_end_rewriter_reaches_the_retriever_but_not_the_generator():
+    original = "  How   does Python work?  "
+
+    class RecordingRetriever(Retriever):
+        def __init__(self, inner):
+            self.inner = inner
+            self.last_query = None
+
+        def retrieve(self, query, top_k=10, candidate_k=50):
+            self.last_query = query
+            return self.inner.retrieve(query, top_k=top_k, candidate_k=candidate_k)
+
+    class RecordingGenerator(Generator):
+        def __init__(self, inner):
+            self.inner = inner
+            self.last_query = None
+
+        def generate(self, query, context):
+            self.last_query = query
+            return self.inner.generate(query, context)
+
+    vstore, lindex = InMemoryVectorStore(), InMemoryLexicalIndex()
+    embedder = DeterministicEmbedder(dimension=8)
+    retriever = RecordingRetriever(
+        HybridRetriever(
+            DenseRetriever(embedder, vstore),
+            LexicalRetriever(lindex),
+            WeightedScoreFusion(),
+        )
+    )
+    generator = RecordingGenerator(DeterministicGenerator())
+    pipe = DeterministicRAGPipeline(
+        chunker=FixedSizeChunker(chunk_size=40),
+        embedder=embedder,
+        vector_store=vstore,
+        lexical_index=lindex,
+        retriever=retriever,
+        context_builder=DeterministicContextBuilder(),
+        reranker=DeterministicReranker(),
+        generator=generator,
+        query_rewriter=DeterministicQueryRewriter(),
+    )
+    pipe.ingest(
+        Document(id="py-doc", content="Python is a programming language. " * 4)
+    )
+
+    result = pipe.answer_with_sources(original, top_k=3, candidate_k=10, max_chars=500)
+
+    assert retriever.last_query == "How does Python work?"  # the rewritten query
+    assert generator.last_query == original  # the caller's query, character for character
+    assert original == "  How   does Python work?  "  # the caller's own string, untouched
+    assert result.answer  # a real extractive answer from real retrieved chunks
+    assert result.sources
+    assert all(s.chunk_id and s.text for s in result.sources)
+
+
+def test_deterministic_query_rewriter_is_stable_across_pipelines():
+    doc = _needle_doc()
+    kwargs = {"top_k": 2, "candidate_k": 10, "max_chars": 2000}
+
+    def run():
+        pipe = _real_pipeline(doc, rewriter=DeterministicQueryRewriter())
+        return pipe.answer_with_sources("  needle   haystack  ", **kwargs)
+
+    assert run() == run()  # same answer, same sources, across instances

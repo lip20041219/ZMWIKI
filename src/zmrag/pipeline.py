@@ -11,9 +11,10 @@ Entry points:
 - ``ingest(document)`` -- chunk -> embed (exactly once per chunk) -> vector
   store + lexical index.
 - ``retrieve(query, *, top_k, candidate_k)`` -- the shared retrieval path
-  (hybrid retrieval over a wide candidate pool -> reranking to ``top_k`` when a
-  reranker is configured) as a real ``list[SearchResult]``. Evaluation-facing:
-  scores are the stages' own, never fabricated.
+  (query rewriter when configured -> hybrid retrieval over a wide candidate
+  pool -> reranking to ``top_k`` when a reranker is configured) as a real
+  ``list[SearchResult]``. Evaluation-facing: scores are the stages' own, never
+  fabricated.
 - ``query(...)`` -- ``retrieve(...)`` -> context packing -> ``Context``; the
   user-facing text answer. It reuses ``retrieve``, so retrieval is never
   duplicated.
@@ -40,6 +41,7 @@ from .generators import Generator
 from .lexical import LexicalIndex
 from .rerankers import Reranker, _check_top_k
 from .retrievers import Retriever
+from .rewriters import QueryRewriter, _check_rewritten
 from .schema import Document, _nonempty_str
 from .stores import SearchResult, VectorStore
 
@@ -57,13 +59,14 @@ class RAGPipeline(ABC):
     """End-to-end pipeline contract: ingest Documents, retrieve, query, answer.
 
     ``ingest`` indexes one Document (chunk -> embed -> vector + lexical).
-    ``retrieve`` runs the shared retrieval path (hybrid retrieval -> optional
-    reranking) and returns the real ranked ``list[SearchResult]``. ``query``
-    calls ``retrieve`` and packs the results into a :class:`Context`;
-    ``answer`` calls ``query`` and hands that Context to the injected
-    Generator. Reranking *and* generation are both optional: with no reranker
-    the retriever's own ranking stands, and generation lives entirely in the
-    generator stage, never in the pipeline.
+    ``retrieve`` runs the shared retrieval path (optional query rewriting ->
+    hybrid retrieval -> optional reranking) and returns the real ranked
+    ``list[SearchResult]``. ``query`` calls ``retrieve`` and packs the results
+    into a :class:`Context`; ``answer`` calls ``query`` and hands that Context
+    to the injected Generator. Query rewriting, reranking, *and* generation are
+    all optional: with no rewriter the query is searched verbatim, with no
+    reranker the retriever's own ranking stands, and generation lives entirely
+    in the generator stage, never in the pipeline.
     """
 
     @abstractmethod
@@ -81,12 +84,12 @@ class RAGPipeline(ABC):
         """Return the ranked ``SearchResult`` list for ``query`` (at most ``top_k``).
 
         This is the evaluation-facing retrieval entry point. It uses exactly
-        the stages ``query`` uses -- the retriever asked for a
-        ``candidate_k``-wide pool, then reranked to ``top_k`` when a reranker
-        is configured -- and returns real scores (no fabricated ranking
-        evidence), so downstream Evaluation can build ``SearchResult``-based
-        predictions directly. The order and scores are the stages' own;
-        nothing is re-sorted or recomputed here.
+        the stages ``query`` uses -- the query rewritten when a rewriter is
+        configured, the retriever asked for a ``candidate_k``-wide pool, then
+        reranked to ``top_k`` when a reranker is configured -- and returns real
+        scores (no fabricated ranking evidence), so downstream Evaluation can
+        build ``SearchResult``-based predictions directly. The order and scores
+        are the stages' own; nothing is re-sorted or recomputed here.
         """
 
     @abstractmethod
@@ -159,15 +162,23 @@ class DeterministicRAGPipeline(RAGPipeline):
     ``top_k > candidate_k`` the pool simply cannot fill ``top_k`` -- every
     stage here returns "at most k".
 
-    ``reranker`` and ``generator`` are the optional collaborators (``None`` =
-    stage disabled, and the default for both): with no reranker, retrieval
-    keeps the retriever's own order and scores, cut to ``top_k``; with no
-    generator, the chain ends at ``query``'s Context and ``answer`` reports
+    ``query_rewriter``, ``reranker`` and ``generator`` are the optional
+    collaborators (``None`` = stage disabled, and the default for all three):
+    with no rewriter the query reaches the retriever verbatim; with no reranker,
+    retrieval keeps the retriever's own order and scores, cut to ``top_k``; with
+    no generator, the chain ends at ``query``'s Context and ``answer`` reports
     that generation is unavailable. ``candidate_k`` (recall width) and
     ``top_k`` (final result count) are configured independently either way;
     without a reranker the wider pool is simply not needed to answer, so no
     re-ranking is simulated. Injecting ``None`` is how a caller turns a stage
     off.
+
+    Query responsibility is split deliberately: a configured ``query_rewriter``
+    decides what the *retrieval* path searches for (it is called once, inside
+    ``retrieve``, and its output goes to the retriever and reranker), while the
+    query the caller passed in is the one that reaches the Generator. The
+    rewriter can change how a question is looked up; it can never change the
+    question the answer is written for.
 
     ``retrieve`` exposes that same retrieve-then-rerank stage pair (before any
     Context packing) as the evaluation-facing API; ``query`` is exactly
@@ -185,6 +196,7 @@ class DeterministicRAGPipeline(RAGPipeline):
         context_builder: ContextBuilder,
         reranker: Reranker | None = None,
         generator: Generator | None = None,
+        query_rewriter: QueryRewriter | None = None,
     ) -> None:
         stages: list[tuple[str, object, type]] = [
             ("chunker", chunker, Chunker),
@@ -200,6 +212,8 @@ class DeterministicRAGPipeline(RAGPipeline):
             stages.append(("reranker", reranker, Reranker))
         if generator is not None:
             stages.append(("generator", generator, Generator))
+        if query_rewriter is not None:
+            stages.append(("query_rewriter", query_rewriter, QueryRewriter))
         for name, value, cls in stages:
             if not isinstance(value, cls):
                 raise TypeError(
@@ -212,6 +226,7 @@ class DeterministicRAGPipeline(RAGPipeline):
         self.retriever = retriever
         self.reranker = reranker
         self.generator = generator
+        self.query_rewriter = query_rewriter
         self.context_builder = context_builder
 
     def ingest(self, document: Document) -> None:
@@ -233,14 +248,31 @@ class DeterministicRAGPipeline(RAGPipeline):
     ) -> list[SearchResult]:
         _nonempty_str(query, "query")
         _check_top_k(top_k)
+        # Rewriting happens after argument validation: a bad call fails before
+        # any stage, model, or network is touched.
+        retrieval_query = self._retrieval_query(query)
         candidates = self.retriever.retrieve(
-            query, top_k=candidate_k, candidate_k=candidate_k
+            retrieval_query, top_k=candidate_k, candidate_k=candidate_k
         )
         if self.reranker is None:
             # Stage disabled: the retriever's own order and scores stand; top_k
             # is a plain cut. Still a subset-of-candidates, best-first list.
             return candidates[:top_k]
-        return self.reranker.rerank(query, candidates, top_k=top_k)
+        return self.reranker.rerank(retrieval_query, candidates, top_k=top_k)
+
+    def _retrieval_query(self, query: str) -> str:
+        """The query the retrieval path searches with: rewritten, or verbatim.
+
+        The reranker scores against this same query, not the original one: the
+        candidates were recalled with it, so the whole retrieval path works on
+        one query, and the caller's own query is left untouched throughout.
+        """
+        if self.query_rewriter is None:
+            return query
+        # The rewriter's contract is enforced, never repaired -- a broken
+        # rewrite raises instead of quietly falling back to the original query,
+        # which would hide the bug behind plausible-looking results.
+        return _check_rewritten(self.query_rewriter.rewrite(query))
 
     def query(
         self,
@@ -286,6 +318,11 @@ class DeterministicRAGPipeline(RAGPipeline):
         # and the Context the citations are derived from, are the same object.
         # Generator errors propagate unchanged (nothing is caught, retried, or
         # turned into a fallback answer).
+        #
+        # The generator is handed the caller's *original* query, never the
+        # retrieval query a rewriter produced: rewriting decides what to look
+        # up, not what the user asked. The rewriter also runs exactly once per
+        # call, because query() reaches it only by way of retrieve().
         context = self.query(
             query, top_k=top_k, candidate_k=candidate_k, max_chars=max_chars
         )

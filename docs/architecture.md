@@ -328,6 +328,75 @@ Empty store + `search` returns `[]`, never raises.
 **Current limitations** — in-memory only: no persistence, no distributed
 index, no ANN, no external vector DB.
 
+## Query Transformation
+
+```
+User Query
+   ↓
+QueryRewriter.rewrite(query)          (optional stage: skipped when none is injected)
+   ↓  retrieval query
+Retriever (dense / lexical / hybrid)
+
+User Query ──────────────────────────► Generator (the original, never the retrieval query)
+```
+
+`QueryRewriter` (abstract: `rewrite(query: str) -> str`, in
+`src/zmrag/rewriters.py`) maps the query the user is asking with into the query
+the retrieval path searches with. One method, one direction, no state carried
+between queries: it never retrieves, embeds, fuses, reranks, packs context,
+generates, or attributes, and there is no route from a rewriter to a store,
+index, or model.
+
+**The original query is never overwritten.** Three responsibilities, three
+queries:
+
+| Stage | Sees |
+| --- | --- |
+| QueryRewriter | the caller's original query (its own input) |
+| Retriever, Reranker | the *retrieval* query (the rewriter's output) |
+| Generator, Citations | the caller's original query, verbatim |
+
+The reranker scores against the retrieval query because the candidate pool was
+recalled with it -- the whole retrieval path works on one query. The Generator
+is handed the original because rewriting decides *how a question is looked up*,
+never *what was asked*: a rewriter that reworded the question could otherwise
+change the subject of the answer. Citations are unaffected either way, since
+they project the Context retrieval actually produced.
+
+Rewriting is **optional and off by default** (`query_rewriter: QueryRewriter |
+None = None`); with `None` the query reaches the retriever verbatim and the
+rewriter is never called. The stage runs inside `retrieve()`, after argument
+validation, exactly once per call -- `query()`, `answer()`, and
+`answer_with_sources()` all reach it by way of `retrieve()`, so one public call
+is one rewrite.
+
+**Implemented** -- `DeterministicQueryRewriter`: trim, plus collapsing each run
+of internal whitespace to a single space (`str.split` splits on all Unicode
+whitespace). Case, punctuation, accents, CJK, and word order are left exactly as
+typed. Stateless, therefore identical across calls, instances, and processes.
+
+**Not implemented** -- anything that changes the information need: no synonyms,
+no query expansion, no HyDE, no multi-query, no LLM rewriting, no model of any
+kind. The deterministic rewriter is a *normalization baseline*, not a semantic
+rewriter, and it makes no claim to improve retrieval -- on some queries it
+cannot. Semantic rewriting belongs behind this same contract, carrying its own
+optional dependency the way `semantic.py` carries sentence-transformers.
+
+**Why normalization stops before the tokenizer** -- `SimpleTokenizer`
+lowercases, drops punctuation, and splits CJK into single characters, so
+tokenize-then-rejoin would *replace* the query rather than normalize it. The
+retrieval query is also what the dense embedder sees, while the lexical side
+tokenizes for itself further down.
+
+**Failure posture** -- a configured rewriter's contract is enforced, never
+repaired: a rewrite that raises, returns a non-`str`, or returns an empty /
+whitespace-only string fails the call. The pipeline never silently falls back to
+the original query, which would hide the bug behind plausible-looking results.
+
+**Evaluation** -- because the rewriter is a pipeline collaborator, a
+baseline-vs-query-rewritten comparison is just two pipelines injected into
+`RetrievalEvaluationRunner`; no metric, harness, runner, or dataset changes.
+
 ## Retrieval
 
 ```
@@ -698,16 +767,25 @@ overwrites in both stores, so re-ingesting a Document never grows the index.
 ### Query
 
 ```
-Query
-   ↓
-HybridRetriever.retrieve(query, top_k=candidate_k, candidate_k=candidate_k)  (recall: candidate_k-wide pool)
-   ↓  list[SearchResult]
-Reranker.rerank(query, candidates, top_k)      (optional stage: narrow to best top_k; skipped when no reranker is injected)
-   ↓  list[SearchResult]
-ContextBuilder.build(reranked, max_chars)                                    (pack: budget-bound)
-   ↓
-Context
+        user Query ───────────────────────────────────────────┐
+        ▼                                                     │  (the original query)
+QueryRewriter.rewrite(query)                                  │  optional stage: skipped when no rewriter is injected
+        ▼  retrieval query                                    │
+HybridRetriever.retrieve(retrieval_query, top_k, candidate_k) │  recall: candidate_k-wide pool
+        ▼  list[SearchResult]                                 │
+Reranker.rerank(retrieval_query, candidates, top_k)           │  optional stage: narrow to best top_k
+        ▼  list[SearchResult]                                 │
+ContextBuilder.build(reranked, max_chars)                     │  pack: budget-bound
+        ▼                                                     │
+Context                                                       │
+        ▼                                                     │
+Generator.generate(query, context)                    ◄───────┘  optional stage: generate
+        ▼
+Answer  (+ Sources, via citations_from_context — see Source Attribution)
 ```
+
+The rail on the right is the caller's query, untouched: it bypasses rewriting
+entirely and arrives at the Generator as it was passed in.
 
 `query(query, *, top_k=5, candidate_k=20, max_chars=2000) -> Context`.
 Retrieval is asked for a `candidate_k`-wide pool; the reranker -- when one is
@@ -719,13 +797,11 @@ stages; the pipeline never sorts, filters, re-scores, or re-packs results
 itself. The return value is the existing `Context` (text + chunks); no
 `Answer`/`RAGResponse` wrapper is invented.
 
-```
-Context
-   ↓
-Generator.generate(query, context)                                           (generate: optional stage)
-   ↓  str
-Answer  (+ Sources, via citations_from_context — see Source Attribution)
-```
+A configured `query_rewriter` runs first, inside `retrieve()`, exactly once per
+public call: its output is what the retriever *and* the reranker see, while the
+caller's own query is what reaches `Generator.generate` (see Query
+Transformation above). The rewriter never sees the retriever, and neither ever
+sees the other's query by accident.
 
 `answer(query, *, top_k=5, candidate_k=20, max_chars=2000) -> str` is exactly
 `query(...)` followed by the injected Generator -- one retrieval path and one
@@ -744,30 +820,33 @@ Attribution below).
 
 ### Dependency injection
 
-Six collaborators are **required keyword arguments** and two are optional,
+Six collaborators are **required keyword arguments** and three are optional,
 validated against their ABCs at construction and never constructed internally:
 `chunker` (`Chunker`), `embedder` (`EmbeddingProvider`), `vector_store`
 (`VectorStore`), `lexical_index` (`LexicalIndex`), `retriever` (`Retriever`,
 hybrid-shaped `retrieve(query, top_k, candidate_k)` -- `HybridRetriever` in
 practice), `context_builder` (`ContextBuilder`), and the optional `reranker`
-(`Reranker | None = None`) and `generator` (`Generator | None = None`); `None`
-disables that stage, which is the default for both. The wiring contract is that
-the retriever searches the same `vector_store` / `lexical_index` that `ingest`
-writes to; the caller owns that wiring.
+(`Reranker | None = None`), `generator` (`Generator | None = None`), and
+`query_rewriter` (`QueryRewriter | None = None`); `None` disables that stage,
+which is the default for all three. The wiring contract is that the retriever
+searches the same `vector_store` / `lexical_index` that `ingest` writes to; the
+caller owns that wiring.
 
 ### Responsibilities
 
 Pipeline is responsible for: orchestration, dependency wiring, indexing
-coordination (chunk -> embed -> both stores), query coordination (retrieve ->
-rerank -> build), generation coordination (query -> generate), and attribution
-coordination (Context -> sources).
+coordination (chunk -> embed -> both stores), query coordination (rewrite ->
+retrieve -> rerank -> build), generation coordination (query -> generate), and
+attribution coordination (Context -> sources). It also owns the query boundary
+itself: which query each stage is handed, and that a rewriter runs once per
+call rather than per stage.
 
 Pipeline is NOT responsible for (all delegated to injected stages): chunking
 algorithm, embedding algorithm, vector similarity, BM25, fusion algorithm,
-reranking algorithm, tokenization, context packing, prompt construction, answer
-generation, and the *content* of a citation (== the injected stages' own
-Chunk objects -- the pipeline only projects them, and never asks a model for
-them).
+reranking algorithm, query rewriting algorithm, tokenization, context packing,
+prompt construction, answer generation, and the *content* of a citation (== the
+injected stages' own Chunk objects -- the pipeline only projects them, and never
+asks a model for them).
 
 ### Determinism and atomicity
 

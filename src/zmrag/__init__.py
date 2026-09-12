@@ -29,6 +29,7 @@ from .lexical import InMemoryLexicalIndex, LexicalIndex
 from .pipeline import DeterministicRAGPipeline, RAGPipeline
 from .rerankers import DeterministicReranker, Reranker
 from .retrievers import DenseRetriever, HybridRetriever, LexicalRetriever, Retriever
+from .rewriters import DeterministicQueryRewriter, QueryRewriter
 from .schema import Chunk, Document, Metadata, Source
 from .stores import InMemoryVectorStore, SearchResult, VectorStore
 from .tokenizers import SimpleTokenizer, Tokenizer
@@ -46,6 +47,7 @@ __all__ = [
     "DeterministicContextBuilder",
     "DeterministicEmbedder",
     "DeterministicGenerator",
+    "DeterministicQueryRewriter",
     "DeterministicRAGPipeline",
     "DeterministicReranker",
     "Document",
@@ -74,6 +76,7 @@ __all__ = [
     "PlainTextDirectoryIngestor",
     "PlainTextFileIngestor",
     "PlainTextIngestor",
+    "QueryRewriter",
     "RAGPipeline",
     "RRFFusion",
     "Reranker",

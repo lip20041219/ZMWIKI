@@ -18,6 +18,7 @@ an Agent framework — those belong to upper-layer systems.
 - Lexical (BM25) retrieval
 - Dense (embedding) retrieval
 - Hybrid retrieval (dense + lexical)
+- Optional query rewriting (`QueryRewriter`; deterministic normalization baseline)
 - Weighted score fusion
 - Reciprocal Rank Fusion (RRF)
 - Deterministic reranking
@@ -41,15 +42,15 @@ Chunking             (Document → Chunk[])
    ↓
 Embedding ───────────────►  Dense index    Lexical (BM25) index
    │                                        │
-   └────────────►  Dense / Lexical / Hybrid Retrieval
-                               ↓
-                         Fusion (Weighted / RRF)
-                               ↓
-                        Optional Reranking
-                               ↓
+   └────────────►  Dense / Lexical / Hybrid Retrieval  ◄── retrieval query
+                               ↓                             ▲
+                         Fusion (Weighted / RRF)             │
+                               ↓                   Optional Query Rewriting
+                        Optional Reranking                   ▲
+                               ↓                          user Query
                        Context Construction
                                ↓
-                       Optional Generation
+                       Optional Generation  ◄── the original user query
                                ↓
                         Answer + Sources
                                ↓
@@ -60,7 +61,9 @@ Embedding ───────────────►  Dense index    Lexic
 `list[SearchResult]`; `query()` is that same path followed by context packing;
 `answer()` is `query()` followed by generation; `answer_with_sources()` is
 `answer()` plus the source attribution for that same Context. One path, four
-entry points, so they never diverge.
+entry points, so they never diverge. A configured `query_rewriter` runs inside
+that one path, so every entry point searches the retrieval query while the
+generator still receives the original one.
 
 ## Installation
 
@@ -160,6 +163,59 @@ for source in result.sources:
 ZMRAG is a **library**, not a standalone command-line product. You compose the
 stages above through the Python API (or run the benchmark scripts in
 [Evaluation & Benchmarks](#evaluation--benchmarks)).
+
+## Query Transformation
+
+```
+user Query ──► QueryRewriter (optional) ──► retrieval query ──► Retriever
+     │
+     └──────────────────────────────────────────────────────► Generator
+                                                    (the original query)
+```
+
+`QueryRewriter.rewrite(query) -> str` sits in front of retrieval and does one
+thing: turn the question the user asked into the query the retriever searches
+with. It never retrieves, reranks, packs context, or generates.
+
+**The original query is never overwritten.** The rewritten query is the
+*retrieval* query -- it reaches the retriever and the reranker. The Generator is
+handed the query the user actually asked, character for character: rewriting
+decides how a question is looked up, never what was asked. Citations are
+unaffected either way, because they project the Context retrieval really
+produced.
+
+Rewriting is optional and off by default. Omit `query_rewriter` and the query
+reaches the retriever verbatim.
+
+```python
+from zmrag import DeterministicQueryRewriter
+
+pipeline = DeterministicRAGPipeline(
+    ...,
+    query_rewriter=DeterministicQueryRewriter(),
+)
+```
+
+The bundled `DeterministicQueryRewriter` is a **normalization baseline, not a
+semantic rewriter**: it trims the query and collapses runs of whitespace, and
+that is the whole thing. No synonyms, no expansion, no model, no network --
+case, punctuation, and word order stay exactly as typed, so it cannot
+reinterpret what you asked. Do not expect it to improve retrieval; it exists so
+the stage has a deterministic implementation, and so `query_rewriter=None` has
+an honest baseline to be compared against.
+
+Real query rewriting -- an LLM rewriter, HyDE, multi-query expansion -- belongs
+behind this same contract, carrying its own optional dependency, the way
+`semantic.py` carries `sentence-transformers`. None of it is part of the core
+runtime.
+
+A configured rewriter's contract is enforced, not repaired: a rewriter that
+raises, returns a non-`str`, or returns an empty string fails the call rather
+than silently falling back to the original query.
+
+Because the rewriter is a pipeline collaborator, an evaluation run is
+"baseline" or "query-rewritten" purely by which pipeline you inject into
+`RetrievalEvaluationRunner` -- no metric, harness, or dataset change.
 
 ## Retrieval
 
