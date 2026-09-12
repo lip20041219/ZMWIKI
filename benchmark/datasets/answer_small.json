@@ -1,6 +1,11 @@
 {
   "dataset": "answer_small",
-  "description": "Answer-evaluation cases over the frozen Phase 10A corpus. Separate from retrieval_small.json, which stays a retrieval benchmark.",
+  "description": "Answer-evaluation and claim-attribution cases over the frozen Phase 10A corpus. Separate from retrieval_small.json, which stays a retrieval benchmark.",
+  "probe_controls": {
+    "answer_override": "Use this text as the answer instead of the pipeline's own output (a probe the real pipeline would never produce).",
+    "citation_chunk_ids": "Cite exactly these context chunks, in this order, instead of every chunk in the Context. An empty list means the answer carries no citations. Every id must be present in the retrieved Context.",
+    "note": "Free-text explanation of what the case demonstrates; never read by the harness."
+  },
   "cases": [
     {
       "id": "a01_btree_single_fact",
@@ -88,8 +93,8 @@
       "reference_answer": "A B-tree index keeps keys sorted and balanced, turning an expensive full scan into a short path to the target record.",
       "relevant_chunk_ids": ["doc_a::1"],
       "answer_override": "A B-tree index keeps keys sorted and balanced, turning a full scan into a short path to the target record.",
-      "drop_sources": true,
-      "note": "Negative case E: the same covering answer as n03, with the citations dropped -- isolates source presence from answer quality."
+      "citation_chunk_ids": [],
+      "note": "Negative case E: the same covering answer as n03 with no citations at all -- isolates source presence from answer quality."
     },
     {
       "id": "n05_negation_grounded",
@@ -98,7 +103,49 @@
       "reference_answer": "LRU evicts the least recently used entry.",
       "relevant_chunk_ids": ["doc_b::1"],
       "answer_override": "LRU never evicts the least recently used entry.",
-      "note": "Limitation probe: one word flips the meaning, and no token-overlap baseline can see it -- coverage and groundedness both stay near perfect."
+      "citation_chunk_ids": ["doc_b::2"],
+      "note": "Limitation probe G: one word flips the meaning, and no token-overlap baseline can see it -- coverage, groundedness and claim attribution all stay at their maximum, including the citation of the source it contradicts."
+    },
+
+    {
+      "id": "p01_correct_wrong_citation",
+      "kind": "probe_wrong_citation",
+      "query": "database B-tree index query",
+      "reference_answer": "A B-tree index keeps keys sorted and balanced, turning an expensive full scan into a short path to the target record.",
+      "relevant_chunk_ids": ["doc_a::1"],
+      "answer_override": "A B-tree index keeps keys sorted and balanced, turning a full scan into a short path to the target record.",
+      "citation_chunk_ids": ["doc_a::0"],
+      "note": "Probe B: the answer is supported by the context, but the citation it carries does not cover it -- supported and attributed disagree."
+    },
+    {
+      "id": "p02_claim_supported_but_uncited",
+      "kind": "probe_supported_uncited_claim",
+      "query": "cache eviction memory",
+      "reference_answer": "LRU evicts the least recently used entry, and monitoring the hit rate guides capacity tuning.",
+      "relevant_chunk_ids": ["doc_b::1"],
+      "answer_override": "LRU evicts the least recently used entry. Monitoring the hit rate guides tuning of capacity and policy.",
+      "citation_chunk_ids": ["doc_b::2"],
+      "note": "Probe E: claim one is cited and supported; claim two is supported by a context chunk that was not cited, so it is supported but unattributed."
+    },
+    {
+      "id": "p03_claim_with_two_sources",
+      "kind": "probe_two_sources_one_claim",
+      "query": "cache eviction memory",
+      "reference_answer": "The cache evicts an entry when it is full.",
+      "relevant_chunk_ids": ["doc_b::1"],
+      "answer_override": "The cache entry is evicted.",
+      "citation_chunk_ids": ["doc_b::1", "doc_b::2"],
+      "note": "Probe F: a single claim that both cited chunks cover -- attribution lists both, in citation order."
+    },
+    {
+      "id": "p04_wrong_but_supported_and_cited",
+      "kind": "probe_wrong_high_overlap",
+      "query": "database B-tree index query",
+      "reference_answer": "A B-tree index keeps keys sorted and balanced.",
+      "relevant_chunk_ids": ["doc_a::1"],
+      "answer_override": "The query planner chooses which index to use based on selectivity and cost. Lookups that miss the index fall back to a sequential scan, which is the slowest option.",
+      "citation_chunk_ids": ["doc_a::2", "doc_a::4"],
+      "note": "Probe D: both claims are verbatim context text and cite the chunk they came from -- fully supported and fully attributed -- while answering a different question than the reference asks."
     }
   ]
 }

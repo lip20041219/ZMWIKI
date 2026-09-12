@@ -1271,6 +1271,66 @@ refuses to write evidence unless two fresh runs agree exactly.
 embedding-based scoring, no claim extraction, no automated fact checking, no
 RAGAS / DeepEval-style framework, and no faithfulness claim of any kind.
 
+## Claim-Level Attribution
+
+```
+Answer
+ ↓
+DeterministicClaimExtractor      (one sentence = one claim)
+ ↓  Claim[]
+DeterministicClaimAttributor     (token overlap, per claim)
+ ↓
+AttributionResult
+   supported  -- the context covers the claim
+   attributed -- a cited source covers the claim
+```
+
+The finest-grained evaluation layer, and the one that answers the question
+source-level coverage cannot: *which* source carries *which* claim.
+
+**Two questions, two rates, never merged.**
+
+- ``supported`` -- the claim's unique tokens are covered (>= ``threshold``,
+  default 0.5) by the **Context** text. The context is therefore a required
+  input: support is a property of the claim against the evidence retrieval
+  actually produced.
+- ``attributed`` -- at least one **Citation** covers the claim the same way.
+  ``supporting_citation_ids`` lists every citation that qualifies, in citation
+  input order (never re-sorted by score), duplicates collapsed to the first
+  occurrence, exactly as ``citations_from_context`` collapses chunk ids.
+
+An answer with no citations can be fully supported and fully unattributed; an
+answer can cite a source that does not cover it. Those are the cells the two
+rates exist to keep apart, and the profile counts them
+(``claims_supported_but_uncited``).
+
+**Deterministic and lexical, at every step.** Claim extraction is sentence
+splitting on the ASCII and CJK terminators -- no clause decomposition, no
+subject/predicate analysis, no coreference. Support is ``|unique claim tokens ∩
+support tokens| / |unique claim tokens|`` over the same NFC +
+``SimpleTokenizer`` path answer evaluation uses (``text.py``), so the two layers
+cannot drift into measuring different things. A claim with no tokens scores 0.0
+and an answer with no sentences produces no claims: no denominator is ever zero
+and no NaN is reachable.
+
+**Nothing is parsed out of the answer.** Attribution reads ``Citation.text`` and
+``Citation.chunk_id`` and nothing else -- no ``[1]`` markers, no chunk ids
+scanned in prose, no citation grammar, and no regex import at all. If the
+structured citation is not there, the answer is simply unattributed.
+
+**Known limitations, recorded rather than fixed.** A negation reuses every token
+of the sentence it contradicts, so it scores as supported *and* is attributed to
+that source; a correct paraphrase with different words scores 0.0. Both are in
+the evidence as limitation probes. Entailment, NLI, embeddings, and an LLM judge
+are all out of scope here; a real attribution model would sit behind this same
+value type with its own optional dependency.
+
+**Evidence** -- ``benchmark/run_attribution_profile.py`` reuses the answer
+dataset, the answer harness's pipeline wiring, and the retrieval runner's corpus
+ingestion, and writes ``benchmark/results/answer_attribution_profile.json`` with
+pooled aggregates, a claim funnel, and one row per claim. The runner executes
+the profile twice and writes only if the two runs are byte-identical.
+
 ## Evaluation Case Set
 
 Phase 9B (in `src/zmrag/evaluation_dataset.py`, exported at the package root)

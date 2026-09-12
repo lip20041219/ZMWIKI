@@ -478,6 +478,58 @@ things.
 Evidence: `benchmark/results/answer_evaluation_profile.json`, reproduced by
 `python benchmark/run_answer_evaluation.py` -- offline, no key, no model.
 
+## Claim-Level Attribution
+
+[Answer Evaluation](#answer-evaluation) reports **source-level** citation
+coverage: are the answer's sentences covered by the cited material at all?
+`attribution.py` asks a narrower question, one claim at a time: is *this* claim
+supported by the context, and *which* cited sources carry it?
+
+| Layer | Question |
+| --- | --- |
+| Source-level citation coverage | Is the answer covered by the cited sources? |
+| Claim-level attribution | Is this claim supported, and by which citations? |
+
+They are not substitutes for each other, and neither is collapsed into a score.
+
+```python
+from zmrag import DeterministicClaimAttributor, DeterministicClaimExtractor
+
+claims = DeterministicClaimExtractor().extract(answer)   # one sentence = one claim
+result = DeterministicClaimAttributor().attribute(
+    claims, context=context, citations=answer_result.sources
+)
+result.supported_claim_rate    # claims the context covers
+result.attributed_claim_rate   # claims a citation covers -- a different number
+```
+
+`supported` and `attributed` are deliberately separate: a claim can be supported
+by the retrieved context while carrying no citation at all, and a claim can cite
+a source that does not cover it. The cell between them is counted, not hidden.
+
+> This is a deterministic lexical baseline, not a semantic factuality judge.
+
+What it is: sentence splitting for claims, token overlap for support, structured
+`Citation` objects for attribution. What it is not: no LLM judge, no entailment
+or NLI, no embeddings, no claim decomposition beyond sentence boundaries, and no
+parsing of the answer for citation markers -- a `Citation` goes in, a chunk id
+comes out, and no marker convention exists anywhere in ZMRAG. The consequences
+are measured rather than papered over: a negated claim ("LRU **never** evicts
+the least recently used entry") is fully supported *and* attributed to the very
+source it contradicts, and a correct paraphrase scores as unsupported.
+
+Measured over the same 16-case dataset
+(`python benchmark/run_attribution_profile.py`): 25 claims, supported claim rate
+**0.9600**, attributed claim rate **0.8400**, mean support score 0.9427 -- with
+3 claims supported by the context but left uncited. The bundled generator is
+extractive and quotes its context, which is why support runs high here; a
+generative model would produce different numbers.
+
+ZMRAG now covers: ingestion → chunking → embedding → dense / lexical / hybrid
+retrieval → fusion → reranking → query transformation → context construction →
+answer generation → source attribution → retrieval evaluation → answer
+evaluation → claim-level attribution.
+
 ## Evaluation & Benchmarks
 
 Offline, deterministic retrieval evaluation over prepared
@@ -520,7 +572,7 @@ baseline-vs-rewritten run: [Query Rewriter Benchmark](docs/query_rewriter_benchm
 python -m pytest -q
 ```
 
-Current result: **1208 passed, 5 skipped**.
+Current result: **1281 passed, 5 skipped**.
 
 ## Project Scope
 

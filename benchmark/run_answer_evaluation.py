@@ -23,7 +23,7 @@ What this harness is careful about:
   extractive one, so the whole profile is offline, dependency-free, and
   reproducible; there is no LLM judge and no opt-in model path.
 - **It does not fabricate answers.** A case may carry ``answer_override`` (and
-  ``drop_sources``) to construct a negative probe -- a wrong answer, an
+  ``citation_chunk_ids``) to construct a negative probe -- a wrong answer, an
   uncited answer -- that the real pipeline would never produce. Such rows are
   labelled ``answer_source: "override"`` in the evidence; every other row is
   the pipeline's own output.
@@ -53,6 +53,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from zmrag import (
     AnswerEvaluator,
+    Citation,
     DenseRetriever,
     DeterministicContextBuilder,
     DeterministicEmbedder,
@@ -87,7 +88,7 @@ CHUNK_SIZE = 120
 OVERLAP = 20
 EXPECTED_DOCUMENTS = 6
 EXPECTED_TOTAL_CHUNKS = 33
-EXPECTED_CASES = 12
+EXPECTED_CASES = 16
 EMBEDDING_ID = "DeterministicEmbedder(dimension=8)"
 GENERATOR_ID = "DeterministicGenerator"
 EVALUATOR_ID = "AnswerEvaluator"
@@ -101,8 +102,8 @@ TOP_K = 5
 CANDIDATE_K = 33
 MAX_CHARS = 2000
 
-#: Required dataset fields per case; ``answer_override`` / ``drop_sources`` /
-#: ``note`` are optional probe controls.
+#: Required dataset fields per case; ``answer_override`` / ``citation_chunk_ids`` /
+#: ``note`` are optional probe controls (see the dataset's own ``probe_controls``).
 REQUIRED_CASE_FIELDS = ("id", "kind", "query", "reference_answer", "relevant_chunk_ids")
 
 #: The aggregate keys, in their fixed order.
@@ -168,6 +169,31 @@ def build_pipeline(documents: list) -> DeterministicRAGPipeline:
     return pipeline
 
 
+def _resolve_sources(case: dict, context, answer_result):
+    """Which citations this case carries: the Context's own, or pinned ones.
+
+    Absent ``citation_chunk_ids`` means "every chunk of the Context", which is
+    what ``citations_from_context`` produces and what the pipeline really does.
+    A present list -- including an empty one -- pins the citations to exactly
+    those context chunks, in that order, so a probe can construct a wrong
+    citation or an uncited answer that the pipeline would never produce. A
+    pinned id that is not in the Context is a malformed probe and stops the run.
+    """
+    pinned = case.get("citation_chunk_ids")
+    if pinned is None:
+        return answer_result.sources, "context"
+    if not isinstance(pinned, list):
+        raise RuntimeError(f"case {case['id']!r}: citation_chunk_ids must be a list")
+    by_id = {chunk.id: chunk for chunk in context.chunks}
+    unknown = [cid for cid in pinned if cid not in by_id]
+    if unknown:
+        raise RuntimeError(
+            f"case {case['id']!r}: citation_chunk_ids {unknown} are not in the "
+            "retrieved Context"
+        )
+    return tuple(Citation.from_chunk(by_id[cid]) for cid in pinned), "pinned"
+
+
 def _evaluate_case(case: dict, pipeline, evaluator: AnswerEvaluator):
     """One case: real retrieval, real (or overridden) answer, real scores.
 
@@ -190,7 +216,7 @@ def _evaluate_case(case: dict, pipeline, evaluator: AnswerEvaluator):
 
     override = case.get("answer_override")
     answer = override if override is not None else answer_result.answer
-    sources = () if case.get("drop_sources") else answer_result.sources
+    sources, citation_source = _resolve_sources(case, context, answer_result)
 
     evaluation = evaluator.evaluate(
         query_id=case["id"],
@@ -210,7 +236,7 @@ def _evaluate_case(case: dict, pipeline, evaluator: AnswerEvaluator):
         "kind": case["kind"],
         "query": query,
         "answer_source": "override" if override is not None else "pipeline",
-        "sources_dropped": bool(case.get("drop_sources")),
+        "citation_source": citation_source,
         "answer": answer,
         "reference_answer": case["reference_answer"],
         "relevant_chunk_ids": list(case["relevant_chunk_ids"]),

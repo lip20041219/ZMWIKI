@@ -35,7 +35,7 @@ RUNNER_SCRIPT = BENCH_DIR / "run_answer_evaluation.py"
 #: frozen data or history.
 FROZEN_SHA256 = {
     "benchmark/datasets/answer_small.json":
-        "25b5f1630b1ec66ac150452c539ac00c2562cfc16fc4002c192974b19b346e3b",
+        "e569efa315cd9436ef0aaefb586371d1c030b2e050a0ac5006e376aca4f3bdb7",
     "benchmark/datasets/retrieval_small.json":
         "5112ba3c580ddc448a7ef96031930c7a9614c0264808af9d648ecce246c46f81",
     "benchmark/results/retrieval_small_baseline.json":
@@ -96,7 +96,7 @@ PER_QUERY_KEYS = [
     "kind",
     "query",
     "answer_source",
-    "sources_dropped",
+    "citation_source",
     "answer",
     "reference_answer",
     "relevant_chunk_ids",
@@ -218,7 +218,7 @@ def test_evidence_schema_is_fixed():
     assert evidence["generator"] == "DeterministicGenerator"
     assert evidence["evaluator"] == "AnswerEvaluator"
     assert evidence["groundedness_threshold"] == 0.5
-    assert evidence["total_cases"] == evidence["evaluated_cases"] == 12
+    assert evidence["total_cases"] == evidence["evaluated_cases"] == 16
     assert evidence["deterministic"] is True
 
 
@@ -250,7 +250,7 @@ def test_aggregate_matches_the_per_query_rows():
 
 def test_per_query_evidence_is_complete():
     rows = _evidence()["per_query"]
-    assert len(rows) == 12
+    assert len(rows) == 16
     assert all(list(row) == PER_QUERY_KEYS for row in rows)
     for row in rows:
         assert row["query_id"] == row["id"]
@@ -261,6 +261,7 @@ def test_per_query_evidence_is_complete():
         assert row["matched_reference_tokens"] <= row["reference_tokens"]
         assert row["has_sources"] == (row["source_count"] > 0)
         assert row["answer_source"] in ("pipeline", "override")
+        assert row["citation_source"] in ("context", "pinned")
         assert isinstance(row["retrieval_hit_at_5"], bool)
         assert row["retrieved_chunk_ids"]
 
@@ -325,7 +326,7 @@ def test_retrieval_join_is_computed_over_real_pipeline_rows_only():
     rows = _evidence()["per_query"]
     real = [r for r in rows if r["answer_source"] == "pipeline"]
     assert join["cases_considered"] == len(real) == 7
-    assert join["cases_excluded_as_probes"] == len(rows) - len(real) == 5
+    assert join["cases_excluded_as_probes"] == len(rows) - len(real) == 9
     hits = [r for r in real if r["retrieval_hit_at_5"]]
     misses = [r for r in real if not r["retrieval_hit_at_5"]]
     assert join["cases_with_retrieval_hit"] == len(hits)

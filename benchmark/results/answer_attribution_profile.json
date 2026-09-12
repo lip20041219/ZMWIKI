@@ -1,0 +1,408 @@
+{
+  "experiment": "answer_attribution_profile",
+  "dataset": "benchmark/datasets/answer_small.json",
+  "corpus_documents": 6,
+  "corpus_chunks": 33,
+  "chunking": "FixedSizeChunker(chunk_size=120, overlap=20)",
+  "embedding": "DeterministicEmbedder(dimension=8)",
+  "generator": "DeterministicGenerator",
+  "extractor": "DeterministicClaimExtractor",
+  "attributor": "DeterministicClaimAttributor",
+  "tokenizer": "SimpleTokenizer",
+  "attribution_threshold": 0.5,
+  "top_k": 5,
+  "candidate_k": 33,
+  "total_cases": 16,
+  "aggregate": {
+    "supported_claim_rate": 0.96,
+    "attributed_claim_rate": 0.84,
+    "mean_support_score": 0.9426923076923077,
+    "total_claims": 25,
+    "supported_claims": 24,
+    "attributed_claims": 21
+  },
+  "funnel": {
+    "cases": 16,
+    "claims": 25,
+    "claims_supported": 24,
+    "claims_attributed": 21,
+    "claims_unsupported": 1,
+    "claims_supported_but_uncited": 3
+  },
+  "per_claim": [
+    {
+      "query_id": "a01_btree_single_fact",
+      "kind": "single_fact",
+      "claim_id": "claim-0",
+      "claim": "o scanning every row for one record is wasteful.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_a::1"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a01_btree_single_fact",
+      "kind": "single_fact",
+      "claim_id": "claim-1",
+      "claim": "A B-tree index keeps keys sorted and balanced, turning an expensive ful",
+      "sentence_index": 1,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_a::1"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a02_cache_multi_fact",
+      "kind": "multi_fact",
+      "claim_id": "claim-0",
+      "claim": "A cache stores recently used data in fast memory so later lookups avoid a slow backend.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_b::0"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a02_cache_multi_fact",
+      "kind": "multi_fact",
+      "claim_id": "claim-1",
+      "claim": "Its size is bounded, so when the",
+      "sentence_index": 1,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_b::0",
+        "doc_b::1"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a03_queue_other_document",
+      "kind": "different_document",
+      "claim_id": "claim-0",
+      "claim": "A message queue decouples producers from consumers by buffering messages between them.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_c::0"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a03_queue_other_document",
+      "kind": "different_document",
+      "claim_id": "claim-1",
+      "claim": "A producer appends a message to t",
+      "sentence_index": 1,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_c::0",
+        "doc_c::1"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a04_vector_search_other_document",
+      "kind": "different_document",
+      "claim_id": "claim-0",
+      "claim": "tem is mapped to an embedding vector, a list of numbers that capture semantics.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_d::1"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a04_vector_search_other_document",
+      "kind": "different_document",
+      "claim_id": "claim-1",
+      "claim": "Similar items have vectors that point in",
+      "sentence_index": 1,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_d::1",
+        "doc_d::2"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a05_hybrid_multi_chunk",
+      "kind": "multi_chunk_support",
+      "claim_id": "claim-0",
+      "claim": "Hybrid retrieval combines lexical and semantic signals to improve ranking.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_e::0"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a05_hybrid_multi_chunk",
+      "kind": "multi_chunk_support",
+      "claim_id": "claim-1",
+      "claim": "Lexical matching scores exact term overlap, f",
+      "sentence_index": 1,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_e::0"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a06_chunking_partial",
+      "kind": "context_partial",
+      "claim_id": "claim-0",
+      "claim": "Chunking splits a long document into smaller pieces that fit a fixed context window.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_f::0"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a06_chunking_partial",
+      "kind": "context_partial",
+      "claim_id": "claim-1",
+      "claim": "Each chunk is stored separately and",
+      "sentence_index": 1,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_f::0",
+        "doc_f::1"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a07_unanswerable",
+      "kind": "unanswerable",
+      "claim_id": "claim-0",
+      "claim": "Database indexes make lookups fast by imposing order on records.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_a::0"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "a07_unanswerable",
+      "kind": "unanswerable",
+      "claim_id": "claim-1",
+      "claim": "A relational table can grow huge, so scanning every row",
+      "sentence_index": 1,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_a::0"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "pipeline"
+    },
+    {
+      "query_id": "n01_grounded_but_off_topic",
+      "kind": "negative_grounded_wrong",
+      "claim_id": "claim-0",
+      "claim": "The query planner chooses which index to use based on selectivity and cost.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_a::2"
+      ],
+      "support_score": 0.8461538461538461,
+      "citation_source": "context",
+      "answer_source": "override"
+    },
+    {
+      "query_id": "n02_correct_but_ungrounded",
+      "kind": "negative_correct_ungrounded",
+      "claim_id": "claim-0",
+      "claim": "Quantum submarines navigate using agricultural sensor arrays.",
+      "sentence_index": 0,
+      "supported": false,
+      "attributed": false,
+      "supporting_citation_ids": [],
+      "support_score": 0.0,
+      "citation_source": "context",
+      "answer_source": "override"
+    },
+    {
+      "query_id": "n03_correct_with_sources",
+      "kind": "negative_correct_cited",
+      "claim_id": "claim-0",
+      "claim": "A B-tree index keeps keys sorted and balanced, turning a full scan into a short path to the target record.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_a::1",
+        "doc_a::2"
+      ],
+      "support_score": 1.0,
+      "citation_source": "context",
+      "answer_source": "override"
+    },
+    {
+      "query_id": "n04_correct_without_sources",
+      "kind": "negative_correct_uncited",
+      "claim_id": "claim-0",
+      "claim": "A B-tree index keeps keys sorted and balanced, turning a full scan into a short path to the target record.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": false,
+      "supporting_citation_ids": [],
+      "support_score": 1.0,
+      "citation_source": "pinned",
+      "answer_source": "override"
+    },
+    {
+      "query_id": "n05_negation_grounded",
+      "kind": "negative_negation",
+      "claim_id": "claim-0",
+      "claim": "LRU never evicts the least recently used entry.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_b::2"
+      ],
+      "support_score": 0.875,
+      "citation_source": "pinned",
+      "answer_source": "override"
+    },
+    {
+      "query_id": "p01_correct_wrong_citation",
+      "kind": "probe_wrong_citation",
+      "claim_id": "claim-0",
+      "claim": "A B-tree index keeps keys sorted and balanced, turning a full scan into a short path to the target record.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": false,
+      "supporting_citation_ids": [],
+      "support_score": 1.0,
+      "citation_source": "pinned",
+      "answer_source": "override"
+    },
+    {
+      "query_id": "p02_claim_supported_but_uncited",
+      "kind": "probe_supported_uncited_claim",
+      "claim_id": "claim-0",
+      "claim": "LRU evicts the least recently used entry.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_b::2"
+      ],
+      "support_score": 1.0,
+      "citation_source": "pinned",
+      "answer_source": "override"
+    },
+    {
+      "query_id": "p02_claim_supported_but_uncited",
+      "kind": "probe_supported_uncited_claim",
+      "claim_id": "claim-1",
+      "claim": "Monitoring the hit rate guides tuning of capacity and policy.",
+      "sentence_index": 1,
+      "supported": true,
+      "attributed": false,
+      "supporting_citation_ids": [],
+      "support_score": 1.0,
+      "citation_source": "pinned",
+      "answer_source": "override"
+    },
+    {
+      "query_id": "p03_claim_with_two_sources",
+      "kind": "probe_two_sources_one_claim",
+      "claim_id": "claim-0",
+      "claim": "The cache entry is evicted.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_b::1",
+        "doc_b::2"
+      ],
+      "support_score": 1.0,
+      "citation_source": "pinned",
+      "answer_source": "override"
+    },
+    {
+      "query_id": "p04_wrong_but_supported_and_cited",
+      "kind": "probe_wrong_high_overlap",
+      "claim_id": "claim-0",
+      "claim": "The query planner chooses which index to use based on selectivity and cost.",
+      "sentence_index": 0,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_a::2"
+      ],
+      "support_score": 0.8461538461538461,
+      "citation_source": "pinned",
+      "answer_source": "override"
+    },
+    {
+      "query_id": "p04_wrong_but_supported_and_cited",
+      "kind": "probe_wrong_high_overlap",
+      "claim_id": "claim-1",
+      "claim": "Lookups that miss the index fall back to a sequential scan, which is the slowest option.",
+      "sentence_index": 1,
+      "supported": true,
+      "attributed": true,
+      "supporting_citation_ids": [
+        "doc_a::4"
+      ],
+      "support_score": 1.0,
+      "citation_source": "pinned",
+      "answer_source": "override"
+    }
+  ],
+  "deterministic": true
+}

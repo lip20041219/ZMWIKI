@@ -35,13 +35,18 @@ count as differences, and CJK text matches at character granularity.
 
 from __future__ import annotations
 
-import unicodedata
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
+from .attribution import (
+    AttributionResult,
+    DeterministicClaimAttributor,
+    DeterministicClaimExtractor,
+)
 from .citations import Citation
 from .context import Context
 from .schema import _nonempty_str
+from .text import safe_ratio, split_sentences, token_coverage, tokenize_text, unique_tokens
 from .tokenizers import SimpleTokenizer, Tokenizer
 
 __all__ = [
@@ -55,12 +60,6 @@ __all__ = [
 #: in the support text. Fixed here, never tuned against a dataset: it is a
 #: stated baseline convention, and every evidence row records the value used.
 DEFAULT_GROUNDEDNESS_THRESHOLD = 0.5
-
-#: Characters that end a sentence. Deliberately naive: decimals and
-#: abbreviations split too, which can only make the sentence count larger (and
-#: each sentence shorter). Recorded as a limitation rather than patched with a
-#: language-specific rule set this project does not have.
-_SENTENCE_TERMINATORS = frozenset(".!?;。！？；\n")
 
 
 @dataclass(frozen=True)
@@ -245,9 +244,9 @@ class AnswerEvaluator:
                     f"each source must be a Citation, got {type(source).__name__}"
                 )
 
-        sentences = _split_sentences(answer)
+        sentences = split_sentences(answer)
         answer_tokens = self._tokens(answer)
-        reference_tokens = _unique(self._tokens(reference_answer))
+        reference_tokens = unique_tokens(self._tokens(reference_answer))
 
         matched = sum(1 for token in reference_tokens if token in set(answer_tokens))
         reference_coverage = matched / len(reference_tokens)
@@ -260,8 +259,8 @@ class AnswerEvaluator:
         return AnswerEvaluation(
             query_id=query_id,
             reference_coverage=reference_coverage,
-            groundedness=_ratio(grounded_sentences, len(sentences)),
-            citation_coverage=_ratio(cited_sentences, len(sentences)),
+            groundedness=safe_ratio(grounded_sentences, len(sentences)),
+            citation_coverage=safe_ratio(cited_sentences, len(sentences)),
             has_answer=bool(answer.strip()),
             has_sources=bool(sources),
             source_count=len(sources),
@@ -274,20 +273,41 @@ class AnswerEvaluator:
 
     def _tokens(self, text: str) -> list[str]:
         """NFC-normalize, then tokenize with the injected tokenizer."""
-        return self.tokenizer.tokenize(unicodedata.normalize("NFC", text))
+        return tokenize_text(text, self.tokenizer)
 
     def _grounded_count(self, sentences: Sequence[str], support: Sequence[str]) -> int:
         """How many sentences are covered by ``support`` at the threshold."""
-        support_tokens = set(support)
-        grounded = 0
-        for sentence in sentences:
-            tokens = _unique(self._tokens(sentence))
-            if not tokens:
-                continue  # a sentence with no tokens has nothing to support
-            covered = sum(1 for token in tokens if token in support_tokens) / len(tokens)
-            if covered >= self.groundedness_threshold:
-                grounded += 1
-        return grounded
+        return sum(
+            1
+            for sentence in sentences
+            if token_coverage(self._tokens(sentence), support)
+            >= self.groundedness_threshold
+        )
+
+    def evaluate_attribution(
+        self,
+        *,
+        answer: str,
+        context: Context,
+        sources: tuple[Citation, ...] = (),
+    ) -> AttributionResult:
+        """Run claim-level attribution with this evaluator's own tokenizer.
+
+        A thin delegation, not a second implementation: extraction and
+        attribution live in ``attribution.py``, and this method exists so a
+        caller holding an :class:`AnswerEvaluator` can reach them without
+        wiring the two up by hand. The attribution threshold is the
+        attributor's own default (``DEFAULT_ATTRIBUTION_THRESHOLD``), not
+        ``groundedness_threshold``: the two are separate conventions even when
+        they share a value today.
+        """
+        if not isinstance(answer, str):
+            raise TypeError(f"answer must be a str, got {type(answer).__name__}")
+        if not isinstance(context, Context):
+            raise TypeError(f"context must be a Context, got {type(context).__name__}")
+        claims = DeterministicClaimExtractor().extract(answer)
+        attributor = DeterministicClaimAttributor(tokenizer=self.tokenizer)
+        return attributor.attribute(claims, context=context, citations=sources)
 
 
 def aggregate_evaluations(evaluations: Iterable[AnswerEvaluation]) -> dict[str, float]:
@@ -319,37 +339,3 @@ def aggregate_evaluations(evaluations: Iterable[AnswerEvaluation]) -> dict[str, 
     }
 
 
-def _split_sentences(text: str) -> list[str]:
-    """Split on sentence terminators; empty pieces are dropped."""
-    sentences: list[str] = []
-    current: list[str] = []
-    for char in text:
-        if char in _SENTENCE_TERMINATORS:
-            piece = "".join(current).strip()
-            if piece:
-                sentences.append(piece)
-            current = []
-        else:
-            current.append(char)
-    tail = "".join(current).strip()
-    if tail:
-        sentences.append(tail)
-    return sentences
-
-
-def _unique(tokens: Sequence[str]) -> list[str]:
-    """First-occurrence order preserved; duplicates dropped."""
-    seen: set[str] = set()
-    out: list[str] = []
-    for token in tokens:
-        if token not in seen:
-            seen.add(token)
-            out.append(token)
-    return out
-
-
-def _ratio(numerator: int, denominator: int) -> float:
-    """0.0 when there is nothing to divide by -- never NaN."""
-    if denominator == 0:
-        return 0.0
-    return numerator / denominator

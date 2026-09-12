@@ -9,6 +9,15 @@ from .answer_evaluation import (
     AnswerEvaluator,
     aggregate_evaluations,
 )
+from .attribution import (
+    AttributionResult,
+    Claim,
+    ClaimAttribution,
+    ClaimAttributor,
+    ClaimExtractor,
+    DeterministicClaimAttributor,
+    DeterministicClaimExtractor,
+)
 from .benchmark import BenchmarkRunner, DeterministicBenchmarkRunner
 from .chunkers import Chunker, FixedSizeChunker
 from .citations import AnswerResult, Citation, citations_from_context
@@ -54,14 +63,21 @@ __all__ = [
     "AnswerEvaluation",
     "AnswerEvaluator",
     "AnswerResult",
+    "AttributionResult",
     "BenchmarkRunner",
     "Chunk",
     "Chunker",
     "Citation",
+    "Claim",
+    "ClaimAttribution",
+    "ClaimAttributor",
+    "ClaimExtractor",
     "Context",
     "ContextBuilder",
     "DenseRetriever",
     "DeterministicBenchmarkRunner",
+    "DeterministicClaimAttributor",
+    "DeterministicClaimExtractor",
     "DeterministicContextBuilder",
     "DeterministicEmbedder",
     "DeterministicGenerator",
