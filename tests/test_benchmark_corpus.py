@@ -26,7 +26,7 @@ from pathlib import Path
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     DeterministicBenchmarkRunner,
     DeterministicContextBuilder,
     DeterministicEmbedder,

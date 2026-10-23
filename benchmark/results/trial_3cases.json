@@ -1,0 +1,417 @@
+{
+  "experiment_id": "multihop_wiki_comparison",
+  "dataset": "benchmark/datasets/multihop_wiki.json",
+  "dataset_version": "1.0",
+  "dataset_sha256_16": "fce6786086a4dd57",
+  "git_sha": "114a4f40f196649f6643753afbaaa33b010a989b",
+  "python_version": "3.11.9",
+  "timestamp": "2026-10-21T19:29:08+0800",
+  "scoring_rule": "answer_correct = for every group in answer_keyword_groups, at least one keyword appears in the normalized answer. For unanswerable cases, answer_correct = at least one refusal_keyword appears. All matching is case-insensitive after stripping punctuation.",
+  "link_construction": "WikiPage links_to/links_from are manually verified from source document content, NOT produced by WikiCompiler. WikiCompiler currently leaves links_to empty; this dataset uses hand-built linked pages to evaluate follow_links capability. This is explicitly recorded as a capability gap of the current compiler.",
+  "link_source": "manual",
+  "comparability_notes": {
+    "retrieval_evidence_metrics": "COMPARABLE across Baseline and Experiment. Both measure whether required pages were found (evidence_recall, source_precision, multi_hop_success), independent of the answer generator.",
+    "answer_quality_metrics": "NOT directly comparable. Baseline uses DeterministicGenerator (offline extractive, copies text from retrieved chunks). Experiment uses a real LLM. Differences in answer_accuracy may come from retrieval, evidence organization, OR the generator itself. Report as independent system results, not a head-to-head comparison.",
+    "scoring_caveat": "Answer scoring uses keyword_group_match (lexical heuristic). A semantically correct paraphrase may score 0; a verbatim copy may score 1. This is not an LLM-as-judge evaluation.",
+    "unanswerable_caveat": "Only 1 unanswerable case in this dataset. unanswerable_handling is not a reliable measure of refusal ability."
+  },
+  "config": {
+    "baseline": {
+      "pipeline": "DeterministicRAGPipeline",
+      "retriever": "HybridRetriever(dense + bm25)",
+      "chunk_size": 120,
+      "overlap": 20,
+      "top_k": 5,
+      "generator": "DeterministicGenerator (offline, no LLM)"
+    },
+    "experiment": {
+      "agent": "WikiAgent",
+      "live": true,
+      "base_url": "https://api.deepseek.com",
+      "model": "deepseek-flash",
+      "max_steps": 8,
+      "search_top_k": 5,
+      "link_source": "manual",
+      "api_key_recorded": false
+    },
+    "limit": 3
+  },
+  "working_tree_status": {
+    "dirty": true,
+    "file_count": 8
+  },
+  "source_file_sha256_16": {
+    "benchmark/run_multihop_evaluation.py": "af1fe237e70822a9",
+    "src/zmrag/wiki/wiki_agent.py": "3834045e04041f84",
+    "src/zmrag/wiki/wiki_compiler.py": "73c3adcd02f1daa7",
+    "src/zmrag/wiki/wiki_index.py": "1da07287d408f463",
+    "src/zmrag/wiki/wiki_retriever.py": "9de57fe1a528109e",
+    "src/zmrag/wiki/wiki_schema.py": "856370383befe0c0",
+    "src/zmrag/wiki/wiki_link_resolver.py": "5a18b38f59be549b",
+    "src/zmrag/llm_generators.py": "b0c7fadb410b74ef"
+  },
+  "results": {
+    "baseline": {
+      "per_case": [
+        {
+          "id": "mh01_manager_title",
+          "question": "What is the job title of the person Alice Smith reports to?",
+          "answer": "ct Orion. Carol reports to Bob Jones, the Director of Engineering. Her office is on the first floor of Building A. Carol",
+          "answer_correct": true,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "none",
+          "status": "answered",
+          "sources": [
+            "carol",
+            "david",
+            "alice",
+            "alice",
+            "bob"
+          ],
+          "accessed_pages": [
+            "alice",
+            "bob",
+            "carol",
+            "david"
+          ],
+          "required_pages": [
+            "alice",
+            "bob"
+          ],
+          "evidence_recall": 1.0,
+          "evidence_recall_numerator": 2,
+          "evidence_recall_denominator": 2,
+          "source_precision": 0.4,
+          "steps": 1,
+          "pages_read": 4,
+          "error": null
+        },
+        {
+          "id": "mh02_project_budget",
+          "question": "What is the budget of the project led by Alice Smith?",
+          "answer": "Project Orion is Acme Corp's data analytics platform project, initiated in mid-2025. The project is led by David Kim, a ",
+          "answer_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "none",
+          "status": "answered",
+          "sources": [
+            "project_orion",
+            "project_phoenix",
+            "project_phoenix",
+            "building_a",
+            "eve"
+          ],
+          "accessed_pages": [
+            "building_a",
+            "eve",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "required_pages": [
+            "alice",
+            "project_phoenix"
+          ],
+          "evidence_recall": 0.5,
+          "evidence_recall_numerator": 1,
+          "evidence_recall_denominator": 2,
+          "source_precision": 0.2,
+          "steps": 1,
+          "pages_read": 4,
+          "error": null
+        },
+        {
+          "id": "mh03_orion_lead_chain",
+          "question": "Who leads Project Orion and who does that person report to?",
+          "answer": "ined the company in 2022 and currently contributes to two active projects: Project Phoenix and Project Orion. Carol repo",
+          "answer_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "none",
+          "status": "answered",
+          "sources": [
+            "carol",
+            "eve",
+            "project_orion",
+            "project_orion",
+            "alice"
+          ],
+          "accessed_pages": [
+            "alice",
+            "carol",
+            "eve",
+            "project_orion"
+          ],
+          "required_pages": [
+            "project_orion",
+            "david",
+            "eve"
+          ],
+          "evidence_recall": 0.6666666666666666,
+          "evidence_recall_numerator": 2,
+          "evidence_recall_denominator": 3,
+          "source_precision": 0.4,
+          "steps": 1,
+          "pages_read": 4,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "total_cases": 3,
+        "answerable_cases": 3,
+        "unanswerable_cases": 0,
+        "multi_hop_cases": 3,
+        "retrieval_evidence_metrics": {
+          "note": "Comparable across Baseline and Experiment: both measure whether required pages were found, independent of the answer generator.",
+          "mean_evidence_recall_answerable": {
+            "value": 0.7222222222222222,
+            "numerator_sum": 5,
+            "denominator_sum": 7,
+            "scope": "answerable cases only (unanswerable excluded; evidence_recall=None)"
+          },
+          "mean_source_precision": {
+            "value": 0.3333333333333333,
+            "scope": "all cases"
+          },
+          "evidence_support_rate_answerable": {
+            "value": 0.3333333333333333,
+            "numerator": 1,
+            "denominator": 3,
+            "definition": "answer_correct AND evidence_recall==1.0, among answerable cases"
+          },
+          "multi_hop_success_rate": {
+            "value": 0.3333333333333333,
+            "numerator": 1,
+            "denominator": 3,
+            "definition": "answer_correct AND evidence_recall==1.0, among answerable multi-hop cases"
+          },
+          "unanswerable_cases": {
+            "count": 0,
+            "evidence_recall_treatment": "excluded from mean (evidence_recall=None, not 1.0)"
+          }
+        },
+        "answer_quality_metrics": {
+          "note": "NOT directly comparable across systems: Baseline uses DeterministicGenerator (offline extractive), Experiment uses a real LLM. Report as independent results.",
+          "answer_accuracy": {
+            "value": 0.3333333333333333,
+            "numerator": 1,
+            "denominator": 3,
+            "scope": "all cases"
+          },
+          "answerable_accuracy": {
+            "value": 0.3333333333333333,
+            "numerator": 1,
+            "denominator": 3,
+            "scope": "answerable cases only"
+          },
+          "unanswerable_handling": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 0,
+            "scope": "unanswerable cases only",
+            "caveat": "Only 1 unanswerable case in this dataset; not a reliable measure of refusal ability."
+          },
+          "scoring_rule": "keyword_group_match (lexical heuristic, NOT semantic correctness; paraphrases may score low even when correct)"
+        },
+        "efficiency_metrics": {
+          "mean_steps": 1.0,
+          "mean_pages_read": 4.0,
+          "failure_rate": 0.0,
+          "budget_exhausted_rate": 0.0
+        },
+        "answer_accuracy": 0.3333333333333333,
+        "answerable_accuracy": 0.3333333333333333,
+        "unanswerable_handling": 0.0,
+        "mean_evidence_recall": 0.7222222222222222,
+        "mean_source_precision": 0.3333333333333333,
+        "multi_hop_success_rate": 0.3333333333333333,
+        "mean_steps": 1.0,
+        "mean_pages_read": 4.0,
+        "failure_rate": 0.0,
+        "budget_exhausted_rate": 0.0,
+        "correct_count": 1,
+        "answerable_correct_count": 1
+      }
+    },
+    "experiment": {
+      "per_case": [
+        {
+          "id": "mh01_manager_title",
+          "question": "What is the job title of the person Alice Smith reports to?",
+          "answer": "Alice Smith reports to Bob Jones, whose job title is Director of Engineering at Acme Corp.",
+          "answer_correct": true,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "manual",
+          "status": "answered",
+          "sources": [
+            "alice",
+            "bob"
+          ],
+          "accessed_pages": [
+            "alice",
+            "bob",
+            "building_a",
+            "project_phoenix"
+          ],
+          "required_pages": [
+            "alice",
+            "bob"
+          ],
+          "evidence_recall": 1.0,
+          "evidence_recall_numerator": 2,
+          "evidence_recall_denominator": 2,
+          "source_precision": 1.0,
+          "steps": 3,
+          "pages_read": 2,
+          "error": null
+        },
+        {
+          "id": "mh02_project_budget",
+          "question": "What is the budget of the project led by Alice Smith?",
+          "answer": "Alice Smith leads Project Phoenix (Acme Corp's internal platform migration initiative). Project Phoenix has an allocated budget of five hundred thousand dollars.",
+          "answer_correct": true,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "manual",
+          "status": "answered",
+          "sources": [
+            "alice",
+            "project_phoenix"
+          ],
+          "accessed_pages": [
+            "alice",
+            "bob",
+            "building_a",
+            "carol",
+            "david",
+            "eve",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "required_pages": [
+            "alice",
+            "project_phoenix"
+          ],
+          "evidence_recall": 1.0,
+          "evidence_recall_numerator": 2,
+          "evidence_recall_denominator": 2,
+          "source_precision": 1.0,
+          "steps": 3,
+          "pages_read": 3,
+          "error": null
+        },
+        {
+          "id": "mh03_orion_lead_chain",
+          "question": "Who leads Project Orion and who does that person report to?",
+          "answer": "Project Orion is led by David Kim, a principal engineer and the project's technical lead. David Kim reports to Eve Martinez, the VP of Engineering.",
+          "answer_correct": true,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "manual",
+          "status": "answered",
+          "sources": [
+            "project_orion",
+            "david"
+          ],
+          "accessed_pages": [
+            "alice",
+            "carol",
+            "david",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "required_pages": [
+            "project_orion",
+            "david",
+            "eve"
+          ],
+          "evidence_recall": 0.6666666666666666,
+          "evidence_recall_numerator": 2,
+          "evidence_recall_denominator": 3,
+          "source_precision": 1.0,
+          "steps": 5,
+          "pages_read": 2,
+          "error": null
+        }
+      ],
+      "aggregate": {
+        "total_cases": 3,
+        "answerable_cases": 3,
+        "unanswerable_cases": 0,
+        "multi_hop_cases": 3,
+        "retrieval_evidence_metrics": {
+          "note": "Comparable across Baseline and Experiment: both measure whether required pages were found, independent of the answer generator.",
+          "mean_evidence_recall_answerable": {
+            "value": 0.8888888888888888,
+            "numerator_sum": 6,
+            "denominator_sum": 7,
+            "scope": "answerable cases only (unanswerable excluded; evidence_recall=None)"
+          },
+          "mean_source_precision": {
+            "value": 1.0,
+            "scope": "all cases"
+          },
+          "evidence_support_rate_answerable": {
+            "value": 0.6666666666666666,
+            "numerator": 2,
+            "denominator": 3,
+            "definition": "answer_correct AND evidence_recall==1.0, among answerable cases"
+          },
+          "multi_hop_success_rate": {
+            "value": 0.6666666666666666,
+            "numerator": 2,
+            "denominator": 3,
+            "definition": "answer_correct AND evidence_recall==1.0, among answerable multi-hop cases"
+          },
+          "unanswerable_cases": {
+            "count": 0,
+            "evidence_recall_treatment": "excluded from mean (evidence_recall=None, not 1.0)"
+          }
+        },
+        "answer_quality_metrics": {
+          "note": "NOT directly comparable across systems: Baseline uses DeterministicGenerator (offline extractive), Experiment uses a real LLM. Report as independent results.",
+          "answer_accuracy": {
+            "value": 1.0,
+            "numerator": 3,
+            "denominator": 3,
+            "scope": "all cases"
+          },
+          "answerable_accuracy": {
+            "value": 1.0,
+            "numerator": 3,
+            "denominator": 3,
+            "scope": "answerable cases only"
+          },
+          "unanswerable_handling": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 0,
+            "scope": "unanswerable cases only",
+            "caveat": "Only 1 unanswerable case in this dataset; not a reliable measure of refusal ability."
+          },
+          "scoring_rule": "keyword_group_match (lexical heuristic, NOT semantic correctness; paraphrases may score low even when correct)"
+        },
+        "efficiency_metrics": {
+          "mean_steps": 3.6666666666666665,
+          "mean_pages_read": 2.3333333333333335,
+          "failure_rate": 0.0,
+          "budget_exhausted_rate": 0.0
+        },
+        "answer_accuracy": 1.0,
+        "answerable_accuracy": 1.0,
+        "unanswerable_handling": 0.0,
+        "mean_evidence_recall": 0.8888888888888888,
+        "mean_source_precision": 1.0,
+        "multi_hop_success_rate": 0.6666666666666666,
+        "mean_steps": 3.6666666666666665,
+        "mean_pages_read": 2.3333333333333335,
+        "failure_rate": 0.0,
+        "budget_exhausted_rate": 0.0,
+        "correct_count": 3,
+        "answerable_correct_count": 3
+      }
+    }
+  }
+}

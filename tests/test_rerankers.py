@@ -2,7 +2,7 @@
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     DeterministicReranker,
     Reranker,
@@ -234,7 +234,7 @@ def test_top_k_beyond_count_returns_all():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Reranker", "DeterministicReranker"} <= set(__all__)
     assert isinstance(DeterministicReranker(), Reranker)

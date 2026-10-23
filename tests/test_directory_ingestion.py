@@ -3,7 +3,7 @@
 import pytest
 from pathlib import Path
 
-from zmrag import (
+from zmwiki import (
     DirectoryIngestor,
     Document,
     FileSource,
@@ -284,7 +284,7 @@ def test_delegates_reading_to_file_ingestor(tmp_path):
 
 
 def test_directory_ingestion_module_has_no_stage_coupling():
-    import zmrag.directory_ingestion as di
+    import zmwiki.directory_ingestion as di
 
     for name in (
         "Chunker",
@@ -298,6 +298,6 @@ def test_directory_ingestion_module_has_no_stage_coupling():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"DirectoryIngestor", "PlainTextDirectoryIngestor"} <= set(__all__)

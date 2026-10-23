@@ -3,10 +3,10 @@
 This module pins what Phase 11 Step 2 adds without touching production code
 beyond the new ``semantic.py`` and without any ML dependency, model, or network:
 
-- importing ``zmrag`` must never load torch / transformers /
+- importing ``zmwiki`` must never load torch / transformers /
   sentence_transformers / fastembed (checked in a *fresh interpreter*, so an
   already-loaded dependency in the test process cannot cause a false failure);
-- ``zmrag.semantic`` must import cleanly with the optional dependency absent;
+- ``zmwiki.semantic`` must import cleanly with the optional dependency absent;
 - constructing ``SemanticEmbeddingProvider`` without the optional dependency
   must raise an actionable ImportError (skipped when the dependency *is*
   installed, so a dev environment never triggers a model download);
@@ -28,17 +28,17 @@ from pathlib import Path
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     DenseRetriever,
     DeterministicEmbedder,
     Embedding,
     InMemoryVectorStore,
 )
-from zmrag.embedders import EmbeddingProvider
-from zmrag.semantic import SemanticEmbeddingProvider
+from zmwiki.embedders import EmbeddingProvider
+from zmwiki.semantic import SemanticEmbeddingProvider
 
-#: The ML modules whose auto-load after ``import zmrag`` would be a regression.
+#: The ML modules whose auto-load after ``import zmwiki`` would be a regression.
 ML_MODULES = ("torch", "transformers", "sentence_transformers", "fastembed")
 
 #: Literal pin of DeterministicEmbedder output (cross-process stable by design).
@@ -79,17 +79,17 @@ class _FakeBackend:
 
 @pytest.fixture
 def provider(monkeypatch):
-    import zmrag.semantic as semantic
+    import zmwiki.semantic as semantic
 
     monkeypatch.setattr(semantic, "_create_backend", lambda **kwargs: _FakeBackend())
     return SemanticEmbeddingProvider(model_name="unused/fake-model")
 
 
-# --- A/B. import zmrag must not auto-load ML dependencies ----------------------
+# --- A/B. import zmwiki must not auto-load ML dependencies ----------------------
 
 
-def test_import_zmrag_does_not_load_ml_dependencies():
-    """A fresh interpreter imports zmrag; no ML module may appear in sys.modules.
+def test_import_zmwiki_does_not_load_ml_dependencies():
+    """A fresh interpreter imports zmwiki; no ML module may appear in sys.modules.
 
     Run in a subprocess so the state of the current pytest process (which may
     already hold some dependency) cannot cause a false failure.
@@ -98,7 +98,7 @@ def test_import_zmrag_does_not_load_ml_dependencies():
     code = (
         "import sys\n"
         f"sys.path.insert(0, {str(root / 'src')!r})\n"
-        "import zmrag\n"
+        "import zmwiki\n"
         "loaded = sorted(m for m in "
         "('torch', 'transformers', 'sentence_transformers', 'fastembed') "
         "if m in sys.modules)\n"
@@ -115,11 +115,11 @@ def test_import_zmrag_does_not_load_ml_dependencies():
     assert last and last[-1] == "LOADED:", last
 
 
-# --- C. zmrag.semantic imports cleanly without the optional dependency ---------
+# --- C. zmwiki.semantic imports cleanly without the optional dependency ---------
 
 
 def test_semantic_module_imports_without_optional_dependency():
-    import zmrag.semantic as semantic  # noqa: F401  (must not raise)
+    import zmwiki.semantic as semantic  # noqa: F401  (must not raise)
 
     assert isinstance(SemanticEmbeddingProvider, type)
     assert issubclass(SemanticEmbeddingProvider, EmbeddingProvider)
@@ -137,7 +137,7 @@ def test_instantiation_without_dependency_raises_actionable_importerror():
     with pytest.raises(ImportError) as excinfo:
         SemanticEmbeddingProvider(model_name="BAAI/bge-small-en-v1.5")
     message = str(excinfo.value)
-    assert "zmrag[semantic]" in message
+    assert "zmwiki[semantic]" in message
     assert "sentence-transformers" in message
 
 
@@ -194,6 +194,6 @@ def test_provider_embed_many_contract_edges(provider):
 
 
 def test_deterministic_embedder_output_is_byte_stable_after_semantic_import():
-    # This module already imported zmrag.semantic; the deterministic profile
+    # This module already imported zmwiki.semantic; the deterministic profile
     # must be untouched: DeterministicEmbedder output stays exactly pinned.
     assert DeterministicEmbedder().embed("alpha beta gamma").vector == _PINNED_VECTOR

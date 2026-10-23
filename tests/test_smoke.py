@@ -1,10 +1,10 @@
 def test_import():
-    import zmrag
+    import zmwiki
 
-    assert zmrag.__version__
+    assert zmwiki.__version__
 
 
 def test_version():
-    import zmrag
+    import zmwiki
 
-    assert zmrag.__version__.count(".") == 2
+    assert zmwiki.__version__.count(".") == 2

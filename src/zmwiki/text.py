@@ -2,7 +2,7 @@
 
 One tokenization path for answer evaluation and claim attribution, so the two
 can never drift into measuring different things. Everything here is stdlib plus
-the existing :class:`~zmrag.tokenizers.Tokenizer`: NFC normalization, sentence
+the existing :class:`~zmwiki.tokenizers.Tokenizer`: NFC normalization, sentence
 splitting, unique-token handling, and token coverage.
 
 Not a NLP toolkit, and deliberately not exported at the package root: these are

@@ -12,7 +12,7 @@ input validation ordering, determinism, immutability, and a real-pipeline E2E.
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     DeterministicContextBuilder,
     DeterministicEmbedder,
@@ -421,7 +421,7 @@ def test_end_to_end_real_pipeline_through_runner_hits_ground_truth():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert "RetrievalEvaluationRunner" in __all__
     runner = RetrievalEvaluationRunner(pipeline=FakePipeline(), harness=_harness())

@@ -2,7 +2,7 @@
 
 import pytest
 
-from zmrag import Document, Metadata, Source
+from zmwiki import Document, Metadata, Source
 
 
 class FileSource(Source):
@@ -105,7 +105,7 @@ def test_frozen_prevents_assignment():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Document", "Source", "Metadata"} <= set(__all__)
     bag: Metadata = {"k": 1}

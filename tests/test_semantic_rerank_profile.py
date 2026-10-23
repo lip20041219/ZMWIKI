@@ -31,11 +31,11 @@ The runner is only *imported* here -- its heavy work happens in ``main()``,
 which constructs the models. No offline test calls it.
 
 Integration tests (real sentence-transformers embedding + CrossEncoder model)
-live at the bottom and are gated behind ``ZMRAG_SEMANTIC_INTEGRATION=1`` so
+live at the bottom and are gated behind ``zmwiki_SEMANTIC_INTEGRATION=1`` so
 the default suite skips them and never downloads/loads a model. Run them
 explicitly:
 
-    set ZMRAG_SEMANTIC_INTEGRATION=1
+    set zmwiki_SEMANTIC_INTEGRATION=1
     python -m pytest tests/test_semantic_rerank_profile.py::\
         test_integration_real_semantic_rerank_profile -q
 
@@ -234,18 +234,18 @@ def test_frozen_evidence_unchanged(name):
 
 # ---------------------------------------------------------------------------
 # Integration: real sentence-transformers embedding + CrossEncoder model.
-# Skipped by default; enable with ZMRAG_SEMANTIC_INTEGRATION=1 (requires the
+# Skipped by default; enable with zmwiki_SEMANTIC_INTEGRATION=1 (requires the
 # `semantic` optional dep and a model cache or network). The default suite
 # must never construct a model.
 # ---------------------------------------------------------------------------
 
 def _integration_enabled() -> bool:
-    return bool(os.environ.get("ZMRAG_SEMANTIC_INTEGRATION"))
+    return bool(os.environ.get("zmwiki_SEMANTIC_INTEGRATION"))
 
 
 @pytest.mark.skipif(
     not _integration_enabled(),
-    reason="real-model integration; set ZMRAG_SEMANTIC_INTEGRATION=1 to run",
+    reason="real-model integration; set zmwiki_SEMANTIC_INTEGRATION=1 to run",
 )
 def test_integration_real_semantic_rerank_profile(tmp_path):
     """Re-run the real rerank profile to a fresh path; compare to committed.

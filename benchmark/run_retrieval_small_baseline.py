@@ -48,7 +48,7 @@ from pathlib import Path
 # repo root without ``pip install``. Stdlib only.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from zmrag import (
+from zmwiki import (
     DenseRetriever,
     DeterministicBenchmarkRunner,
     DeterministicContextBuilder,

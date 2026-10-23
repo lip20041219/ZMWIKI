@@ -64,7 +64,7 @@ _DEFAULT_TEMPERATURE = 0.0
 #: The one environment variable consulted, and only when no ``api_key``
 #: argument was given. No vendor-specific variable (OPENAI_API_KEY,
 #: DEEPSEEK_API_KEY, ANTHROPIC_API_KEY, ...) is read or required.
-_ENV_API_KEY = "ZMRAG_API_KEY"
+_ENV_API_KEY = "ZMWIKI_API_KEY"
 
 #: Path appended to ``base_url``. ``base_url`` is the API root -- for OpenAI
 #: that is ``https://api.openai.com/v1``, not the full endpoint.
@@ -211,7 +211,7 @@ class OpenAICompatibleGenerator(Generator):
     exceptions; the pipeline owns none of that and never sees the wire format.
 
     The Context is read, never modified: ``context.text`` is embedded verbatim
-    by :func:`zmrag.generators.build_prompt`, and ``context.chunks`` is not
+    by :func:`zmwiki.generators.build_prompt`, and ``context.chunks`` is not
     touched at all. This class never retrieves, reranks, packs, or cites.
     """
 
@@ -405,7 +405,7 @@ def _check_base_url(base_url: object) -> str:
 
 
 def _resolve_api_key(api_key: object) -> str | None:
-    """Explicit argument first, then ``ZMRAG_API_KEY``, then no key at all.
+    """Explicit argument first, then ``ZMWIKI_API_KEY``, then no key at all.
 
     A key is read once, here, so a running generator can never pick one up
     mid-flight. ``None`` means "send no Authorization header" -- local servers

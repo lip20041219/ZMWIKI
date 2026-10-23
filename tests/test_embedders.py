@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     DeterministicEmbedder,
     Document,
     Embedding,
@@ -136,8 +136,8 @@ def test_cross_process_stable():
     provider = DeterministicEmbedder(dimension=6)
     expected = provider.embed("hello world").vector
     code = (
-        "import zmrag; "
-        "print(zmrag.DeterministicEmbedder(dimension=6).embed('hello world').vector)"
+        "import zmwiki; "
+        "print(zmwiki.DeterministicEmbedder(dimension=6).embed('hello world').vector)"
     )
     out = subprocess.run(
         [sys.executable, "-c", code], capture_output=True, text=True, check=True
@@ -173,7 +173,7 @@ def test_invalid_dimension_type_rejected(bad):
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Embedding", "EmbeddingProvider", "DeterministicEmbedder"} <= set(__all__)
 

@@ -9,7 +9,7 @@ DeterministicRAGPipeline output is consumable by the harness.
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     DeterministicContextBuilder,
     DeterministicEmbedder,
@@ -352,7 +352,7 @@ def test_end_to_end_pipeline_context_through_harness_hit_and_miss():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert "EvaluationHarness" in __all__
     assert isinstance(_harness(), EvaluationHarness)

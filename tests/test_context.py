@@ -4,7 +4,7 @@ import dataclasses
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     Context,
     ContextBuilder,
@@ -60,7 +60,7 @@ def test_context_builder_is_abstract():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Context", "ContextBuilder", "DeterministicContextBuilder"} <= set(__all__)
 

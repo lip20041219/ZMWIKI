@@ -1,17 +1,17 @@
-# ZMRAG Architecture
+# zmwiki Architecture
 
-Design intent and implemented-stage documentation for the ZMRAG knowledge /
+Design intent and implemented-stage documentation for the zmwiki knowledge /
 retrieval pipeline -- phases 1-7, through Pipeline Orchestration.
 
 ## Mission
 
-ZMRAG is an engineering-grade **Knowledge / Retrieval Layer**: a reusable,
+zmwiki is an engineering-grade **Knowledge / Retrieval Layer**: a reusable,
 testable, model-agnostic RAG foundation. It is an independent project, not an
 agent, and is intentionally decoupled from ZMAI and ZMForge at this stage.
 
 ## Responsibilities
 
-The data-to-context pipeline ZMRAG owns:
+The data-to-context pipeline zmwiki owns:
 
 | Stage                | Concern                                              |
 | -------------------- | ---------------------------------------------------- |
@@ -31,7 +31,7 @@ The data-to-context pipeline ZMRAG owns:
 - Tool execution / agent lifecycle / autonomous action
 - UI
 
-Those belong to ZMAI (reasoning/planning) and ZMForge (execution/tools). ZMRAG
+Those belong to ZMAI (reasoning/planning) and ZMForge (execution/tools). zmwiki
 exposes retrieval capabilities and consumes nothing from them.
 
 ## Core design principles
@@ -46,13 +46,13 @@ exposes retrieval capabilities and consumes nothing from them.
 
 ## Data contract: Document
 
-`Document` is the base data object of the ZMRAG pipeline:
+`Document` is the base data object of the zmwiki pipeline:
 
 ```
 External Input -> Document -> (later) Chunk
 ```
 
-Shipped in `src/zmrag/schema.py` and exposed at the package root. It is an
+Shipped in `src/zmwiki/schema.py` and exposed at the package root. It is an
 immutable value object holding `id`, `content`, `metadata`, an optional typed
 `Source`, and an open `content_type`. It owns **no logic**: no chunking,
 embedding, indexing, retrieval, ranking, LLM generation, or agent reasoning.
@@ -76,7 +76,7 @@ would break ordinary user-supplied dicts.
 ## Data contract: Chunk
 
 A `Chunk` is the smallest retrievable unit a future Chunker cuts a Document
-into. Shipped alongside `Document` in `src/zmrag/schema.py`; exported at the
+into. Shipped alongside `Document` in `src/zmwiki/schema.py`; exported at the
 package root. It is an immutable value object holding `id` (its own chunk id),
 `document_id` (its parent), `text`, a 0-based integer `position`, and its own
 `metadata`.
@@ -123,7 +123,7 @@ normalized `Document`, and nothing more. It:
   generates an id (no UUID / random / timestamp / db-generated id);
 - does not chunk, embed, index, retrieve, rerank, or call an LLM.
 
-**Current implementation** — `PlainTextIngestor` in `src/zmrag/ingestion.py`,
+**Current implementation** — `PlainTextIngestor` in `src/zmwiki/ingestion.py`,
 exported at the package root. It builds `Document(id, content=text,
 content_type="text/plain", source=None)`, optionally forwarding caller
 `metadata`. All validation is delegated to `Document`'s own constructor
@@ -152,7 +152,7 @@ Document`) is the file front door of the pipeline, built on the same
 deterministic principles as Text Ingestion.
 
 **Current implementation (Phase 6B)** — `PlainTextFileIngestor` in
-`src/zmrag/file_ingestion.py`, exported at the package root. It is strictly
+`src/zmwiki/file_ingestion.py`, exported at the package root. It is strictly
 minimal:
 
 - **`.txt` only** — the extension is matched case-insensitively
@@ -204,7 +204,7 @@ metadata=None) -> list[Document]`) ingests every `.txt` file in one directory
 as Documents, in one deterministic batch.
 
 **Current implementation (Phase 6C)** — `PlainTextDirectoryIngestor` in
-`src/zmrag/directory_ingestion.py`, exported at the package root. Strict
+`src/zmwiki/directory_ingestion.py`, exported at the package root. Strict
 separation of duties:
 
 - `DirectoryIngestor` = **discovery + ordering + batch delegation** only;
@@ -253,12 +253,12 @@ Document into ordered, immutable Chunks. A Chunker never mutates its input,
 never embeds/indexes/retrieves, never calls an LLM, and is deterministic.
 
 **Current implementation** — `FixedSizeChunker(chunk_size, overlap=0)` in
-`src/zmrag/chunkers.py`. Purely lexical: text is sliced into windows of at
+`src/zmwiki/chunkers.py`. Purely lexical: text is sliced into windows of at
 most `chunk_size`, never stripped or rewritten; chunking is "split, don't
 clean".
 
 - **chunk_size** — maximum window size, in **characters (Python code points)**, *not*
-  tokens. ZMRAG has no tokenizer abstraction yet, so no token-aware counting.
+  tokens. zmwiki has no tokenizer abstraction yet, so no token-aware counting.
 - **overlap** — max characters shared between adjacent windows; windows begin
   every `chunk_size - overlap` characters; the final window may be shorter.
   With `overlap == 0`, concatenating chunk texts reproduces the input exactly.
@@ -277,7 +277,7 @@ Text -> EmbeddingProvider -> Embedding
 
 **Provider abstraction** — `EmbeddingProvider` (abstract: `embed(text)`,
 `embed_many(texts)`, `dimension`) is the only thing core code depends on. No
-concrete provider is coupled in, so ZMRAG stays agnostic of OpenAI / DeepSeek /
+concrete provider is coupled in, so zmwiki stays agnostic of OpenAI / DeepSeek /
 Gemini / local models / any third-party embedding library. `embed_many` equals
 `[embed(t) for t in texts]` in content and order by default.
 
@@ -341,7 +341,7 @@ User Query ───────────────────────
 ```
 
 `QueryRewriter` (abstract: `rewrite(query: str) -> str`, in
-`src/zmrag/rewriters.py`) maps the query the user is asking with into the query
+`src/zmwiki/rewriters.py`) maps the query the user is asking with into the query
 the retrieval path searches with. One method, one direction, no state carried
 between queries: it never retrieves, embeds, fuses, reranks, packs context,
 generates, or attributes, and there is no route from a rewriter to a store,
@@ -560,9 +560,9 @@ against actual provider constraints:
 
 - `CrossEncoderReranker(provider)` where `provider` exposes a
   `score_pairs(query, texts) -> list[float]` contract (model-agnostic, matching
-  ZMRAG's injection style: the provider, not ZMRAG, holds the model).
-- Scored outside ZMRAG's deterministic core; candidates pass through an
-  injected scorer so ZMRAG never depends on torch/transformers/FlagEmbedding.
+  zmwiki's injection style: the provider, not zmwiki, holds the model).
+- Scored outside zmwiki's deterministic core; candidates pass through an
+  injected scorer so zmwiki never depends on torch/transformers/FlagEmbedding.
 - Chunk metadata could later hold query-independent cached encodings; query
   expansion / learned ranking remain separate, unbuilt stages.
 
@@ -589,7 +589,7 @@ never reranks, never re-scores, never summarizes/compresses, never generates a
 prompt, and never calls a model. The reranker decides the order; ContextBuilder
 only packs.
 
-**`Context`** (in `src/zmrag/context.py`) is a frozen value object with just
+**`Context`** (in `src/zmwiki/context.py`) is a frozen value object with just
 two fields: `text: str` (the assembled text handed to the Generator) and
 `chunks: tuple[Chunk, ...]` (the exact Chunk objects whose entries appear in
 `text`). Provenance is structural: `chunks[i]` corresponds to the `[i+1]`
@@ -609,7 +609,7 @@ more. Chunk texts are emitted in input order as numbered entries
   by score / id / length. Reranker output order *is* the context order.
 - **max_chars** — a budget on the **final `Context.text` length in Python
   characters / code points**, numbering and separators (`\n\n`) included. It is
-  *not* an LLM token budget; ZMRAG has no token-counting abstraction (a future
+  *not* an LLM token budget; zmwiki has no token-counting abstraction (a future
   `TokenBudget` may be layered on, but is not implemented here). `max_chars`
   is a required, validated int >= 1 (bool/float/str/None/0 rejected).
 - **Greedy stop** — chunks are added in order until the next one would push
@@ -678,7 +678,7 @@ temperature/max-tokens knobs, so it never pretends to be an LLM; being
 copy-only it cannot hallucinate. `Context(text="", chunks=())` yields `""` — no
 evidence, no fabricated answer.
 
-`OpenAICompatibleGenerator` (in `src/zmrag/llm_generators.py`) is the real
+`OpenAICompatibleGenerator` (in `src/zmwiki/llm_generators.py`) is the real
 adapter: it builds one request from the query and the Context (a fixed system
 instruction plus `build_prompt(query, context)` as the user message), sends it
 through an injected transport, and returns `choices[0].message.content`.
@@ -703,7 +703,7 @@ DNS/TLS failure, or timeout raises `GeneratorTransportError` (with the
 underlying `urllib`/socket exception chained). There is no fallback answer, no
 default string, and no retry loop — `GeneratorError` is the shared base.
 
-**Credentials** — the key comes from the `api_key` argument or `ZMRAG_API_KEY`
+**Credentials** — the key comes from the `api_key` argument or `ZMWIKI_API_KEY`
 (one generic variable; no vendor-specific variable is read). It is resolved
 once at construction, sent only as a bearer header, and never rendered:
 `OpenAICompatibleGenerator.__repr__` reports only whether a key is set, and
@@ -792,7 +792,7 @@ Phase 7 wires every stage above into one dependency-injected, deterministic,
 end-to-end pipeline. The pipeline adds **no new algorithm** -- chunking,
 embedding, vector similarity, BM25, fusion, reranking, and context packing all
 live in the injected collaborators. `DeterministicRAGPipeline` in
-`src/zmrag/pipeline.py` (ABC: `RAGPipeline`, exported at the package root)
+`src/zmwiki/pipeline.py` (ABC: `RAGPipeline`, exported at the package root)
 owns orchestration, dependency wiring, indexing coordination, and query
 coordination, and nothing else.
 
@@ -939,7 +939,7 @@ Evaluator
 EvaluationResult
 ```
 
-Evaluation (Phase 8A, in `src/zmrag/evaluation.py`, exported at the package
+Evaluation (Phase 8A, in `src/zmwiki/evaluation.py`, exported at the package
 root) is an **offline, deterministic retrieval-metric contract**. A pipeline /
 retriever / reranker runs first and produces results; the evaluator only
 computes metrics over those already-obtained results. Evaluation does **not**
@@ -1003,7 +1003,7 @@ they never assert (or fake) benchmark quality.
 
 ## Evaluation Harness
 
-Phase 8B (in `src/zmrag/evaluation_harness.py`, exported at the package root)
+Phase 8B (in `src/zmwiki/evaluation_harness.py`, exported at the package root)
 adds an orchestration shell around an `Evaluator` -- execution, validation,
 and reporting -- while keeping the metric math exactly where Phase 8A put it.
 
@@ -1077,7 +1077,7 @@ already delegates to unchanged.
 ## Ranking Metrics
 
 Phase 8C adds the classic **offline ranking metrics** to the Phase 8A / 8B
-evaluation contract (still in `src/zmrag/evaluation.py`, on
+evaluation contract (still in `src/zmwiki/evaluation.py`, on
 `RetrievalEvaluator` / `EvaluationResult`). Evaluation *consumes ranked
 results*; it never produces a ranking.
 
@@ -1143,7 +1143,7 @@ exports; only `RetrievalEvaluator` gains the optional `k`, and
 ## Retrieval Evaluation Integration
 
 Phase 9A closes the loop between a real pipeline and the Evaluation Harness:
-`RetrievalEvaluationRunner` in `src/zmrag/evaluation_runner.py` (exported at the
+`RetrievalEvaluationRunner` in `src/zmwiki/evaluation_runner.py` (exported at the
 package root) runs a list of `EvaluationCase`s through an injected
 `RAGPipeline`, converts each query's real retrieval output into an
 `EvaluationPrediction`, and hands the prepared pair to an injected
@@ -1333,7 +1333,7 @@ the profile twice and writes only if the two runs are byte-identical.
 
 ## Evaluation Case Set
 
-Phase 9B (in `src/zmrag/evaluation_dataset.py`, exported at the package root)
+Phase 9B (in `src/zmwiki/evaluation_dataset.py`, exported at the package root)
 adds the **case organization contract** of offline retrieval evaluation:
 `EvaluationCaseSet` is an ordered, immutable collection of `EvaluationCase`s
 that exists so a run's inputs are organized and reusable. It sits in front of
@@ -1390,7 +1390,7 @@ takes a `list[EvaluationCase]`; a CaseSet feeds it via `list(case_set.cases)`).
 
 ## Evaluation Dataset Loader
 
-Phase 9C (in `src/zmrag/evaluation_loader.py`, exported at the package root)
+Phase 9C (in `src/zmwiki/evaluation_loader.py`, exported at the package root)
 adds the **input adapter** of offline retrieval evaluation: a local,
 JSON-compatible evaluation-case file is loaded into an `EvaluationCaseSet`, so
 a reusable case set lives on disk and re-enters the Phase 9A / 9B chain
@@ -1459,7 +1459,7 @@ SOTA, or performance claims are made anywhere.
 
 ## Benchmark Runner
 
-Phase 9D (in `src/zmrag/benchmark.py`, exported at the package root) adds the
+Phase 9D (in `src/zmwiki/benchmark.py`, exported at the package root) adds the
 **offline execution layer**: a thin runner that composes the existing stages
 into one deterministic entry point, `EvaluationCaseSet -> EvaluationResult`.
 
@@ -1614,7 +1614,7 @@ testing; experiment registry; result database; dashboard; web UI; CLI
 framework; parallel execution; distributed benchmark; LLM judge; generation
 evaluation. The evidence is a static JSON artifact written by a script; no
 benchmark framework, result store, or production abstraction was added, and
-``src/zmrag/`` is untouched by this phase.
+``src/zmwiki/`` is untouched by this phase.
 
 > This baseline is a deterministic local validation result on a small synthetic
 > corpus and is not a claim of real-world benchmark performance.
@@ -1671,7 +1671,7 @@ statistical significance framework; hyperparameter sweep; automated tuning;
 parallel execution; async execution; experiment registry; experiment database;
 MLflow; Weights & Biases; LLM judge; generation evaluation. The results are a
 static JSON artifact written by a script; no experiment framework, result
-store, or production abstraction was added, and ``src/zmrag/`` is untouched by
+store, or production abstraction was added, and ``src/zmwiki/`` is untouched by
 this phase.
 
 > Results are deterministic, reproducible measurements of the existing system on
@@ -1812,7 +1812,7 @@ path / environment dump); ``tests/test_benchmark_truncation.py`` pins the
 schema, the 18-cell matrix, per-cell determinism, and the E3 cross-phase guard,
 and re-runs the runner to a fresh output path to prove byte-for-byte
 reproduction. Phase 10B / Phase 10C evidence files are read but never
-overwritten, and ``src/zmrag/`` is untouched by this phase. The full test suite
+overwritten, and ``src/zmwiki/`` is untouched by this phase. The full test suite
 passes (832 tests).
 
 **Implemented** -- D1-D4 18-cell truncation matrix; per-cell same-instance and
@@ -1826,7 +1826,7 @@ fusion weights, or ``rrf_k``; learned / semantic reranking under truncation;
 scalability / large-corpus behavior; any recommendation of a "best"
 ``candidate_k`` / ``top_k``; any production dense-vs-BM25 or Weighted-vs-RRF
 claim. The evidence is a static JSON artifact written by a script; no benchmark
-framework, result store, or production abstraction was added, and ``src/zmrag/``
+framework, result store, or production abstraction was added, and ``src/zmwiki/``
 is untouched by this phase.
 
 > Results are deterministic, reproducible measurements of the existing system
@@ -1844,7 +1844,7 @@ dev install, and leaves the frozen deterministic profiles (Phases 10B / 10C /
 
 ### Motivation
 
-Every embedding ZMRAG shipped up to Phase 10D came from
+Every embedding zmwiki shipped up to Phase 10D came from
 ``DeterministicEmbedder`` -- a stdlib, sha256-derived *synthetic* vector that is
 byte-stable but has no semantic content. That made the deterministic local
 benchmarks reproducible, but it is deliberately unsuitable for any semantic-
@@ -1876,11 +1876,11 @@ EvaluationHarness
 RetrievalEvaluator
 ```
 
-``SemanticEmbeddingProvider`` (``src/zmrag/semantic.py``) wraps
+``SemanticEmbeddingProvider`` (``src/zmwiki/semantic.py``) wraps
 sentence-transformers behind a narrow backend adapter. Exactly one model source
 is required (``model_name`` or ``local_model_path``, validated before any
 backend work); results are converted to the library ``Embedding`` value object
-via ``tolist()``, so numpy / torch objects never leak into ZMRAG and never need
+via ``tolist()``, so numpy / torch objects never leak into zmwiki and never need
 to be imported. ``dimension`` is read from the loaded model at construction.
 
 ### Optional dependency boundary
@@ -1890,9 +1890,9 @@ to be imported. ``dimension`` is read from the loaded model at construction.
 - It is **not** in ``dependencies = []`` and **not** in the ``dev`` extra
   (pytest only), so a default install and the CI test suite never import torch.
 - The heavy import happens inside ``_create_backend`` at instantiation time,
-  never at module scope -- importing ``zmrag`` or ``zmrag.semantic`` is always
+  never at module scope -- importing ``zmwiki`` or ``zmwiki.semantic`` is always
   safe, and constructing the provider without the dependency raises an
-  actionable ``ImportError`` naming ``pip install "zmrag[semantic]"``.
+  actionable ``ImportError`` naming ``pip install "zmwiki[semantic]"``.
 - The deterministic profile therefore remains fully dependency-free and
   byte-reproducible across environments.
 
@@ -1978,7 +1978,7 @@ in general, and makes no real-world performance claim.
 
 ### Deterministic profile protection
 
-Phase 11 touches exactly one source file (``src/zmrag/semantic.py``, additive
+Phase 11 touches exactly one source file (``src/zmwiki/semantic.py``, additive
 and never imported by the default graph) and adds optional ``pyproject.toml``
 extras plus tests, a benchmark runner, and evidence. ``embedders.py``,
 ``retrievers.py``, ``stores.py``, ``fusion.py``, ``rerankers.py``,
@@ -1992,7 +1992,7 @@ Phase 11 does **not** implement generation, answer / generated-answer
 evaluation, agents, tool calling, MCP, memory, semantic reranking, persistence,
 a new fusion strategy, new evaluation metrics, or a new corpus / dataset. The
 retrieval/evaluation stack still ends at ranked retrieval results and an
-offline metric result; ZMRAG remains a retrieval layer, not a generated-answer
+offline metric result; zmwiki remains a retrieval layer, not a generated-answer
 RAG or Agent system.
 
 ## Semantic Cross-Encoder Reranking Profile (Phase 12)
@@ -2010,7 +2010,7 @@ byte-identical.
 
 The existing `Reranker` abstraction (`rerank(query, candidates, top_k)`) is the
 integration seam and is reused unchanged: `CrossEncoderReranker`
-(`src/zmrag/semantic_rerank.py`) is a new optional *implementation* of it. The
+(`src/zmwiki/semantic_rerank.py`) is a new optional *implementation* of it. The
 two-stage shape:
 
 ```
@@ -2040,10 +2040,10 @@ files stay frozen (byte-identical to their prior commits).
 ### Optional dependency and lazy model loading
 
 The reranker uses the same optional `semantic` extra already declared in Phase
-11 (`pip install "zmrag[semantic]"`, `sentence-transformers>=2.0`); no new extra
+11 (`pip install "zmwiki[semantic]"`, `sentence-transformers>=2.0`); no new extra
 or dependency is added. `CrossEncoder` is imported only inside `_create_backend`
-at construction time, never at module scope, so `import zmrag` /
-`import zmrag.semantic_rerank` never loads torch / transformers /
+at construction time, never at module scope, so `import zmwiki` /
+`import zmwiki.semantic_rerank` never loads torch / transformers /
 sentence-transformers. Constructing the reranker without the dependency raises
 an actionable `ImportError`.
 
@@ -2098,7 +2098,7 @@ Rerank evidence lives in
 on freshly constructed providers / rerankers. The four prior evidence files
 (Phase 10 baseline / experiments / truncation and Phase 11 semantic) are never
 written by the runner and stay byte-identical to HEAD. Real-model integration
-was executed successfully (gated behind `ZMRAG_SEMANTIC_INTEGRATION=1`).
+was executed successfully (gated behind `zmwiki_SEMANTIC_INTEGRATION=1`).
 
 ## Guiding constraints (development process)
 
@@ -2111,11 +2111,11 @@ was executed successfully (gated behind `ZMRAG_SEMANTIC_INTEGRATION=1`).
 ## Planned module layout (later phases)
 
 > Superseded early-phase plan. Every phase shipped as flat modules directly
-> under `src/zmrag/` (`schema.py`, `chunkers.py`, …, `benchmark.py`) — the
+> under `src/zmwiki/` (`schema.py`, `chunkers.py`, …, `benchmark.py`) — the
 > sections above reference them by file. No sub-package restructure is planned.
 
 ```
-src/zmrag/
+src/zmwiki/
 ├── schema/        # canonical document/chunk/result types
 ├── ingest/        # ingestion + normalization
 ├── chunk/         # chunkers

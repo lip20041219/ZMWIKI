@@ -15,7 +15,7 @@ comparable row for row. See §5.
 | Embedder | `DeterministicEmbedder(dimension=8)` | `SentenceTransformerEmbedder` via `SemanticEmbeddingProvider` |
 | What it is | sha256 hash stand-in -- **no semantic content** | real `sentence-transformers/all-MiniLM-L6-v2`, 384-d |
 | Reproducibility | byte-identical across calls / instances / processes | identical within one pinned model + dependency set; **not** promised across model / torch versions |
-| Dependency | none (stdlib only) | `pip install "zmrag[semantic]"` (opt-in) |
+| Dependency | none (stdlib only) | `pip install "zmwiki[semantic]"` (opt-in) |
 | Network | never | model fetch on first use unless cached; never in the test path |
 | Used for | deterministic regression + architecture testing | observing real semantic retrieval behaviour |
 | Evidence | `retrieval_small_*.json`, `retrieval_truncation.json`, `retrieval_strategy_comparison.json` | `retrieval_semantic_profile.json`, `retrieval_semantic_rerank_profile.json`, `retrieval_strategy_semantic_profile.json` |
@@ -119,8 +119,8 @@ Running the profile therefore reports, exits 0, and **writes nothing**:
 $ python benchmark/run_semantic_profile.py
 semantic profile unavailable: ImportError: SemanticEmbeddingProvider requires
 the 'semantic' optional dependency (sentence-transformers + torch).
-Install it with: pip install "zmrag[semantic]"
-install with: pip install "zmrag[semantic]"
+Install it with: pip install "zmwiki[semantic]"
+install with: pip install "zmwiki[semantic]"
 ```
 
 `main()` returns
@@ -128,7 +128,7 @@ install with: pip install "zmrag[semantic]"
 ```json
 {"available": false,
  "reason": "ImportError: SemanticEmbeddingProvider requires …",
- "install_hint": "pip install \"zmrag[semantic]\""}
+ "install_hint": "pip install \"zmwiki[semantic]\""}
 ```
 
 Rules the runner holds to, and which `tests/test_semantic_profile.py` pins:

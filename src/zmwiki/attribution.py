@@ -18,7 +18,7 @@ supports it and which cited sources do.
 
 Citations are only ever read from the structured ``Citation`` objects. This
 module never parses an answer for ``[1]``, ``doc_a::0``, or any other marker,
-and no such convention exists anywhere in ZMRAG.
+and no such convention exists anywhere in zmwiki.
 
 **What this is not.** Claim extraction is sentence splitting, nothing more:
 no clause decomposition, no subject/predicate analysis, no coreference. Support

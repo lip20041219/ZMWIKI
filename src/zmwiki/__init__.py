@@ -1,4 +1,4 @@
-"""ZMRAG — a model-agnostic Knowledge / Retrieval layer.
+"""zmwiki — a model-agnostic Knowledge / Retrieval layer.
 
 Public API (kept deliberately small): the core data contract. Internal
 modules are not re-exported until they become stable public surface.

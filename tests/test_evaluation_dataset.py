@@ -16,7 +16,7 @@ import json
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     DeterministicContextBuilder,
     DeterministicEmbedder,
@@ -405,7 +405,7 @@ def test_real_pipeline_case_set_is_pure_input_contract():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert "EvaluationCaseSet" in __all__
     case_set = EvaluationCaseSet(cases=(_case("q", "A"),))

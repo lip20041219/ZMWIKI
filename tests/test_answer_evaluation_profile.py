@@ -373,7 +373,7 @@ def test_runner_uses_no_network_no_model_and_no_metric_of_its_own():
         "json",
         "sys",
         "pathlib",
-        "zmrag",
+        "zmwiki",
         "run_retrieval_small_baseline",
     }
     for banned in ("requests", "urllib", "httpx", "socket", "sentence_transformers"):
@@ -386,8 +386,8 @@ def test_runner_uses_no_network_no_model_and_no_metric_of_its_own():
 
 def test_evaluator_is_not_wired_into_the_pipeline():
     # Evaluation stays a separate stage: the pipeline has no evaluator attribute.
-    from zmrag import DeterministicRAGPipeline
+    from zmwiki import DeterministicRAGPipeline
 
     assert "answer_evaluator" not in dir(DeterministicRAGPipeline)
-    source = (ROOT / "src" / "zmrag" / "pipeline.py").read_text(encoding="utf-8")
+    source = (ROOT / "src" / "zmwiki" / "pipeline.py").read_text(encoding="utf-8")
     assert "answer_evaluation" not in source

@@ -14,7 +14,7 @@ metric and without touching production code:
   move the dense ordering of the hash-based stand-in embedder;
 - the runner reproduces the committed evidence from a fresh output path;
 - the opt-in semantic evidence is pinned too, and its real re-run is skipped by
-  default (``ZMRAG_SEMANTIC_INTEGRATION=1`` to enable), matching Phase 11/12.
+  default (``zmwiki_SEMANTIC_INTEGRATION=1`` to enable), matching Phase 11/12.
 """
 
 import json
@@ -285,8 +285,8 @@ def test_runner_loads_no_model_outside_the_opt_in_path():
         ln for ln in source.splitlines() if ln.startswith(("import ", "from "))
     ]
     # The semantic providers exist, but only inside the opt-in function.
-    assert "from zmrag.semantic import" in source
-    assert "from zmrag.semantic_rerank import" in source
+    assert "from zmwiki.semantic import" in source
+    assert "from zmwiki.semantic_rerank import" in source
     assert not any("semantic" in ln for ln in import_lines), import_lines
     banned = ("requests", "urllib", "httpx", "socket", "random", "uuid", "datetime")
     assert not any(any(token in ln for token in banned) for ln in import_lines), import_lines
@@ -352,8 +352,8 @@ def test_semantic_baseline_reproduces_the_frozen_phase12_r2_row():
 
 
 @pytest.mark.skipif(
-    not os.environ.get("ZMRAG_SEMANTIC_INTEGRATION"),
-    reason="real-model integration; set ZMRAG_SEMANTIC_INTEGRATION=1 to run",
+    not os.environ.get("zmwiki_SEMANTIC_INTEGRATION"),
+    reason="real-model integration; set zmwiki_SEMANTIC_INTEGRATION=1 to run",
 )
 def test_integration_real_semantic_query_rewriter_profile(tmp_path):
     """Re-run the real CrossEncoder scenario and compare it to the committed one."""

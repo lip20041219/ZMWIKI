@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "zmrag"
+name = "zmwiki"
 version = "0.1.0"
 description = "Model-agnostic, engineering-grade RAG / Knowledge & Retrieval layer"
 readme = "README.md"
@@ -13,6 +13,8 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
+# Optional retro terminal UI. The default install stays dependency-free.
+tui = ["textual>=8.2.8,<9"]
 # Phase 11 Semantic Retrieval Profile: real semantic embeddings behind the
 # existing EmbeddingProvider contract. Optional and isolated -- never pulled by
 # a default install and never added to the dev extra, so CI/test stay ML-free.

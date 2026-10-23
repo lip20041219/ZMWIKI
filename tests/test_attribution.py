@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     AnswerEvaluator,
     AttributionResult,
     Citation,
@@ -23,7 +23,7 @@ from zmrag import (
     DeterministicClaimAttributor,
     DeterministicClaimExtractor,
 )
-from zmrag.text import (
+from zmwiki.text import (
     normalize_text,
     safe_ratio,
     split_sentences,
@@ -42,7 +42,7 @@ def _citation(text, chunk_id="doc::0", position=0):
 
 
 def _context(text, chunk_id="doc::0"):
-    from zmrag import Chunk
+    from zmwiki import Chunk
 
     chunk = Chunk(id=chunk_id, document_id="doc", text=text or "x", position=0)
     return Context(text=text, chunks=(chunk,))
@@ -518,7 +518,7 @@ def test_existing_answer_evaluation_api_is_unchanged():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     expected = {
         "AttributionResult",
@@ -536,7 +536,7 @@ def test_attribution_module_parses_no_citation_markers():
     import ast
     import pathlib
 
-    import zmrag.attribution as module
+    import zmwiki.attribution as module
 
     source = pathlib.Path(module.__file__).read_text(encoding="utf-8")
     # No marker grammar anywhere -- not even a regex import: the only text the

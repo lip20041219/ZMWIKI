@@ -1,6 +1,6 @@
 """Answer evaluation: score an answer against a reference, its context, its sources.
 
-The other half of ZMRAG's evaluation story. Retrieval Evaluation (``evaluation.py``)
+The other half of zmwiki's evaluation story. Retrieval Evaluation (``evaluation.py``)
 answers "did we retrieve the right context?"; this module answers "did the
 generated answer cover the expected answer, and did it stay grounded in the
 context it was given?". They are independent: this layer never retrieves,
@@ -28,7 +28,7 @@ names above are deliberate and are used verbatim in the README and in
 ``docs/architecture.md``: calling any of this "semantic correctness" or
 "faithfulness" would overstate what a token overlap can see.
 
-Token identity comes from the existing :class:`~zmrag.tokenizers.SimpleTokenizer`
+Token identity comes from the existing :class:`~zmwiki.tokenizers.SimpleTokenizer`
 (plus NFC normalization), so case, whitespace, and punctuation differences never
 count as differences, and CJK text matches at character granularity.
 """

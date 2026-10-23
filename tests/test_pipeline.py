@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     AnswerResult,
     Chunk,
     Chunker,
@@ -669,7 +669,7 @@ def test_real_pipeline_retrieve_and_query_share_the_same_ranking():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"RAGPipeline", "DeterministicRAGPipeline"} <= set(__all__)
 
@@ -1063,7 +1063,7 @@ def test_real_pipeline_answer_with_sources_is_deterministic():
 
 
 def test_public_import_answer_result():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Citation", "AnswerResult", "citations_from_context"} <= set(__all__)
     assert "answer_with_sources" in dir(DeterministicRAGPipeline)

@@ -1,0 +1,352 @@
+================================================================================
+              zmwiki → ZMWiki 只读架构审计报告 · 文本总结
+================================================================================
+审计日期：2026-10-21
+审计性质：只读源码审计，未修改/创建/删除任何源码文件
+审计范围：src/zmwiki/ 全部33个模块、tests/ 42个测试文件、
+          benchmark/ 语料与评测结果、docs/ 架构文档，
+          以及参考项目 WeAgentAI/LLM-Wiki（arXiv:2605.25480）
+
+================================================================================
+一、仓库现状
+================================================================================
+
+【基本数据】
+  - 源码模块：33个 .py 文件
+  - 测试文件：42个，1281 passed / 5 skipped
+  - 运行时依赖：零（dependencies = []）
+  - 可选依赖：semantic（sentence-transformers），dev（pytest）
+  - 公开 API：62个符号（__init__.py 重导出）
+
+【核心数据流】
+  Document → Chunk[] → Embedding → VectorStore + BM25 Index
+                                        ↓
+  Query → QueryRewriter(可选) → Hybrid Retrieval → Reranker(可选)
+                                        ↓
+                              ContextBuilder → Context
+                                        ↓
+                        Generator(可选) → Answer + Citations
+
+【模块分层（无循环依赖，源码已证实）】
+  - 数据层：schema.py（Document/Chunk/Source/Metadata）
+  - 工具层：tokenizers.py, text.py
+  - 摄入层：ingestion.py, file_ingestion.py, directory_ingestion.py
+  - 分块层：chunkers.py（FixedSizeChunker）
+  - 嵌入层：embedders.py, semantic.py（可选）
+  - 存储层：stores.py（InMemoryVectorStore）, lexical.py（InMemoryLexicalIndex/BM25）
+  - 检索层：retrievers.py（Dense/Lexical/Hybrid）, fusion.py（Weighted/RRF）
+  - 重排层：rerankers.py, semantic_rerank.py（可选）
+  - 查询改写：rewriters.py（DeterministicQueryRewriter，仅空白归一化）
+  - 上下文层：context.py, citations.py
+  - 生成层：generators.py（DeterministicGenerator）, llm_generators.py（OpenAI兼容）
+  - 编排层：pipeline.py（DeterministicRAGPipeline，5个入口：ingest/retrieve/query/answer/answer_with_sources）
+  - 评测层：evaluation.py, evaluation_dataset.py, evaluation_harness.py,
+            evaluation_loader.py, evaluation_runner.py, benchmark.py,
+            answer_evaluation.py, attribution.py
+
+【评测基准】
+  - 语料：6个文档，33个 chunks（benchmark/corpus/doc_a~f.txt）
+  - 检索评测：retrieval_small.json，8个 cases（含1个无答案哨兵）
+  - 答案评测：answer_small.json，12+ cases（含负例：grounded但答非所问、正确但无依据）
+  - 基线结果：hit_rate=0.875, recall=0.875, MRR=0.75, NDCG=0.791（top_k=33）
+
+================================================================================
+二、现有模块复用分类
+================================================================================
+
+【可直接复用（18项，无需修改）】
+  1. schema.py — Document/Chunk/Source/Metadata（Wiki编译输入单元）
+  2. tokenizers.py — SimpleTokenizer（wiki_search词法后端）
+  3. text.py — 分句/分词/覆盖率（Error Book内容验证、claim提取）
+  4. lexical.py — InMemoryLexicalIndex/BM25（wiki_search正文搜索后备）
+  5. stores.py — InMemoryVectorStore/cosine_similarity（Wiki页面语义搜索）
+  6. embedders.py — EmbeddingProvider/Embedding（Wiki页面嵌入契约）
+  7. semantic.py — SemanticEmbeddingProvider（真实语义嵌入后端）
+  8. fusion.py — WeightedScoreFusion/RRFFusion（多路搜索融合）
+  9. evaluation.py — RetrievalEvaluator（HR/Recall/Precision/MRR/MAP/NDCG）
+  10. answer_evaluation.py — AnswerEvaluator（lexical答案评测）
+  11. attribution.py — ClaimExtractor/ClaimAttributor（证据充分性判断的claim提取）
+  12. evaluation_dataset.py — EvaluationCaseSet
+  13. evaluation_harness.py — EvaluationHarness
+  14. evaluation_loader.py — JsonEvaluationDatasetLoader
+  15. evaluation_runner.py — RetrievalEvaluationRunner
+  16. benchmark.py — BenchmarkRunner/DeterministicBenchmarkRunner
+  17. llm_generators.py — OpenAICompatibleGenerator/HTTP边界（编译+Agent LLM调用）
+  18. ingestion.py/file_ingestion.py/directory_ingestion.py — 原始文档摄入
+
+【可复用但需调整接口（7项）】
+  1. chunkers.py — FixedSizeChunker：需新增标题感知分块模式
+  2. retrievers.py — Retriever：需新增WikiSearchRetriever，返回页面+元数据而非Chunk
+  3. context.py — Context：chunks需扩展支持pages
+  4. generators.py — Generator：契约保留，Agent需新增循环编排层
+  5. pipeline.py — RAGPipeline：需新增WikiPipeline子类（compile/agent_query入口）
+  6. citations.py — Citation：chunk_id需扩展支持page_id/page_path
+  7. rerankers.py — Reranker：输入类型从SearchResult[Chunk]扩展为WikiPageSearchResult
+
+【需要重构（3项）】
+  1. rewriters.py — QueryRewriter：从单次改写重构为Agent内部查询分解
+  2. evaluation_loader.py — 需扩展multi-hop dataset schema
+  3. evaluation_runner.py — 需扩展支持Agent模式评测（记录tool_calls/pages_read/latency）
+
+【需要新增（7项，ZMWiki核心，当前完全缺失）】
+  1. wiki_schema.py — WikiPage数据模型（id/path/title/aliases/tags/description/content/sources/links_to/links_from/metadata）
+  2. wiki_compiler.py — 离线编译引擎（SelectPages→CompileWikiPages→验证→Error Book→增量更新）
+  3. wiki_index.py — Wiki页面多维索引（元数据索引+正文BM25+反向链接+目录索引+语义向量）
+  4. wiki_retriever.py — wiki_search(query) + wiki_read(paths) 两个核心工具接口
+  5. wiki_agent.py — Retrieval-as-Reasoning Agent（tool-calling循环+三种遍历模式+停止条件+证据充分性判断）
+  6. error_book.py — Error Book自校正（5步：Discover→Attribute→Constrain→Inject→Verify，Layer1代码修复+Layer2 LLM周期修复）
+  7. wiki_evaluation.py — multi-hop评测（F1/EM/hop-wise/type-wise）+成本分析（编译tokens/查询tool_calls/pages_read/latency）
+
+【可以暂缓或降级（4项，保留但不作为主流程）】
+  1. DeterministicQueryRewriter — 仅空白归一化，无实际检索改善
+  2. DeterministicGenerator — 抽取式，仅测试/CI基线
+  3. DeterministicReranker — 词法重叠，仅测试基线
+  4. DeterministicEmbedder — sha256哈希向量，无语义，仅CI无模型测试基线
+  注意：以上全部保留以维持RAG基线可运行，1281个测试必须继续通过。
+
+================================================================================
+三、与 LLM-Wiki 的核心差异
+================================================================================
+
+【根本差异】
+  ┌──────────────┬──────────────────────┬──────────────────────────┐
+  │ 维度          │ zmwiki（当前）         │ LLM-Wiki（参考）          │
+  ├──────────────┼──────────────────────┼──────────────────────────┤
+  │ 知识表示      │ Chunk（扁平无结构）    │ WikiPage（结构化+元数据）  │
+  │ 页面Schema    │ 无                    │ wiki-schema.md 定义        │
+  │ 双向链接      │ 无                    │ links_to/links_from        │
+  │ search/read   │ 无分离（检索即全文）   │ 分离（search返回候选+元数据，│
+  │              │                      │ read返回全文）             │
+  │ Agent多步检索 │ 无（单次retrieve）    │ tool-calling循环           │
+  │ 遍历模式      │ 无                    │ Direct/Link-Following/     │
+  │              │                      │ Browse&Aggregation         │
+  │ 停止条件      │ 无                    │ T_max=15, P=3空搜索,       │
+  │              │                      │ 至少1次wiki_read           │
+  │ Error Book    │ 无                    │ error_book.json持久化,     │
+  │              │                      │ 5步自校正                  │
+  │ 编译引擎      │ 无（仅chunk+index）   │ two-step LLM ingestion     │
+  │ multi-hop评测 │ 无（仅单跳8cases）    │ HotpotQA/MuSiQue/2Wiki     │
+  │ 编译成本      │ 零                    │ 一次性（论文未给具体数值）  │
+  └──────────────┴──────────────────────┴──────────────────────────┘
+
+【LLM-Wiki 已证实的关键数据】
+  - 工具接口：wiki_search(query) → 候选页面+元数据；wiki_read(paths) → 页面全文+链接
+  - Agent预算：T_max=15次tool call，P=3次连续空搜索提前停止
+  - 页面读取：平均2.5~3.9页/query（MuSiQue需8.2步，延迟27.1秒）
+  - 编译错误分布：断链55.8-63.8%，错误来源引用18.9-28.5%，无依据句子5.8-12.7%
+  - 编译成本：AuthTrace 860篇→194M tokens（约22.6万tokens/篇，来自同团队WikiLoop）
+  - 性能：multi-hop F1比最强baseline高2.0~8.0；去掉遍历F1下降11.7~13.8
+  - 局限：单文档问题上比HippoRAG 2低2.3 AC；页面数万时扩展性未验证
+
+================================================================================
+四、推荐目标架构
+================================================================================
+
+【双模式共存】
+  - RAG基线模式：DeterministicRAGPipeline 全部入口保留，零修改
+  - ZMWiki模式：新增 WikiPipeline，包含 compile()（离线编译）和 agent_query()（在线Agent检索）
+
+【离线编译阶段】
+  原始Document → 摄入 → 预处理分块 → WikiCompiler
+    → SelectPages（选相关已有页面≤5）
+    → CompileWikiPages（LLM生成页面+链接+元数据，注入Error Book约束）
+    → 结构验证（代码：断链/格式/索引一致性）
+    → 内容验证（LLM：来源对照/无依据句子/页面矛盾）
+    → Error Book更新 → 约束重提取 → 代码自动修复
+    → 提交到 WikiIndex
+  WikiIndex：元数据索引 + 正文BM25索引 + 反向链接索引 + 目录索引 + 语义向量索引
+  ErrorBook：JSON持久化，5步自校正，Layer1代码修复(每批)+Layer2 LLM修复(每10批)
+
+【在线检索阶段】
+  用户Query → WikiAgent（tool-calling循环）
+    → wiki_search(query)：元数据优先→正文后备，返回候选页面+元数据
+    → wiki_read(paths)：批量读取页面/目录索引，返回全文+链接
+    → 证据充分性判断（复用attribution.py的claim提取）
+    → 三种遍历模式：Direct Retrieval / Link-Following Traversal / Browse & Aggregation
+    → 停止条件：证据充分 / T_max=15 / P=3空搜索 / 至少1次wiki_read
+    → 答案合成（复用Generator）→ AnswerResult（answer+sources指向WikiPage）
+
+【代码组织】
+  建议在 src/zmwiki/wiki/ 子包下新增7个模块，不新建顶层包，不修改pyproject.toml
+
+================================================================================
+五、分阶段实施计划
+================================================================================
+
+Phase 0 — 基础设施准备（不改现有代码）
+  任务：新增 wiki_schema.py（WikiPage dataclass）+ 测试
+  验收：WikiPage可构造/序列化/反序列化；1281现有测试不受影响
+
+Phase 1 — Wiki索引与检索工具（核心，不依赖LLM编译）
+  任务：新增 wiki_index.py（多维索引）+ wiki_retriever.py（wiki_search/wiki_read）
+  验收：wiki_search元数据优先；wiki_read返回全文+链接；反向链接一致性；断链检测
+
+Phase 2 — Wiki编译引擎（离线，LLM驱动）
+  任务：新增 wiki_compiler.py（SelectPages/CompileWikiPages/验证/增量更新）
+       扩展 llm_generators.py 支持 tools 参数
+  验收：编译Document产出WikiPage；页面sources指回原始Document；结构验证检测断链；增量编译
+
+Phase 3 — Error Book自校正（可并行于Phase 4）
+  任务：新增 error_book.py（持久化/5步自校正/Layer1代码修复）
+  验收：Error Book可持久化；约束注入编译prompt；Layer1修复断链；状态流转open→closed
+
+Phase 4 — WikiAgent在线检索（核心）
+  任务：新增 wiki_agent.py（tool-calling循环/三种遍历模式/停止条件/证据充分性）
+       扩展 context.py 支持pages；扩展 citations.py 支持page_id
+  验收：Direct/Link-Following/Browse三种模式；T_max/P停止条件；至少1次wiki_read
+
+Phase 5 — 评测与成本分析
+  任务：新增 wiki_evaluation.py（multi-hop F1/EM/hop-wise/成本统计）
+       扩展 evaluation_loader.py 支持multi-hop schema
+       新增 benchmark/wiki/ 数据集 + 对照评测脚本
+  验收：multi-hop F1/EM可计算；编译/查询成本统计；ZMWiki vs RAG公平对照
+
+Phase 6 — 集成与文档
+  任务：更新 __init__.py 导出；新增 docs/zmwiki_architecture.md；更新README；新增示例
+  验收：from zmwiki import WikiPage/WikiCompiler/WikiAgent 正常；RAG基线继续运行；全量测试通过
+
+【关键路径】Phase 0 → Phase 1 → Phase 2 → Phase 4 → Phase 5
+【可并行】Phase 3（Error Book）可与 Phase 4 并行
+
+================================================================================
+六、验收与评测设计
+================================================================================
+
+【编译完整性与来源可追溯性】
+  - 页面覆盖率：编译页面数/预期页面数
+  - 来源追溯率：含有效sources的页面比例
+  - 内容保真度：页面内容可追溯到原始文档的句子比例（复用token_coverage）
+  - 元数据完整率：含title/aliases/tags/description全部字段的页面比例
+
+【Wiki链接有效性与双向一致性】
+  - 断链率：links_to指向不存在page_id的比例
+  - 反向链接一致性：A.links_to含B ↔ B.links_from含A
+  - 目录索引完整性：_index.md列出的页面与实际存在对应
+  - 链接密度：平均出链/入链数，检测孤立页面
+
+【多步检索跨文档证据】
+  - multi-hop F1/EM（按hop数分解：2/3/4-hop）
+  - 跨文档证据召回率：Agent读取页面覆盖required_page_ids的比例
+  - 遍历路径有效性：每步链接确实存在于源页面
+
+【Agent工具调用预算与停止条件】
+  - 平均tool_calls/query、平均pages_read/query
+  - T_max触发率、P触发率、证据充分停止率
+  - 延迟分布（p50/p95/p99）
+
+【错误知识记录、修正与失效处理】
+  - Error Book覆盖率、约束注入率、Layer1修复率、错误复发率
+  - 页面失效处理：原始Document删除后衍生页面标记orphaned
+
+【与RAG基线公平对照】
+  同一corpus/query set/answer LLM/embedding model
+  ZMWiki（Agent循环T_max=15）vs RAG（单次top_k=5）
+  对比维度：单跳F1/EM、multi-hop F1/EM、证据质量、Token消耗、延迟、编译成本、可解释性
+
+【区分Wiki结构收益 vs 增加模型调用收益（消融实验）】
+  A: RAG基线（无Wiki，无循环，1次generate）
+  B: 迭代RAG（无Wiki，有Chunk级循环，T_max=15）→ 单纯增加调用收益 = B-A
+  C: Wiki单次读取（有Wiki，无循环，1次generate）→ 单纯Wiki结构收益 = C-A
+  D: ZMWiki完整（有Wiki，有循环，T_max=15）→ 总收益 = D-A
+  交互收益 = D - C - (B - A)
+
+================================================================================
+七、主要风险
+================================================================================
+
+1. 【高】编译质量不可控 — LLM编译可能产生幻觉/断链/矛盾
+   缓解：Phase 1先用手工构造WikiPage验证Agent，Phase 2再引入LLM编译
+
+2. 【高】multi-hop评测数据集缺失 — 现有8/12 cases都是单跳
+   缓解：Phase 5构造小规模multi-hop数据集（采样HotpotQA/MuSiQue或手工构造）
+
+3. 【中】Agent循环token成本高 — 最多15轮LLM调用
+   缓解：预算控制+提前停止；单跳问题回退RAG模式；评测明确报告token消耗
+
+4. 【中】与现有RAG基线回归风险 — 新增代码可能影响1281测试
+   缓解：新代码放zmwiki/wiki/子包，不修改现有模块；每Phase结束全量测试
+
+5. 【中】LLM function calling兼容性 — 非所有端点支持tools参数
+   缓解：tools=None时行为不变；Agent可降级手动JSON解析
+
+6. 【低】Wiki页面规模扩展性 — 页面数万时目录索引难处理（LLM-Wiki自承认）
+   缓解：本阶段目标<1000页面；扩展性标注为待核实
+
+================================================================================
+八、现有技术债
+================================================================================
+
+1. 无持久化层 — stores/indexes全内存，进程退出即丢失
+2. 无并发控制 — ingest非事务性
+3. lexical index全量重建 — 每次upsert O(total tokens)
+4. 无token计数 — ContextBuilder用字符预算
+5. 评测数据集过小 — 仅8/12单跳cases
+6. semantic模块非公开API — 需单独import
+
+================================================================================
+九、不应实现的功能（本阶段排除）
+================================================================================
+
+Web UI / MCP服务器 / 流式生成 / 重试退避 / 向量数据库后端(FAISS/Qdrant) /
+PDF/Markdown/HTML解析 / 多租户权限 / 分布式编译 / 实时索引更新 /
+LLM-judge评测 / GraphRAG社区检测 / 多语言支持
+
+================================================================================
+十、尚未核实的问题（10项）
+================================================================================
+
+1. LLM-Wiki的wiki-schema.md精确字段定义（仅知存在，未读全文）
+2. LLM-Wiki的bench_ingest.py编译prompt具体内容
+3. LLM-Wiki的wiki_agent.py Agent system prompt具体内容
+4. zmwiki的docs/architecture.md（110KB）中是否有未来扩展规划（仅看了目录）
+5. zmwiki测试中是否有页面/链接/Agent的预留测试（仅读了test_pipeline.py前100行）
+6. benchmark/results/中其他12个评测结果JSON的完整内容（仅读了1个）
+7. zmwiki是否有Git分支或未合并的ZMWiki相关工作（未检查Git历史）
+8. pyproject.toml零依赖是否为最终决定（token计数可能需要tiktoken）
+9. LLM-Wiki编译成本具体数值（原论文未给出，WikiLoop数据为不同语料）
+10. semantic.py/semantic_rerank.py实际模型性能（CI用fake backend，未真实验证）
+
+================================================================================
+十一、需人工确认的7个决策点
+================================================================================
+
+1. WikiPage存储格式：Python dataclass+JSON vs Markdown文件
+2. 编译LLM与Agent LLM是否分离实例
+3. Agent tool-calling实现：OpenAI tools API vs 手动JSON解析
+4. Error Book持久化格式：JSON vs YAML
+5. 代码组织：zmwiki/wiki/子包 vs 独立zmwiki包
+6. multi-hop评测数据集来源：手工构造 vs 采样公开数据集
+7. SemanticEmbeddingProvider是否加入公开API
+
+================================================================================
+十二、核心判断总结
+================================================================================
+
+1. zmwiki工程质量极高：33模块严格分层、依赖注入、零循环依赖、1281测试、零依赖。
+   其数据契约/存储/检索/融合/重排/上下文/引用/生成/评测等模块均可直接复用。
+
+2. 根本差异在知识表示和检索范式：
+   zmwiki = Chunk（扁平无结构）+ 单次检索（retrieval-as-lookup）
+   LLM-Wiki = WikiPage（结构化+双向链接）+ Agent多步检索（retrieval-as-reasoning）
+
+3. 最小改造 = 新增7个模块 + 修改0个现有模块：
+   新增 wiki_schema/wiki_compiler/wiki_index/wiki_retriever/wiki_agent/error_book/wiki_evaluation
+   现有33模块全部保留，RAG基线完全可运行
+   仅需增量扩展 llm_generators.py（tools参数）和 __init__.py（导出）
+
+4. ZMWiki价值主要在multi-hop场景：
+   单跳问题不应显著优于RAG（且成本更高）
+   跨文档多跳推理是核心优势
+   必须通过消融实验区分"Wiki结构收益"与"增加模型调用收益"
+
+5. 实施优先级：
+   P0: Phase 0（数据模型）+ Phase 1（索引+工具）
+   P1: Phase 2（编译）+ Phase 4（Agent）
+   P2: Phase 3（Error Book）+ Phase 5（评测）
+   P3: Phase 6（集成+文档）
+
+================================================================================
+*本总结为只读审计结果，未执行任何代码修改。*
+*完整报告见 docs/zmwiki_architecture_audit.md，每项结论附源码证据。*
+*等待人工确认7个决策点后进入实施阶段。*
+================================================================================

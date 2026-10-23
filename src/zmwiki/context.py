@@ -70,7 +70,7 @@ class DeterministicContextBuilder(ContextBuilder):
     joined by blank lines. ``max_chars`` is a budget on the *final*
     ``Context.text`` length in Python characters/code points (separators and
     numbering included) -- not an LLM token budget (no token counting exists
-    in ZMRAG). If a chunk would push the text over budget the packing stops
+    in zmwiki). If a chunk would push the text over budget the packing stops
     there; the only exception is the very first chunk, which is kept even when
     it alone exceeds ``max_chars``, so a semantic unit is never truncated.
     """

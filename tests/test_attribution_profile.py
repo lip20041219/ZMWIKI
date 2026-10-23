@@ -316,13 +316,13 @@ def test_runner_uses_no_network_no_model_and_no_metric_of_its_own():
         "json",
         "sys",
         "pathlib",
-        "zmrag",
+        "zmwiki",
         "run_answer_evaluation",
         "run_retrieval_small_baseline",
     }
     for banned in ("requests", "urllib", "httpx", "socket", "sentence_transformers", "os"):
         assert banned not in imported
-    # The rates come from zmrag.attribution; the runner only pools them.
+    # The rates come from zmwiki.attribution; the runner only pools them.
     assert "DeterministicClaimAttributor" in source
     for banned in ("def _ndcg", "def _coverage", "math."):
         assert banned not in source
@@ -331,7 +331,7 @@ def test_runner_uses_no_network_no_model_and_no_metric_of_its_own():
 def test_attribution_is_not_wired_into_the_pipeline_or_the_generator():
     # Prose may mention attribution (the citation stage is named after it); the
     # check is that neither module *depends* on the claim-attribution layer.
-    for relative in ("src/zmrag/pipeline.py", "src/zmrag/generators.py"):
+    for relative in ("src/zmwiki/pipeline.py", "src/zmwiki/generators.py"):
         source = (ROOT / relative).read_text(encoding="utf-8")
         imports = [
             line

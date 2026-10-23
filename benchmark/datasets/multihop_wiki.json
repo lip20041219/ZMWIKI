@@ -1,0 +1,161 @@
+{
+  "dataset": "multihop_wiki",
+  "version": "1.0",
+  "description": "Multi-hop question answering dataset for ZMWiki baseline vs experiment comparison. Built over a fictional company wiki (Acme Corp) with 9 interlinked pages. Answers require combining information across 1-3 pages. Standard answers and keyword groups are used only by the evaluator, never passed to the system under test.",
+  "corpus": "benchmark/corpus/wiki/",
+  "link_construction": "WikiPage links_to/links_from are manually verified from source document content, NOT produced by WikiCompiler. WikiCompiler currently leaves links_to empty; this dataset uses hand-built linked pages to evaluate follow_links capability. This is explicitly recorded as a capability gap of the current compiler.",
+  "scoring_rule": "answer_correct = for every group in answer_keyword_groups, at least one keyword appears in the normalized answer. For unanswerable cases, answer_correct = at least one refusal_keyword appears. All matching is case-insensitive after stripping punctuation.",
+  "cases": [
+    {
+      "id": "mh01_manager_title",
+      "question": "What is the job title of the person Alice Smith reports to?",
+      "reference_answer": "Bob Jones is the Director of Engineering.",
+      "answer_keyword_groups": [["director"], ["engineering"]],
+      "answerable": true,
+      "required_page_ids": ["alice", "bob"],
+      "hops": 2,
+      "question_type": "two_page_relation"
+    },
+    {
+      "id": "mh02_project_budget",
+      "question": "What is the budget of the project led by Alice Smith?",
+      "reference_answer": "Project Phoenix has a budget of five hundred thousand dollars ($500,000).",
+      "answer_keyword_groups": [["500", "five"], ["thousand", "hundred"]],
+      "answerable": true,
+      "required_page_ids": ["alice", "project_phoenix"],
+      "hops": 2,
+      "question_type": "two_page_relation"
+    },
+    {
+      "id": "mh03_orion_lead_chain",
+      "question": "Who leads Project Orion and who does that person report to?",
+      "reference_answer": "David Kim leads Project Orion and reports to Eve Martinez.",
+      "answer_keyword_groups": [["david"], ["eve"]],
+      "answerable": true,
+      "required_page_ids": ["project_orion", "david", "eve"],
+      "hops": 3,
+      "question_type": "three_page_chain"
+    },
+    {
+      "id": "mh04_cafeteria_floor",
+      "question": "Which floor is the cafeteria on in the building where Bob Jones works?",
+      "reference_answer": "The cafeteria is on the second floor of Building A.",
+      "answer_keyword_groups": [["second", "2"], ["floor"]],
+      "answerable": true,
+      "required_page_ids": ["bob", "building_a"],
+      "hops": 2,
+      "question_type": "two_page_relation"
+    },
+    {
+      "id": "mh05_total_budget_aggregation",
+      "question": "What is the total budget of all projects Carol Chen works on?",
+      "reference_answer": "Carol Chen works on Project Phoenix ($500,000) and Project Orion ($300,000), totaling eight hundred thousand dollars ($800,000).",
+      "answer_keyword_groups": [["800", "eight"], ["thousand", "hundred"]],
+      "answerable": true,
+      "required_page_ids": ["carol", "project_phoenix", "project_orion"],
+      "hops": 3,
+      "question_type": "three_page_aggregation"
+    },
+    {
+      "id": "mh06_shared_engineer",
+      "question": "Which engineer works on both Project Phoenix and Project Orion?",
+      "reference_answer": "Carol Chen works on both Project Phoenix and Project Orion.",
+      "answer_keyword_groups": [["carol"]],
+      "answerable": true,
+      "required_page_ids": ["project_phoenix", "project_orion", "carol"],
+      "hops": 3,
+      "question_type": "three_page_intersection"
+    },
+    {
+      "id": "mh07_deadline_by_budget",
+      "question": "What is the deadline of the project with a five hundred thousand dollar budget?",
+      "reference_answer": "The deadline is December 31, 2026.",
+      "answer_keyword_groups": [["december"], ["2026"]],
+      "answerable": true,
+      "required_page_ids": ["project_phoenix"],
+      "hops": 1,
+      "question_type": "single_page_by_attribute"
+    },
+    {
+      "id": "mh08_ceo_unanswerable",
+      "question": "Who is the CEO of Acme Corp?",
+      "reference_answer": "The CEO is not named in any page. Eve Martinez reports to the CEO, but the CEO's identity is not provided.",
+      "answer_keyword_groups": [],
+      "refusal_keywords": ["cannot", "not mentioned", "no information", "unclear", "not found", "unknown", "not stated", "does not say", "don't know", "not provided"],
+      "answerable": false,
+      "required_page_ids": [],
+      "hops": 0,
+      "question_type": "unanswerable"
+    },
+    {
+      "id": "mh09_negative_membership",
+      "question": "Does Alice Smith work on Project Orion?",
+      "reference_answer": "No, Alice Smith leads Project Phoenix and is not a member of Project Orion. Project Orion is led by David Kim with Carol Chen.",
+      "answer_keyword_groups": [["no", "not", "doesn't", "does not"]],
+      "answerable": true,
+      "required_page_ids": ["alice", "project_orion"],
+      "hops": 2,
+      "question_type": "two_page_negative"
+    },
+    {
+      "id": "mh10_direct_reports",
+      "question": "List all people who report to Bob Jones.",
+      "reference_answer": "Alice Smith and Carol Chen report to Bob Jones.",
+      "answer_keyword_groups": [["alice"], ["carol"]],
+      "answerable": true,
+      "required_page_ids": ["bob", "alice", "carol"],
+      "hops": 3,
+      "question_type": "three_page_aggregation"
+    },
+    {
+      "id": "mh11_vp_office_floor",
+      "question": "What is the office floor of the VP of Engineering?",
+      "reference_answer": "Eve Martinez, the VP of Engineering, has her office on the fifth floor of Building B.",
+      "answer_keyword_groups": [["fifth", "5"], ["floor"]],
+      "answerable": true,
+      "required_page_ids": ["eve"],
+      "hops": 1,
+      "question_type": "single_page_by_title"
+    },
+    {
+      "id": "mh12_connected_building",
+      "question": "Which building is connected to Building A by a covered walkway?",
+      "reference_answer": "The covered walkway linking the two buildings connects to Building B.",
+      "answer_keyword_groups": [["building"], ["b"]],
+      "answerable": true,
+      "required_page_ids": ["building_b"],
+      "hops": 1,
+      "question_type": "single_page_relation"
+    },
+    {
+      "id": "mh13_engineering_budget",
+      "question": "What is the annual engineering budget at Acme Corp?",
+      "reference_answer": "The annual engineering budget is four million dollars.",
+      "answer_keyword_groups": [["four", "4"], ["million"]],
+      "answerable": true,
+      "required_page_ids": ["eve"],
+      "hops": 1,
+      "question_type": "single_page_fact"
+    },
+    {
+      "id": "mh14_orion_lead_degree",
+      "question": "Who is the technical lead for the data analytics platform project and what is their highest academic degree?",
+      "reference_answer": "David Kim is the technical lead for Project Orion and holds a PhD in distributed systems.",
+      "answer_keyword_groups": [["david"], ["phd", "doctor"]],
+      "answerable": true,
+      "required_page_ids": ["project_orion", "david"],
+      "hops": 2,
+      "question_type": "two_page_relation"
+    },
+    {
+      "id": "mh15_gym_location",
+      "question": "On which floor and in which building is the gym located?",
+      "reference_answer": "The gym is on the first floor of Building B.",
+      "answer_keyword_groups": [["first", "1"], ["building"], ["b"]],
+      "answerable": true,
+      "required_page_ids": ["building_b"],
+      "hops": 1,
+      "question_type": "single_page_fact"
+    }
+  ]
+}

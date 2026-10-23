@@ -8,7 +8,7 @@ metadata, and verified bidirectional links. A `WikiAgent` searches, reads, and
 follows links across pages to answer multi-hop questions — instead of relying on
 a single retrieval pass over flat chunks.
 
-ZMWiki builds on the **ZMRAG deterministic retrieval & evaluation layer**
+ZMWiki builds on the **zmwiki deterministic retrieval & evaluation layer**
 (lexical BM25, dense, hybrid, offline metrics). The RAG pipeline remains the
 retrieval backbone; ZMWiki adds the wiki representation, compiler, agent, and
 terminal UI on top.
@@ -42,7 +42,7 @@ terminal UI on top.
   layout (search + page list / content reader / metadata + links), fluorescent-green
   on black theme, keyboard-driven navigation
 
-### Retrieval & Evaluation Backbone (ZMRAG)
+### Retrieval & Evaluation Backbone (zmwiki)
 
 - Document ingestion (plain text, `.txt` files, directories)
 - Fixed-size chunking
@@ -88,10 +88,10 @@ WikiCompiler (LLM-assisted) ──► WikiPage (candidate_links, unverified)
                               (read-only browser)
 ```
 
-The ZMRAG retrieval pipeline (chunking → embedding → dense/lexical/hybrid
+The zmwiki retrieval pipeline (chunking → embedding → dense/lexical/hybrid
 retrieval → fusion → reranking → context → generation → evaluation) remains
 available as the baseline retrieval backbone and is used in the controlled
-ZMRAG-vs-ZMWiki comparison benchmark.
+zmwiki-vs-ZMWiki comparison benchmark.
 
 ## Installation
 
@@ -134,7 +134,7 @@ ZMWiki 是一个**只读的 Wiki 终端浏览器**。你给它一个包含 Wiki 
 
 ```bash
 # 克隆仓库后进入目录
-cd ZMRAG
+cd zmwiki
 
 # 安装（默认零依赖）
 pip install -e .
@@ -148,7 +148,7 @@ pip install -e ".[tui]"
 仓库已自带演示用的 workspace 文件，直接运行：
 
 ```bash
-python -m zmrag.tui --workspace benchmark/corpus/wiki_workspace.json
+python -m zmwiki.tui --workspace benchmark/corpus/wiki_workspace.json
 ```
 
 启动后你会看到：顶部 ZMWiki 绿色 ASCII 标题，左侧搜索框和页面列表，中间正文，右侧元数据和双向链接，底部状态栏和快捷键提示。
@@ -190,7 +190,7 @@ json.dump({"version": 1, "pages": [p.to_dict() for p in pages]},
           open("my_wiki.json", "w", encoding="utf-8"), indent=2)
 ```
 
-然后启动：`python -m zmrag.tui --workspace my_wiki.json`
+然后启动：`python -m zmwiki.tui --workspace my_wiki.json`
 
 ### 配置 LLM API（编译文档 / Agent 问答 / 评测时需要）
 
@@ -214,25 +214,25 @@ ZMWiki 使用 **OpenAI 兼容接口**，任何支持 `POST /v1/chat/completions`
 
 ```powershell
 # Windows PowerShell（当前终端生效）
-$env:ZMRAG_API_KEY = "你的密钥"
+$env:ZMWIKI_API_KEY = "你的密钥"
 
 # 或者设为用户级环境变量（永久生效，推荐）
-[Environment]::SetEnvironmentVariable("ZMRAG_API_KEY", "你的密钥", "User")
+[Environment]::SetEnvironmentVariable("ZMWIKI_API_KEY", "你的密钥", "User")
 ```
 
-> 注意：环境变量名是 `ZMRAG_API_KEY`，**不是** `OPENAI_API_KEY`。
+> 注意：环境变量名是 `ZMWIKI_API_KEY`，**不是** `OPENAI_API_KEY`。
 
 #### 第二步：在代码中使用
 
 **WikiCompiler（编译文档）：**
 
 ```python
-from zmrag.wiki.wiki_compiler import WikiCompiler
+from zmwiki.wiki.wiki_compiler import WikiCompiler
 
 compiler = WikiCompiler(
     base_url="https://api.deepseek.com/v1",
     model="deepseek-chat",
-    # api_key 不传时自动读取 ZMRAG_API_KEY 环境变量
+    # api_key 不传时自动读取 ZMWIKI_API_KEY 环境变量
 )
 page = compiler.compile(document)  # Document → WikiPage
 ```
@@ -240,7 +240,7 @@ page = compiler.compile(document)  # Document → WikiPage
 **WikiAgent（多步问答）：**
 
 ```python
-from zmrag.wiki.wiki_agent import WikiAgent
+from zmwiki.wiki.wiki_agent import WikiAgent
 
 agent = WikiAgent(
     index,  # 你的 WikiIndex
@@ -290,7 +290,7 @@ python benchmark/run_multihop_evaluation.py `
 ### Retro Terminal UI
 
 ```bash
-python -m zmrag.tui --workspace path/to/wiki.json
+python -m zmwiki.tui --workspace path/to/wiki.json
 ```
 
 The workspace is a single JSON document:
@@ -310,7 +310,7 @@ clear search, `Tab` switch pane, `Q` quit.
 ### HTTP Server
 
 ```bash
-python -m zmrag.web.server --workspace path/to/wiki.json --port 8000
+python -m zmwiki.web.server --workspace path/to/wiki.json --port 8000
 ```
 
 Then open `http://127.0.0.1:8000` in a browser. The server is read-only, uses
@@ -349,9 +349,9 @@ json.dump({"version": 1, "pages": [p.to_dict() for p in pages]},
 ### Wiki Agent (Python API)
 
 ```python
-from zmrag.wiki.wiki_schema import WikiPage
-from zmrag.wiki.wiki_index import WikiIndex
-from zmrag.wiki.wiki_agent import WikiAgent
+from zmwiki.wiki.wiki_schema import WikiPage
+from zmwiki.wiki.wiki_index import WikiIndex
+from zmwiki.wiki.wiki_agent import WikiAgent
 
 # Build an index (or load from a workspace JSON)
 index = WikiIndex()
@@ -373,7 +373,7 @@ print(result.status)    # answered / budget_exhausted / model_error / ...
 ### Deterministic RAG Pipeline (baseline)
 
 ```python
-from zmrag import (
+from zmwiki import (
     DeterministicRAGPipeline, DeterministicReranker, DeterministicEmbedder,
     DeterministicContextBuilder, DeterministicGenerator,
     DenseRetriever, LexicalRetriever, HybridRetriever,
@@ -381,7 +381,7 @@ from zmrag import (
     WeightedScoreFusion, PlainTextIngestor,
 )
 
-text = "ZMRAG is a deterministic retrieval and ranking layer for RAG systems."
+text = "zmwiki is a deterministic retrieval and ranking layer for RAG systems."
 doc = PlainTextIngestor().ingest(document_id="quickstart-1", text=text)
 
 embedder = DeterministicEmbedder(dimension=8)
@@ -406,11 +406,11 @@ pipeline.ingest(doc)
 results = pipeline.retrieve(query="retrieval", top_k=3)
 ```
 
-## ZMRAG vs ZMWiki Comparison Benchmark
+## zmwiki vs ZMWiki Comparison Benchmark
 
 A controlled multi-hop QA benchmark compares:
 
-- **Baseline** — ZMRAG single-pass hybrid retrieval + deterministic extractive generation
+- **Baseline** — zmwiki single-pass hybrid retrieval + deterministic extractive generation
 - **Experiment** — ZMWiki WikiAgent multi-step search / read / follow_links / answer
 
 The benchmark includes 15 multi-hop questions (2-page, 3-page, single-page,
@@ -428,13 +428,13 @@ python benchmark/run_multihop_evaluation.py \
   --limit 3 --output results/trial_3cases.json
 ```
 
-API keys are read from `--api-key` or the `ZMRAG_API_KEY` environment variable.
+API keys are read from `--api-key` or the `ZMWIKI_API_KEY` environment variable.
 Anonymous endpoints require `--allow-anonymous`. Results are written to a
 timestamped JSON file with per-case records, aggregate metrics, configuration,
 git SHA, and source file hashes. A per-case checkpoint JSONL provides
 incremental persistence.
 
-## Retrieval Evaluation (ZMRAG backbone)
+## Retrieval Evaluation (zmwiki backbone)
 
 Offline, deterministic retrieval evaluation over a frozen local benchmark (6
 documents / 33 chunks / 8 queries):
@@ -458,7 +458,7 @@ row measures plumbing rather than real dense retrieval. Full analysis in
 vLLM, llama.cpp, Ollama, LM Studio, LiteLLM.
 
 ```python
-from zmrag import OpenAICompatibleGenerator
+from zmwiki import OpenAICompatibleGenerator
 
 generator = OpenAICompatibleGenerator(
     base_url="https://api.example.com/v1",
@@ -468,7 +468,7 @@ generator = OpenAICompatibleGenerator(
 )
 ```
 
-API keys come from the `api_key` argument or `ZMRAG_API_KEY` environment
+API keys come from the `api_key` argument or `ZMWIKI_API_KEY` environment
 variable. No key is ever written to a file, logged, or rendered by `repr`.
 
 ## Tests
@@ -480,13 +480,13 @@ python -m pytest -q
 Wiki module tests: `273 passed` (WikiPage, WikiIndex, wiki_search/wiki_read,
 WikiCompiler, WikiAgent, link resolver, multi-hop evaluation, TUI).
 
-ZMRAG core tests: `1281 passed, 5 skipped` (retrieval, ranking, generation,
+zmwiki core tests: `1281 passed, 5 skipped` (retrieval, ranking, generation,
 evaluation, attribution).
 
 ## Project Scope
 
 ZMWiki focuses on **wiki knowledge representation, compilation, agent navigation,
-and evaluation**. The ZMRAG backbone provides **retrieval, ranking, and offline
+and evaluation**. The zmwiki backbone provides **retrieval, ranking, and offline
 evaluation**. Not in scope:
 
 - LLM answer generation as a standalone product (generation is a pluggable adapter)

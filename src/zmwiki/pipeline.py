@@ -144,7 +144,7 @@ class RAGPipeline(ABC):
 
 
 class DeterministicRAGPipeline(RAGPipeline):
-    """Dependency-injected orchestration of the ZMRAG retrieval stages.
+    """Dependency-injected orchestration of the zmwiki retrieval stages.
 
     Every collaborator is required and keyword-injected; the pipeline builds
     nothing itself. It is deterministic whenever its injected stages are (all

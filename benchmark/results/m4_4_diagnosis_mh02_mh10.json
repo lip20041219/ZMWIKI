@@ -1,0 +1,405 @@
+{
+  "experiment_id": "multihop_wiki_comparison",
+  "dataset": "benchmark/datasets/multihop_wiki.json",
+  "dataset_version": "1.0",
+  "dataset_sha256_16": "fce6786086a4dd57",
+  "git_sha": "114a4f40f196649f6643753afbaaa33b010a989b",
+  "python_version": "3.11.9",
+  "timestamp": "2026-10-21T21:11:32+0800",
+  "scoring_rule": "answer_correct = for every group in answer_keyword_groups, at least one keyword appears in the normalized answer. For unanswerable cases, answer_correct = at least one refusal_keyword appears. All matching is case-insensitive after stripping punctuation.",
+  "link_construction": "WikiPage links_to/links_from are manually verified from source document content, NOT produced by WikiCompiler. WikiCompiler currently leaves links_to empty; this dataset uses hand-built linked pages to evaluate follow_links capability. This is explicitly recorded as a capability gap of the current compiler.",
+  "link_source": "manual",
+  "comparability_notes": {
+    "retrieval_evidence_metrics": "COMPARABLE across Baseline and Experiment. Both measure whether required pages were found (evidence_recall, source_precision, multi_hop_success), independent of the answer generator.",
+    "answer_quality_metrics": "NOT directly comparable. Baseline uses DeterministicGenerator (offline extractive, copies text from retrieved chunks). Experiment uses a real LLM. Differences in answer_accuracy may come from retrieval, evidence organization, OR the generator itself. Report as independent system results, not a head-to-head comparison.",
+    "scoring_caveat": "Answer scoring uses keyword_group_match (lexical heuristic). A semantically correct paraphrase may score 0; a verbatim copy may score 1. This is not an LLM-as-judge evaluation.",
+    "unanswerable_caveat": "Only 1 unanswerable case in this dataset. unanswerable_handling is not a reliable measure of refusal ability."
+  },
+  "config": {
+    "baseline": {
+      "pipeline": "DeterministicRAGPipeline",
+      "retriever": "HybridRetriever(dense + bm25)",
+      "chunk_size": 120,
+      "overlap": 20,
+      "top_k": 5,
+      "generator": "DeterministicGenerator (offline, no LLM)"
+    },
+    "experiment": {
+      "agent": "WikiAgent",
+      "live": true,
+      "base_url": "https://api.deepseek.com",
+      "model": "deepseek-flash",
+      "max_steps": 8,
+      "search_top_k": 5,
+      "link_source": "manual",
+      "api_key_recorded": false
+    },
+    "limit": null
+  },
+  "working_tree_status": {
+    "dirty": true,
+    "file_count": 13
+  },
+  "source_file_sha256_16": {
+    "benchmark/run_multihop_evaluation.py": "d1c924540df63803",
+    "src/zmrag/wiki/wiki_agent.py": "3834045e04041f84",
+    "src/zmrag/wiki/wiki_compiler.py": "73c3adcd02f1daa7",
+    "src/zmrag/wiki/wiki_index.py": "1da07287d408f463",
+    "src/zmrag/wiki/wiki_retriever.py": "9de57fe1a528109e",
+    "src/zmrag/wiki/wiki_schema.py": "856370383befe0c0",
+    "src/zmrag/wiki/wiki_link_resolver.py": "5a18b38f59be549b",
+    "src/zmrag/llm_generators.py": "b0c7fadb410b74ef"
+  },
+  "results": {
+    "baseline": {
+      "per_case": [
+        {
+          "id": "mh02_project_budget",
+          "question": "What is the budget of the project led by Alice Smith?",
+          "answer": "Project Orion is Acme Corp's data analytics platform project, initiated in mid-2025. The project is led by David Kim, a ",
+          "answer_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "none",
+          "status": "answered",
+          "sources": [
+            "project_orion",
+            "project_phoenix",
+            "project_phoenix",
+            "building_a",
+            "eve"
+          ],
+          "accessed_pages": [
+            "building_a",
+            "eve",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "required_pages": [
+            "alice",
+            "project_phoenix"
+          ],
+          "evidence_recall": 0.5,
+          "evidence_recall_numerator": 1,
+          "evidence_recall_denominator": 2,
+          "source_precision": 0.2,
+          "steps": 1,
+          "pages_read": 4,
+          "error": null,
+          "step_details": []
+        },
+        {
+          "id": "mh10_direct_reports",
+          "question": "List all people who report to Bob Jones.",
+          "answer": "this role since 2018 and reports directly to the CEO. Eve manages two directors: Bob Jones, who leads the platform engin",
+          "answer_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "none",
+          "status": "answered",
+          "sources": [
+            "eve",
+            "alice",
+            "carol",
+            "bob",
+            "bob"
+          ],
+          "accessed_pages": [
+            "alice",
+            "bob",
+            "carol",
+            "eve"
+          ],
+          "required_pages": [
+            "bob",
+            "alice",
+            "carol"
+          ],
+          "evidence_recall": 1.0,
+          "evidence_recall_numerator": 3,
+          "evidence_recall_denominator": 3,
+          "source_precision": 0.6,
+          "steps": 1,
+          "pages_read": 4,
+          "error": null,
+          "step_details": []
+        }
+      ],
+      "aggregate": {
+        "total_cases": 2,
+        "answerable_cases": 2,
+        "unanswerable_cases": 0,
+        "multi_hop_cases": 2,
+        "retrieval_evidence_metrics": {
+          "note": "Comparable across Baseline and Experiment: both measure whether required pages were found, independent of the answer generator.",
+          "mean_evidence_recall_answerable": {
+            "value": 0.75,
+            "numerator_sum": 4,
+            "denominator_sum": 5,
+            "scope": "answerable cases only (unanswerable excluded; evidence_recall=None)"
+          },
+          "mean_source_precision": {
+            "value": 0.4,
+            "scope": "all cases"
+          },
+          "evidence_support_rate_answerable": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 2,
+            "definition": "answer_correct AND evidence_recall==1.0, among answerable cases"
+          },
+          "multi_hop_success_rate": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 2,
+            "definition": "answer_correct AND evidence_recall==1.0, among answerable multi-hop cases"
+          },
+          "unanswerable_cases": {
+            "count": 0,
+            "evidence_recall_treatment": "excluded from mean (evidence_recall=None, not 1.0)"
+          }
+        },
+        "answer_quality_metrics": {
+          "note": "NOT directly comparable across systems: Baseline uses DeterministicGenerator (offline extractive), Experiment uses a real LLM. Report as independent results.",
+          "answer_accuracy": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 2,
+            "scope": "all cases"
+          },
+          "answerable_accuracy": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 2,
+            "scope": "answerable cases only"
+          },
+          "unanswerable_handling": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 0,
+            "scope": "unanswerable cases only",
+            "caveat": "Only 1 unanswerable case in this dataset; not a reliable measure of refusal ability."
+          },
+          "scoring_rule": "keyword_group_match (lexical heuristic, NOT semantic correctness; paraphrases may score low even when correct)"
+        },
+        "efficiency_metrics": {
+          "mean_steps": 1.0,
+          "mean_pages_read": 4.0,
+          "failure_rate": 0.0,
+          "budget_exhausted_rate": 0.0
+        },
+        "answer_accuracy": 0.0,
+        "answerable_accuracy": 0.0,
+        "unanswerable_handling": 0.0,
+        "mean_evidence_recall": 0.75,
+        "mean_source_precision": 0.4,
+        "multi_hop_success_rate": 0.0,
+        "mean_steps": 1.0,
+        "mean_pages_read": 4.0,
+        "failure_rate": 0.0,
+        "budget_exhausted_rate": 0.0,
+        "correct_count": 0,
+        "answerable_correct_count": 0
+      }
+    },
+    "experiment": {
+      "per_case": [
+        {
+          "id": "mh02_project_budget",
+          "question": "What is the budget of the project led by Alice Smith?",
+          "answer": null,
+          "answer_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "manual",
+          "status": "protocol_error",
+          "sources": [],
+          "accessed_pages": [],
+          "required_pages": [
+            "alice",
+            "project_phoenix"
+          ],
+          "evidence_recall": 0.0,
+          "evidence_recall_numerator": 0,
+          "evidence_recall_denominator": 2,
+          "source_precision": 0.0,
+          "steps": 2,
+          "pages_read": 0,
+          "error": "2 consecutive protocol errors",
+          "step_details": [
+            {
+              "step": 0,
+              "action": "protocol_error",
+              "error": "output is not valid JSON: Extra data: line 3 column 1 (char 61)",
+              "result_summary": "invalid model output"
+            },
+            {
+              "step": 1,
+              "action": "protocol_error",
+              "error": "output is not valid JSON: Extra data: line 3 column 1 (char 54)",
+              "result_summary": "invalid model output"
+            }
+          ]
+        },
+        {
+          "id": "mh10_direct_reports",
+          "question": "List all people who report to Bob Jones.",
+          "answer": "Based on the pages read, Bob Jones manages a team of twelve engineers. The only individuals explicitly named as reporting to him are Alice Smith (senior engineer, who reports directly to Bob Jones) and Carol Chen (staff engineer, who reports to Bob Jones). The other ten engineers on his team are not named in the available pages.",
+          "answer_correct": true,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "manual",
+          "status": "answered",
+          "sources": [
+            "bob",
+            "alice",
+            "carol"
+          ],
+          "accessed_pages": [
+            "alice",
+            "bob",
+            "building_a",
+            "building_b",
+            "carol",
+            "david",
+            "eve",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "required_pages": [
+            "bob",
+            "alice",
+            "carol"
+          ],
+          "evidence_recall": 1.0,
+          "evidence_recall_numerator": 3,
+          "evidence_recall_denominator": 3,
+          "source_precision": 1.0,
+          "steps": 7,
+          "pages_read": 3,
+          "error": null,
+          "step_details": [
+            {
+              "step": 0,
+              "action": "protocol_error",
+              "error": "output is not valid JSON: Extra data: line 1 column 43 (char 42)",
+              "result_summary": "invalid model output"
+            },
+            {
+              "step": 1,
+              "action": "search",
+              "error": null,
+              "result_summary": "search returned 5 candidates (5 new)"
+            },
+            {
+              "step": 2,
+              "action": "read",
+              "error": null,
+              "result_summary": "read 1 pages (1 new)"
+            },
+            {
+              "step": 3,
+              "action": "read",
+              "error": null,
+              "result_summary": "read 2 pages (2 new)"
+            },
+            {
+              "step": 4,
+              "action": "protocol_error",
+              "error": "output is not valid JSON: Extra data: line 1 column 78 (char 77)",
+              "result_summary": "invalid model output"
+            },
+            {
+              "step": 5,
+              "action": "search",
+              "error": null,
+              "result_summary": "search returned 5 candidates (2 new)"
+            },
+            {
+              "step": 6,
+              "action": "answer",
+              "error": null,
+              "result_summary": "answer produced (3 sources)"
+            }
+          ]
+        }
+      ],
+      "aggregate": {
+        "total_cases": 2,
+        "answerable_cases": 2,
+        "unanswerable_cases": 0,
+        "multi_hop_cases": 2,
+        "retrieval_evidence_metrics": {
+          "note": "Comparable across Baseline and Experiment: both measure whether required pages were found, independent of the answer generator.",
+          "mean_evidence_recall_answerable": {
+            "value": 0.5,
+            "numerator_sum": 3,
+            "denominator_sum": 5,
+            "scope": "answerable cases only (unanswerable excluded; evidence_recall=None)"
+          },
+          "mean_source_precision": {
+            "value": 0.5,
+            "scope": "all cases"
+          },
+          "evidence_support_rate_answerable": {
+            "value": 0.5,
+            "numerator": 1,
+            "denominator": 2,
+            "definition": "answer_correct AND evidence_recall==1.0, among answerable cases"
+          },
+          "multi_hop_success_rate": {
+            "value": 0.5,
+            "numerator": 1,
+            "denominator": 2,
+            "definition": "answer_correct AND evidence_recall==1.0, among answerable multi-hop cases"
+          },
+          "unanswerable_cases": {
+            "count": 0,
+            "evidence_recall_treatment": "excluded from mean (evidence_recall=None, not 1.0)"
+          }
+        },
+        "answer_quality_metrics": {
+          "note": "NOT directly comparable across systems: Baseline uses DeterministicGenerator (offline extractive), Experiment uses a real LLM. Report as independent results.",
+          "answer_accuracy": {
+            "value": 0.5,
+            "numerator": 1,
+            "denominator": 2,
+            "scope": "all cases"
+          },
+          "answerable_accuracy": {
+            "value": 0.5,
+            "numerator": 1,
+            "denominator": 2,
+            "scope": "answerable cases only"
+          },
+          "unanswerable_handling": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 0,
+            "scope": "unanswerable cases only",
+            "caveat": "Only 1 unanswerable case in this dataset; not a reliable measure of refusal ability."
+          },
+          "scoring_rule": "keyword_group_match (lexical heuristic, NOT semantic correctness; paraphrases may score low even when correct)"
+        },
+        "efficiency_metrics": {
+          "mean_steps": 4.5,
+          "mean_pages_read": 1.5,
+          "failure_rate": 0.5,
+          "budget_exhausted_rate": 0.0
+        },
+        "answer_accuracy": 0.5,
+        "answerable_accuracy": 0.5,
+        "unanswerable_handling": 0.0,
+        "mean_evidence_recall": 0.5,
+        "mean_source_precision": 0.5,
+        "multi_hop_success_rate": 0.5,
+        "mean_steps": 4.5,
+        "mean_pages_read": 1.5,
+        "failure_rate": 0.5,
+        "budget_exhausted_rate": 0.0,
+        "correct_count": 1,
+        "answerable_correct_count": 1
+      }
+    }
+  }
+}

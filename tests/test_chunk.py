@@ -2,7 +2,7 @@
 
 import pytest
 
-from zmrag import Chunk, Document
+from zmwiki import Chunk, Document
 
 
 def test_minimal_chunk():
@@ -123,7 +123,7 @@ def test_position_orders_chunks():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Chunk", "Document", "Source", "Metadata"} <= set(__all__)
     assert Chunk.__name__ == "Chunk"

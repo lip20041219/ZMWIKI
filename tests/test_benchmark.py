@@ -13,7 +13,7 @@ full deterministic retrieval pipeline.
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     BenchmarkRunner,
     Chunk,
     DeterministicBenchmarkRunner,
@@ -384,7 +384,7 @@ def test_real_e2e_benchmark_runner_full_retrieval_chain():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert "BenchmarkRunner" in __all__
     assert "DeterministicBenchmarkRunner" in __all__

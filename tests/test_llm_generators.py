@@ -14,7 +14,7 @@ import urllib.request
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     Context,
     Generator,
@@ -106,7 +106,7 @@ def _generate(query="what is it?", context=None, *, transport=None, **overrides)
 @pytest.fixture(autouse=True)
 def _no_ambient_api_key(monkeypatch):
     """No test depends on the machine's environment (or leaks its key)."""
-    monkeypatch.delenv("ZMRAG_API_KEY", raising=False)
+    monkeypatch.delenv("ZMWIKI_API_KEY", raising=False)
 
 
 # --- 1-8. configuration --------------------------------------------------------
@@ -154,19 +154,19 @@ def test_api_key_argument_is_used_and_never_exposed():
     assert repr(gen).endswith("api_key=set)")
 
 
-def test_api_key_falls_back_to_the_zmrag_environment_variable(monkeypatch):
-    monkeypatch.setenv("ZMRAG_API_KEY", "env-key")
+def test_api_key_falls_back_to_the_zmwiki_environment_variable(monkeypatch):
+    monkeypatch.setenv("ZMWIKI_API_KEY", "env-key")
     assert _generator().has_api_key is True
     # An explicit argument wins over the environment.
     assert _generator(api_key="arg-key")._api_key == "arg-key"
-    monkeypatch.setenv("ZMRAG_API_KEY", "   ")
+    monkeypatch.setenv("ZMWIKI_API_KEY", "   ")
     assert _generator().has_api_key is False  # blank env is not a key
 
 
 def test_api_key_is_optional_and_not_read_from_vendor_variables(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "vendor-key")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "vendor-key")
-    assert _generator().has_api_key is False  # only ZMRAG_API_KEY is consulted
+    assert _generator().has_api_key is False  # only ZMWIKI_API_KEY is consulted
 
 
 def test_api_key_must_not_be_blank_when_given():
@@ -558,7 +558,7 @@ def test_errors_share_one_base_class():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     expected = {
         "OpenAICompatibleGenerator",
@@ -593,7 +593,7 @@ def test_a_plain_callable_is_a_valid_transport():
 
 
 def test_module_imports_are_stdlib_only():
-    import zmrag.llm_generators as module
+    import zmwiki.llm_generators as module
 
     tree = ast.parse(pathlib.Path(module.__file__).read_text(encoding="utf-8"))
     absolute = set()

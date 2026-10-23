@@ -9,7 +9,7 @@ the evaluation layer.
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     DeterministicContextBuilder,
     DeterministicEmbedder,
@@ -307,7 +307,7 @@ def test_end_to_end_pipeline_context_feed_evaluator():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {
         "EvaluationCase",

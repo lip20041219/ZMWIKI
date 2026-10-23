@@ -1,4 +1,4 @@
-"""ZMRAG core data contract.
+"""zmwiki core data contract.
 
 Pipeline data relationship:
 

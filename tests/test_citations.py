@@ -2,7 +2,7 @@
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     AnswerResult,
     Chunk,
     Citation,
@@ -193,6 +193,6 @@ def test_answer_result_is_frozen_and_comparable_by_value():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Citation", "AnswerResult", "citations_from_context"} <= set(__all__)

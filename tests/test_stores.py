@@ -2,14 +2,14 @@
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     Embedding,
     InMemoryVectorStore,
     SearchResult,
     VectorStore,
 )
-from zmrag.stores import cosine_similarity
+from zmwiki.stores import cosine_similarity
 
 
 def _chunk(cid, text="t"):
@@ -255,7 +255,7 @@ def test_invalid_embedding_on_upsert_rejected():
 def test_store_abstract_and_public_import():
     with pytest.raises(TypeError):
         VectorStore()  # type: ignore[abstract]
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"VectorStore", "InMemoryVectorStore", "SearchResult"} <= set(__all__)
 

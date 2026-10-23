@@ -2,7 +2,7 @@
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     FusionStrategy,
     HybridRetriever,
@@ -268,7 +268,7 @@ def test_hybrid_injects_fake_fusion_strategy():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"HybridRetriever", "FusionStrategy", "WeightedScoreFusion", "RRFFusion"} <= set(__all__)
     assert isinstance(WeightedScoreFusion(), FusionStrategy)

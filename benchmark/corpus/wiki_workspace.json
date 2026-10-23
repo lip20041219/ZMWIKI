@@ -1,0 +1,196 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "id": "alice",
+      "path": "wiki/alice",
+      "title": "Alice Smith is a senior engineer at Acme Corp",
+      "content": "Alice Smith is a senior engineer at Acme Corp. She joined the company in 2021 and currently leads Project Phoenix, an internal platform migration initiative. Alice reports directly to Bob Jones, the Director of Engineering. Her office is located on the second floor of Building A. Alice holds a master's degree in computer science and previously worked at a startup focused on distributed systems. She is known for her expertise in database internals and system performance tuning.",
+      "aliases": [],
+      "tags": [],
+      "description": null,
+      "sources": [
+        "alice"
+      ],
+      "links_to": [
+        "bob",
+        "project_phoenix"
+      ],
+      "links_from": [
+        "bob",
+        "project_phoenix"
+      ],
+      "metadata": {}
+    },
+    {
+      "id": "bob",
+      "path": "wiki/bob",
+      "title": "Bob Jones serves as the Director of Engineering at Acme Corp, a role he has",
+      "content": "Bob Jones serves as the Director of Engineering at Acme Corp, a role he has held since 2019. He manages a team of twelve engineers, including Alice Smith and Carol Chen. Bob's office is in Building A, on the third floor. He reports to Eve Martinez, the VP of Engineering. Before his current role, Bob was a staff engineer working on the company's core infrastructure. He is responsible for technical roadmap planning and quarterly performance reviews for his direct reports.",
+      "aliases": [],
+      "tags": [],
+      "description": null,
+      "sources": [
+        "bob"
+      ],
+      "links_to": [
+        "alice",
+        "carol",
+        "building_a"
+      ],
+      "links_from": [
+        "alice",
+        "carol",
+        "eve",
+        "building_a"
+      ],
+      "metadata": {}
+    },
+    {
+      "id": "carol",
+      "path": "wiki/carol",
+      "title": "Carol Chen is a staff engineer at Acme Corp, specializing in backend services",
+      "content": "Carol Chen is a staff engineer at Acme Corp, specializing in backend services and API design. She joined the company in 2022 and currently contributes to two active projects: Project Phoenix and Project Orion. Carol reports to Bob Jones, the Director of Engineering. Her office is on the first floor of Building A. Carol is recognized for her work on the company's authentication service and her mentorship of junior engineers. She previously worked at a fintech company where she built high-throughput payment processing systems.",
+      "aliases": [],
+      "tags": [],
+      "description": null,
+      "sources": [
+        "carol"
+      ],
+      "links_to": [
+        "bob",
+        "project_phoenix",
+        "project_orion"
+      ],
+      "links_from": [
+        "bob",
+        "project_phoenix",
+        "project_orion"
+      ],
+      "metadata": {}
+    },
+    {
+      "id": "project_phoenix",
+      "path": "wiki/project_phoenix",
+      "title": "Project Phoenix is Acme Corp's internal platform migration initiative, launched",
+      "content": "Project Phoenix is Acme Corp's internal platform migration initiative, launched in early 2025. The project is led by Alice Smith, with Carol Chen as a core team member. It has an allocated budget of five hundred thousand dollars and a target completion date of December 31, 2026. The goal of Project Phoenix is to migrate the company's legacy monolithic application to a microservices architecture running on Kubernetes. The project team meets every Tuesday and Thursday for standups and architecture reviews.",
+      "aliases": [],
+      "tags": [],
+      "description": null,
+      "sources": [
+        "project_phoenix"
+      ],
+      "links_to": [
+        "alice",
+        "carol"
+      ],
+      "links_from": [
+        "alice",
+        "carol"
+      ],
+      "metadata": {}
+    },
+    {
+      "id": "project_orion",
+      "path": "wiki/project_orion",
+      "title": "Project Orion is Acme Corp's data analytics platform project, initiated in",
+      "content": "Project Orion is Acme Corp's data analytics platform project, initiated in mid-2025. The project is led by David Kim, a principal engineer, with Carol Chen contributing to the backend integration layer. Project Orion has a budget of three hundred thousand dollars and is expected to launch in Q2 2027. The platform aims to provide real-time business intelligence dashboards for all departments. The tech stack includes a columnar database, a stream processing engine, and a React-based frontend. David Kim reports to Eve Martinez.",
+      "aliases": [],
+      "tags": [],
+      "description": null,
+      "sources": [
+        "project_orion"
+      ],
+      "links_to": [
+        "david",
+        "carol"
+      ],
+      "links_from": [
+        "carol",
+        "david"
+      ],
+      "metadata": {}
+    },
+    {
+      "id": "david",
+      "path": "wiki/david",
+      "title": "David Kim is a principal engineer at Acme Corp and the technical lead for",
+      "content": "David Kim is a principal engineer at Acme Corp and the technical lead for Project Orion. He joined the company in 2020 and has been instrumental in building the company's data infrastructure. David reports to Eve Martinez, the VP of Engineering. His office is on the fourth floor of Building B. David holds a PhD in distributed systems and has published several papers on stream processing. Before joining Acme Corp, he worked at a large cloud provider on their managed database service.",
+      "aliases": [],
+      "tags": [],
+      "description": null,
+      "sources": [
+        "david"
+      ],
+      "links_to": [
+        "project_orion",
+        "eve"
+      ],
+      "links_from": [
+        "project_orion",
+        "eve"
+      ],
+      "metadata": {}
+    },
+    {
+      "id": "eve",
+      "path": "wiki/eve",
+      "title": "Eve Martinez is the VP of Engineering at Acme Corp, overseeing all technical",
+      "content": "Eve Martinez is the VP of Engineering at Acme Corp, overseeing all technical teams. She has been in this role since 2018 and reports directly to the CEO. Eve manages two directors: Bob Jones, who leads the platform engineering group, and David Kim, who leads the data engineering group. Her office is on the fifth floor of Building B. Eve is responsible for the company's annual engineering budget of four million dollars and for setting the long-term technical vision. She previously held senior engineering leadership roles at two Fortune 500 technology companies.",
+      "aliases": [],
+      "tags": [],
+      "description": null,
+      "sources": [
+        "eve"
+      ],
+      "links_to": [
+        "bob",
+        "david",
+        "building_b"
+      ],
+      "links_from": [
+        "david",
+        "building_b"
+      ],
+      "metadata": {}
+    },
+    {
+      "id": "building_a",
+      "path": "wiki/building_a",
+      "title": "Building A is one of two office buildings occupied by Acme Corp",
+      "content": "Building A is one of two office buildings occupied by Acme Corp. It houses the platform engineering group and has three floors. The first floor contains open workspace for staff and senior engineers, including Carol Chen's desk. The second floor has additional offices and a small kitchenette; Alice Smith's office is on this floor. The third floor houses the Director of Engineering's office, currently occupied by Bob Jones, plus two conference rooms. A cafeteria serving breakfast and lunch is located on the second floor, adjacent to the kitchenette.",
+      "aliases": [],
+      "tags": [],
+      "description": null,
+      "sources": [
+        "building_a"
+      ],
+      "links_to": [
+        "bob"
+      ],
+      "links_from": [
+        "bob"
+      ],
+      "metadata": {}
+    },
+    {
+      "id": "building_b",
+      "path": "wiki/building_b",
+      "title": "Building B is the second office building at Acme Corp, housing the executive",
+      "content": "Building B is the second office building at Acme Corp, housing the executive and data engineering groups. It has five floors. The first floor features a fully equipped gym with locker rooms and showers, open to all employees. The second and third floors contain workspace for the data engineering team. The fourth floor houses David Kim's office and several meeting rooms. The fifth floor is the executive level, containing the VP of Engineering's office (currently Eve Martinez), the CEO's office, and a boardroom. Building B is connected to Building A by a covered walkway on the second floor.",
+      "aliases": [],
+      "tags": [],
+      "description": null,
+      "sources": [
+        "building_b"
+      ],
+      "links_to": [
+        "eve"
+      ],
+      "links_from": [
+        "eve"
+      ],
+      "metadata": {}
+    }
+  ]
+}

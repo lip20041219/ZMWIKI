@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0b0c">
+  <meta name="description" content="ZMWiki turns plain documents into linked wiki pages, then retrieves them locally with a budgeted multi-step agent. A Python library, deterministic by default.">
+  <title>ZMWiki — Local-first, wiki-native retrieval</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#top" aria-label="ZMWiki home">
+        <svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="14" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <rect x="10.5" y="7.5" width="14" height="18" rx="2.5" fill="var(--bg)" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M14.5 14.5h6M14.5 18h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span>ZMWiki</span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div class="header-actions">
+        <a class="ghost-link" href="https://github.com/lip20041219/zmwiki">GitHub</a>
+        <a class="btn btn-small" href="#terminal">Get started</a>
+      </div>
+
+      <details class="mobile-nav">
+        <summary aria-label="Open menu">Menu</summary>
+        <nav class="mobile-panel" aria-label="Mobile">
+          <a href="#features">Features</a>
+          <a href="#workflow">Workflow</a>
+          <a href="#roadmap">Roadmap</a>
+          <a href="#faq">FAQ</a>
+          <a href="#terminal">Get started</a>
+          <a href="https://github.com/lip20041219/zmwiki">GitHub</a>
+        </nav>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>Local-first · Wiki-native retrieval</p>
+          <h1>
+            Your knowledge.<br>
+            Structured.<br>
+            <span class="accent-serif">Retrieved locally.</span>
+          </h1>
+          <p class="lede">
+            ZMWiki turns plain documents into linked wiki pages, then lets an agent
+            search, read, and follow those links on your machine. The core is a
+            Python library — deterministic by default, model-agnostic when you
+            connect a live endpoint.
+          </p>
+          <div class="cta-row">
+            <a class="btn" href="#terminal">
+              Get started
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a class="btn btn-ghost" href="#workflow">See how it works</a>
+          </div>
+          <ul class="hero-meta" aria-label="Project facts">
+            <li>Python 3.10+</li>
+            <li>Zero runtime dependencies</li>
+            <li>Offline by default</li>
+          </ul>
+        </div>
+
+        <figure class="hero-art">
+          <svg role="img" aria-labelledby="graph-title graph-desc" viewBox="0 0 560 480">
+            <title id="graph-title">A linked wiki page graph</title>
+            <desc id="graph-desc">Five wiki pages — Alice Smith, Project Phoenix, Bob Jones, Carol Chen and Project Budget — connected by links, with a search query highlighted along a read path.</desc>
+            <defs>
+              <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0 0 8 4 0 8z" fill="#4a4a51"/>
+              </marker>
+              <marker id="arrow-accent" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0 0 8 4 0 8z" fill="var(--accent)"/>
+              </marker>
+            </defs>
+
+            <rect x="0.5" y="0.5" width="559" height="479" rx="20" fill="#101012" stroke="#26262a"/>
+            <text class="graph-label" x="24" y="36">wiki / demo</text>
+            <circle cx="470" cy="32" r="3" fill="var(--accent)"/>
+            <text class="graph-label accent" x="536" y="36" text-anchor="end">index ready</text>
+
+            <path class="link" d="M186 103 C 230 100, 260 94, 300 94" marker-end="url(#arrow)"/>
+            <path class="link" d="M106 136 C 106 165, 106 185, 108 210" marker-end="url(#arrow)"/>
+            <path class="link link-active" d="M410 130 C 410 155, 410 175, 410 200" marker-end="url(#arrow-accent)"/>
+            <path class="link" d="M190 241 C 240 241, 270 230, 330 229" marker-end="url(#arrow)"/>
+            <path class="link link-active" d="M410 266 C 400 295, 370 315, 352 340" marker-end="url(#arrow-accent)"/>
+            <path class="link link-dashed" d="M110 272 C 120 315, 180 360, 250 376" marker-end="url(#arrow)"/>
+
+            <g class="node node-active">
+              <rect x="26" y="70" width="160" height="66" rx="12"/>
+              <circle class="node-pulse" cx="42" cy="86" r="3"/>
+              <text class="node-path" x="42" y="91">alice</text>
+              <text class="node-title" x="42" y="110">Alice Smith</text>
+              <text class="node-meta" x="42" y="126">person · 2 links</text>
+            </g>
+
+            <g class="node node-active">
+              <rect x="300" y="58" width="200" height="72" rx="12"/>
+              <circle class="node-pulse" cx="316" cy="74" r="3"/>
+              <text class="node-path" x="316" y="79">project_phoenix</text>
+              <text class="node-title" x="316" y="99">Project Phoenix</text>
+              <text class="node-meta" x="316" y="116">project · 2 links</text>
+            </g>
+
+            <g class="node">
+              <rect x="330" y="200" width="160" height="66" rx="12"/>
+              <text class="node-path" x="346" y="221">bob</text>
+              <text class="node-title" x="346" y="240">Bob Jones</text>
+              <text class="node-meta" x="346" y="256">person · 3 links</text>
+            </g>
+
+            <g class="node">
+              <rect x="30" y="210" width="160" height="62" rx="12"/>
+              <text class="node-path" x="46" y="230">carol</text>
+              <text class="node-title" x="46" y="249">Carol Chen</text>
+              <text class="node-meta" x="46" y="265">person · 3 links</text>
+            </g>
+
+            <g class="node">
+              <rect x="250" y="340" width="200" height="72" rx="12"/>
+              <text class="node-path" x="266" y="361">project_budget</text>
+              <text class="node-title" x="266" y="381">Project Budget</text>
+              <text class="node-meta" x="266" y="398">concept · 1 link</text>
+            </g>
+
+            <rect x="24" y="426" width="512" height="34" rx="9" fill="#151518" stroke="#2a2a2f"/>
+            <text class="graph-query" x="40" y="447">search("phoenix budget")</text>
+            <text class="graph-result" x="520" y="447" text-anchor="end">3 pages read</text>
+          </svg>
+          <figcaption>Wiki pages, explicit links, and an agent that reads before it answers.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Fact strip -->
+    <section class="fact-strip" aria-label="Project facts">
+      <div class="wrap fact-grid">
+        <div><strong>0</strong><span>runtime dependencies</span></div>
+        <div><strong>2×</strong><span>BM25 signals: metadata + content</span></div>
+        <div><strong>15</strong><span>multi-hop benchmark cases</span></div>
+        <div><strong>Local</strong><span>default execution model</span></div>
+      </div>
+    </section>
+
+    <!-- Capabilities overview -->
+    <section class="section capabilities" id="capabilities">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">The core</p>
+          <h2>A retrieval loop you can inspect.</h2>
+          <p class="section-lede">
+            No opaque pipeline. Each stage is a small, testable module with a
+            defined contract, and every answer points back to pages the agent
+            actually read.
+          </p>
+        </div>
+        <ul class="capability-grid">
+          <li class="capability">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5 14.5 9.5M7.8 17.2l-1.3 1.3a3.5 3.5 0 0 1-5-5l3-3a3.5 3.5 0 0 1 5 0M16.2 6.8l1.3-1.3a3.5 3.5 0 0 1 5 5l-3 3a3.5 3.5 0 0 1-5 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <h3>Linked pages</h3>
+            <p>Stable ids, paths, aliases, tags and bidirectional links — not anonymous text chunks.</p>
+          </li>
+          <li class="capability">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <h3>Two-signal search</h3>
+            <p>Metadata BM25 and content BM25 fused deterministically. Results carry metadata, not page bodies.</p>
+          </li>
+          <li class="capability">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <h3>Evidence-aware agent</h3>
+            <p>Search candidates never count as evidence. Only pages opened through <code>wiki_read</code> do.</p>
+          </li>
+          <li class="capability">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <h3>Measured, not asserted</h3>
+            <p>Offline retrieval metrics and a multi-hop benchmark with per-step diagnostics.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section features" id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Features</p>
+          <h2>Six modules. One local loop.</h2>
+          <p class="section-lede">
+            These are shipped modules in the repository today. The browser
+            workbench is not one of them — it is on the roadmap.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-top"><span class="feature-num">01</span><span class="feature-tag">wiki_schema.py</span></div>
+            <h3>Structured Wiki Pages</h3>
+            <p>Every page carries a stable id, path, title, aliases, tags, source ids and bidirectional links. Pages serialize to JSON-ready dicts and validate on construction.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-top"><span class="feature-num">02</span><span class="feature-tag">wiki_retriever.py</span></div>
+            <h3>Metadata-First Search</h3>
+            <p><code>wiki_search</code> ranks title, alias, tag and description matches first, fuses content BM25, then returns candidate metadata — never full page bodies.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-top"><span class="feature-num">03</span><span class="feature-tag">wiki_retriever.py</span></div>
+            <h3>Evidence-Aware Reading</h3>
+            <p><code>wiki_read</code> fetches pages by path in input order and fails loudly on missing paths. Only pages actually read enter the agent&rsquo;s evidence set.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-top"><span class="feature-num">04</span><span class="feature-tag">wiki_agent.py</span></div>
+            <h3>Budgeted Multi-Step Agent</h3>
+            <p>Search, read, follow links, answer. Step limits, duplicate-action suppression and consecutive protocol-error caps are enforced in code, not by prompt alone.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-top"><span class="feature-num">05</span><span class="feature-tag">wiki_compiler.py</span></div>
+            <h3>Source-Aware Compilation</h3>
+            <p><code>WikiCompiler</code> turns one document into one structured page through an OpenAI-compatible endpoint and keeps the source document id on the page.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-top"><span class="feature-num">06</span><span class="feature-tag">benchmark/</span></div>
+            <h3>Measurable Retrieval</h3>
+            <p>Offline retrieval metrics, deterministic answer scoring and a 15-case multi-hop benchmark track evidence recall and per-step failures without an LLM judge.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workflow -->
+    <section class="section workflow" id="workflow">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Workflow</p>
+          <h2>From raw text to a traceable answer.</h2>
+        </div>
+
+        <ol class="flow">
+          <li>
+            <span class="flow-num">01</span>
+            <h3>Ingest</h3>
+            <p>Plain text documents or a directory, loaded through the existing ingestion contracts.</p>
+          </li>
+          <li>
+            <span class="flow-num">02</span>
+            <h3>Compile &amp; Index</h3>
+            <p>Pages are compiled with sources retained. The index builds metadata and content BM25.</p>
+          </li>
+          <li>
+            <span class="flow-num">03</span>
+            <h3>Search</h3>
+            <p>Metadata-first ranking returns candidate pages with scores and no page bodies.</p>
+          </li>
+          <li>
+            <span class="flow-num">04</span>
+            <h3>Read</h3>
+            <p>Full pages are fetched by path. Their links become the next set of traversal options.</p>
+          </li>
+          <li>
+            <span class="flow-num">05</span>
+            <h3>Answer</h3>
+            <p>The agent answers from pages it actually read, with sources kept separate from model text.</p>
+          </li>
+        </ol>
+
+        <div class="loop-note">
+          <span class="loop-label">Agent loop</span>
+          <div class="loop-chips">
+            <span>search</span><span aria-hidden="true">→</span>
+            <span>read</span><span aria-hidden="true">→</span>
+            <span>follow_links</span><span aria-hidden="true">→</span>
+            <span>answer</span>
+          </div>
+          <p>Bounded by <code>max_steps</code>, duplicate suppression and a consecutive protocol-error limit.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Terminal -->
+    <section class="section terminal-section" id="terminal">
+      <div class="wrap terminal-grid">
+        <div class="terminal-copy">
+          <p class="eyebrow">Install</p>
+          <h2>The library, not a platform.</h2>
+          <p class="section-lede">
+            Clone the repository and install it in editable mode. The default
+            install is dependency-free and runs without a model or network.
+          </p>
+          <ul class="check-list">
+            <li>Python 3.10 or newer</li>
+            <li>No runtime dependencies</li>
+            <li>Wiki and benchmark tests run offline</li>
+          </ul>
+          <p class="fine-print">
+            This phase ships the static site only. There is no local server or
+            browser workbench command yet — both are in progress.
+          </p>
+        </div>
+
+        <div class="terminal-window" aria-label="Terminal commands">
+          <div class="terminal-bar">
+            <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="terminal-title">~/zmwiki</span>
+          </div>
+          <pre class="terminal-code"><code><span class="prompt">$</span> git clone <span class="url">https://github.com/lip20041219/zmwiki.git</span>
+<span class="prompt">$</span> cd zmwiki
+<span class="prompt">$</span> pip install -e .
+<span class="prompt">$</span> python -m pytest tests/wiki -q</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section class="section roadmap" id="roadmap">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Roadmap</p>
+          <h2>What exists, and what does not.</h2>
+          <p class="section-lede">No dates promised. Status is part of the product.</p>
+        </div>
+        <div class="roadmap-grid">
+          <div class="roadmap-card">
+            <div class="roadmap-head"><span class="status-dot available" aria-hidden="true"></span><h3>Available</h3></div>
+            <ul>
+              <li>WikiPage model, links and JSON-ready serialization</li>
+              <li>WikiIndex with metadata and content BM25</li>
+              <li><code>wiki_search</code> and <code>wiki_read</code></li>
+              <li>Budgeted multi-step <code>WikiAgent</code></li>
+              <li>Document-to-page <code>WikiCompiler</code></li>
+              <li>RAG baseline and offline evaluation</li>
+            </ul>
+          </div>
+          <div class="roadmap-card">
+            <div class="roadmap-head"><span class="status-dot progress" aria-hidden="true"></span><h3>In Progress</h3></div>
+            <ul>
+              <li>Persistent local workspace for wiki pages</li>
+              <li>Local HTTP service over the existing core</li>
+              <li>Browser workbench for search, read and ask</li>
+              <li>Broader document format ingestion</li>
+            </ul>
+            <p class="roadmap-note">Not shipped yet. Do not expect these capabilities in the current release.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section faq" id="faq">
+      <div class="wrap faq-grid">
+        <div class="faq-intro">
+          <p class="eyebrow">FAQ</p>
+          <h2>Questions worth asking.</h2>
+          <p class="section-lede">Short answers, no cloud marketing.</p>
+        </div>
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>Is my knowledge sent to a cloud?</summary>
+            <p>No by default. Indexing, search, reading and the deterministic evaluation paths run locally. Only model calls you configure — compilation, agent reasoning or generation — leave the machine, and they go to the endpoint you choose.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Do I need an API key?</summary>
+            <p>Not for the deterministic RAG pipeline or the offline benchmarks. Compilation and the live agent need an OpenAI-compatible endpoint; the key is read from your environment or passed in code. It is never part of the static site.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Is there a browser workbench or local server?</summary>
+            <p>Not yet. This release ships the static product site. A localhost-only HTTP service and browser workbench are in progress and will reuse the existing index and agent APIs.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Where is my wiki stored?</summary>
+            <p>Today the wiki index is in memory: it lives for the process that built it. Benchmark artifacts are JSON files under <code>benchmark/results/</code>. A persistent local workspace is not implemented yet.</p>
+          </details>
+          <details class="faq-item">
+            <summary>What document formats are supported?</summary>
+            <p>Plain text and directories of <code>.txt</code> files, through the existing ingestion modules. PDF and Markdown parsing are not implemented.</p>
+          </details>
+          <details class="faq-item">
+            <summary>What license is ZMWiki under?</summary>
+            <p>Proprietary, as declared in <code>pyproject.toml</code>. The source is publicly readable on GitHub; that is not an open-source license grant.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="footer">
+    <div class="wrap">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a class="brand" href="#top" aria-label="ZMWiki home">
+            <svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true">
+              <rect x="3.5" y="3.5" width="14" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+              <rect x="10.5" y="7.5" width="14" height="18" rx="2.5" fill="var(--bg)" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M14.5 14.5h6M14.5 18h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>ZMWiki</span>
+          </a>
+          <p>Local-first knowledge, structured for agents.</p>
+        </div>
+        <nav class="footer-links" aria-label="Footer">
+          <div>
+            <h3>Product</h3>
+            <a href="#features">Features</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#roadmap">Roadmap</a>
+          </div>
+          <div>
+            <h3>Docs</h3>
+            <a href="https://github.com/lip20041219/zmwiki/blob/master/README.md">README</a>
+            <a href="https://github.com/lip20041219/zmwiki/blob/master/docs/architecture.md">Architecture</a>
+            <a href="#faq">FAQ</a>
+          </div>
+          <div>
+            <h3>Project</h3>
+            <a href="https://github.com/lip20041219/zmwiki">GitHub</a>
+            <a href="https://github.com/lip20041219/zmwiki/blob/master/pyproject.toml">License</a>
+            <a href="#terminal">Install</a>
+          </div>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 ZMWiki</span>
+        <span>Proprietary license</span>
+        <span>No accounts. No cloud dependency.</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

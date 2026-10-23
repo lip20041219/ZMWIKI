@@ -63,8 +63,8 @@ exits 0, writing nothing:
 
     semantic profile unavailable: ImportError: SemanticEmbeddingProvider
     requires the 'semantic' optional dependency (sentence-transformers +
-    torch). Install it with: pip install "zmrag[semantic]"
-    install with: pip install "zmrag[semantic]"
+    torch). Install it with: pip install "zmwiki[semantic]"
+    install with: pip install "zmwiki[semantic]"
 
 An optional positional output path overrides the default evidence location
 (used by the integration tests so they never overwrite the committed file).
@@ -83,7 +83,7 @@ from pathlib import Path
 # repo root without ``pip install``. Stdlib only.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from zmrag import (
+from zmwiki import (
     DenseRetriever,
     EvaluationHarness,
     EvaluationPrediction,
@@ -97,7 +97,7 @@ from zmrag import (
     RRFFusion,
     WeightedScoreFusion,
 )
-from zmrag.semantic import SemanticEmbeddingProvider
+from zmwiki.semantic import SemanticEmbeddingProvider
 
 #: Sibling Phase 10B runner: the canonical corpus ingestion + boundary checks.
 import run_retrieval_small_baseline as _baseline
@@ -151,7 +151,7 @@ CUTOFF_FIELDS = (
 )
 
 #: Printed (and returned) when the optional dependency or the model is missing.
-UNAVAILABLE_HINT = 'pip install "zmrag[semantic]"'
+UNAVAILABLE_HINT = 'pip install "zmwiki[semantic]"'
 
 #: A missing optional dependency or model -- distinct from a broken experiment.
 #: Only these failures degrade to ``available: false``; a wrong corpus or

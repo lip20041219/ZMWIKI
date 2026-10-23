@@ -3,7 +3,7 @@
 Pins what Phase 12 Step 2 adds without touching any production code beyond the
 new ``semantic_rerank.py`` and without any ML dependency, model, or network:
 
-- importing ``zmrag`` and ``zmrag.semantic_rerank`` must never load torch /
+- importing ``zmwiki`` and ``zmwiki.semantic_rerank`` must never load torch /
   transformers / sentence_transformers (fresh-interpreter check, so an
   already-loaded dependency in the test process cannot cause a false failure);
 - constructing ``CrossEncoderReranker`` validates exactly-one model source
@@ -29,13 +29,13 @@ from pathlib import Path
 
 import pytest
 
-from zmrag.embedders import EmbeddingProvider
-from zmrag.rerankers import Reranker
-from zmrag.schema import Chunk
+from zmwiki.embedders import EmbeddingProvider
+from zmwiki.rerankers import Reranker
+from zmwiki.schema import Chunk
 
-import zmrag.semantic_rerank as semantic_rerank
-from zmrag.semantic_rerank import CrossEncoderReranker
-from zmrag.stores import SearchResult
+import zmwiki.semantic_rerank as semantic_rerank
+from zmwiki.semantic_rerank import CrossEncoderReranker
+from zmwiki.stores import SearchResult
 
 
 def _chunk(cid: str, text: str = "some text", pos: int = 0) -> Chunk:
@@ -75,15 +75,15 @@ def reranker(monkeypatch):
 # --- A. import safety ---------------------------------------------------------
 
 
-def test_import_zmrag_and_semantic_rerank_do_not_load_ml_dependencies():
-    """A fresh interpreter imports zmrag + zmrag.semantic_rerank; no ML module
+def test_import_zmwiki_and_semantic_rerank_do_not_load_ml_dependencies():
+    """A fresh interpreter imports zmwiki + zmwiki.semantic_rerank; no ML module
     may appear in sys.modules."""
     root = Path(__file__).resolve().parents[1]
     code = (
         "import sys\n"
         f"sys.path.insert(0, {str(root / 'src')!r})\n"
-        "import zmrag\n"
-        "import zmrag.semantic_rerank\n"
+        "import zmwiki\n"
+        "import zmwiki.semantic_rerank\n"
         "loaded = sorted(m for m in "
         "('torch', 'transformers', 'sentence_transformers', 'fastembed') "
         "if m in sys.modules)\n"

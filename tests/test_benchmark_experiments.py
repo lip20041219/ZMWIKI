@@ -41,7 +41,7 @@ sys.path.insert(0, str(BENCH_DIR))
 
 import run_retrieval_experiments as experiments  # noqa: E402
 
-from zmrag import (  # noqa: E402
+from zmwiki import (  # noqa: E402
     DenseRetriever,
     DeterministicEmbedder,
     EvaluationCaseSet,

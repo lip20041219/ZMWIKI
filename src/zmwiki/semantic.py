@@ -1,6 +1,6 @@
 """Optional semantic embeddings behind the existing EmbeddingProvider contract.
 
-ZMRAG core ships only :class:`~zmrag.embedders.DeterministicEmbedder` -- a
+zmwiki core ships only :class:`~zmwiki.embedders.DeterministicEmbedder` -- a
 test / local-development stand-in that produces *no* semantic vectors. This
 module adds a real, optional semantic provider for Phase 11's Semantic
 Retrieval Profile. It is deliberately **not** part of the top-level public API
@@ -8,8 +8,8 @@ and is never imported by the default import graph.
 
 Import safety: importing this module is always safe. No ML dependency appears
 at module scope; ``torch`` / ``sentence-transformers`` are imported only inside
-``_create_backend`` at instantiation time, so a plain ``import zmrag`` (or
-``from zmrag.semantic import SemanticEmbeddingProvider``) never touches them.
+``_create_backend`` at instantiation time, so a plain ``import zmwiki`` (or
+``from zmwiki.semantic import SemanticEmbeddingProvider``) never touches them.
 
 Deterministic profile vs semantic profile (Phase 11 boundary):
 
@@ -57,7 +57,7 @@ class SemanticEmbeddingProvider(EmbeddingProvider):
 
     Every result is wrapped in the library's :class:`Embedding` value object
     (a finite ``tuple[float, ...]``); numpy arrays / torch tensors never leak
-    into ZMRAG. ``dimension`` always matches the loaded model's embedding
+    into zmwiki. ``dimension`` always matches the loaded model's embedding
     dimension.
     """
 
@@ -122,7 +122,7 @@ def _create_backend(*, model_source: str, device: str | None) -> "_SentenceTrans
         raise ImportError(
             "SemanticEmbeddingProvider requires the 'semantic' optional "
             'dependency (sentence-transformers + torch). Install it with: '
-            'pip install "zmrag[semantic]"'
+            'pip install "zmwiki[semantic]"'
         ) from exc
     return _SentenceTransformerBackend(
         SentenceTransformer(model_source, device=device)

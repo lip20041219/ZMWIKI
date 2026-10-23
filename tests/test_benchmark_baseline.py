@@ -30,7 +30,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from zmrag import (
+from zmwiki import (
     DenseRetriever,
     DeterministicBenchmarkRunner,
     DeterministicContextBuilder,

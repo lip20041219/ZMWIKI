@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     AnswerEvaluation,
     AnswerEvaluator,
     Chunk,
@@ -443,7 +443,7 @@ def test_aggregate_accepts_any_iterable():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     expected = {"AnswerEvaluation", "AnswerEvaluator", "aggregate_evaluations"}
     assert expected <= set(__all__)

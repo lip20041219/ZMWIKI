@@ -2,7 +2,7 @@
 
 import pytest
 
-from zmrag import Document, PlainTextIngestor, TextIngestor
+from zmwiki import Document, PlainTextIngestor, TextIngestor
 
 
 def _ingest(text="hello", document_id="doc-001", metadata=None):
@@ -159,7 +159,7 @@ def test_ingestor_is_abstract():
 
 
 def test_ingestion_module_has_no_stage_coupling():
-    import zmrag.ingestion as ing
+    import zmwiki.ingestion as ing
 
     for name in (
         "Chunker",
@@ -174,7 +174,7 @@ def test_ingestion_module_has_no_stage_coupling():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"TextIngestor", "PlainTextIngestor", "Document"} <= set(__all__)
 

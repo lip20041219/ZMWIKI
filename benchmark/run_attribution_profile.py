@@ -18,7 +18,7 @@ the one between them -- claims the context supports but no citation covers.
 Offline, dependency-free, model-free, and deterministic: the runner executes the
 whole profile twice and refuses to write evidence unless the two runs are
 identical. It reads no key, opens no socket, and computes no metric of its own
--- every number comes from ``zmrag.attribution``.
+-- every number comes from ``zmwiki.attribution``.
 
 Run from the repository root:
 
@@ -39,7 +39,7 @@ from pathlib import Path
 # repo root without ``pip install``. Stdlib only.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from zmrag import DeterministicClaimAttributor, DeterministicClaimExtractor
+from zmwiki import DeterministicClaimAttributor, DeterministicClaimExtractor
 
 #: Sibling harnesses: the answer profile owns the dataset loading, the canonical
 #: pipeline wiring, and the citation pinning; the retrieval runner owns the

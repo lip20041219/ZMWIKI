@@ -3,7 +3,7 @@
 import pytest
 from pathlib import Path
 
-from zmrag import (
+from zmwiki import (
     Document,
     FileIngestor,
     FileSource,
@@ -237,7 +237,7 @@ def test_file_ingestor_is_abstract():
 
 
 def test_file_ingestion_module_has_no_stage_coupling():
-    import zmrag.file_ingestion as fi
+    import zmwiki.file_ingestion as fi
 
     for name in (
         "Chunker",
@@ -252,7 +252,7 @@ def test_file_ingestion_module_has_no_stage_coupling():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"FileIngestor", "FileSource", "PlainTextFileIngestor"} <= set(__all__)
 

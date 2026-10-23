@@ -2,7 +2,7 @@
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     DenseRetriever,
     DeterministicEmbedder,
@@ -226,6 +226,6 @@ def test_top_k_validation_is_delegated_to_store():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Retriever", "DenseRetriever"} <= set(__all__)

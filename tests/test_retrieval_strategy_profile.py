@@ -439,7 +439,7 @@ def test_semantic_arm_reports_unavailable_instead_of_failing(monkeypatch):
     real_import = builtins.__import__
 
     def blocked(name, *args, **kwargs):
-        if name.startswith("zmrag.semantic"):
+        if name.startswith("zmwiki.semantic"):
             raise ImportError("no semantic extra")
         return real_import(name, *args, **kwargs)
 
@@ -452,8 +452,8 @@ def test_semantic_arm_reports_unavailable_instead_of_failing(monkeypatch):
 
 
 @pytest.mark.skipif(
-    not os.environ.get("ZMRAG_SEMANTIC_INTEGRATION"),
-    reason="real-model integration; set ZMRAG_SEMANTIC_INTEGRATION=1 to run",
+    not os.environ.get("zmwiki_SEMANTIC_INTEGRATION"),
+    reason="real-model integration; set zmwiki_SEMANTIC_INTEGRATION=1 to run",
 )
 def test_integration_real_semantic_strategy_profile(tmp_path):
     fresh = profile.main_semantic(tmp_path / "semantic.json")
@@ -475,20 +475,20 @@ def test_runner_imports_no_network_client_and_no_model():
             absolute.update(alias.name.split(".")[0] for alias in node.names)
         elif isinstance(node, ast.ImportFrom) and not node.level:
             absolute.add((node.module or "").split(".")[0])
-    # stdlib + zmrag + the sibling frozen corpus-ingestion runner (no HTTP client,
+    # stdlib + zmwiki + the sibling frozen corpus-ingestion runner (no HTTP client,
     # no model, no third-party package).
     assert absolute <= {
         "__future__",
         "json",
         "sys",
         "pathlib",
-        "zmrag",
+        "zmwiki",
         "run_retrieval_small_baseline",
     }
     for banned in ("requests", "urllib", "httpx", "socket", "sentence_transformers"):
         assert banned not in absolute
     # The semantic providers live behind the opt-in function only.
-    assert "from zmrag.semantic import" in source
+    assert "from zmwiki.semantic import" in source
     import_lines = [
         line for line in source.splitlines() if line.startswith(("import ", "from "))
     ]

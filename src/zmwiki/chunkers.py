@@ -32,7 +32,7 @@ class FixedSizeChunker(Chunker):
 
     Splits ``document.content`` into windows of at most ``chunk_size``
     **characters (Python code points)** -- not tokens; no tokenizer exists in
-    ZMRAG yet. Adjacent windows share at most ``overlap`` characters.
+    zmwiki yet. Adjacent windows share at most ``overlap`` characters.
 
     Windows begin every ``step = chunk_size - overlap`` characters and the
     last window may be shorter than ``chunk_size``. With ``overlap == 0`` the

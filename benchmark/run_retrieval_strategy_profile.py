@@ -63,7 +63,7 @@ from pathlib import Path
 # repo root without ``pip install``. Stdlib only.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from zmrag import (
+from zmwiki import (
     DenseRetriever,
     DeterministicEmbedder,
     DeterministicReranker,
@@ -626,8 +626,8 @@ def main_semantic(out_path: str | Path = DEFAULT_SEMANTIC_PATH) -> dict:
     """
     output = Path(out_path)
     try:
-        from zmrag.semantic import SemanticEmbeddingProvider
-        from zmrag.semantic_rerank import CrossEncoderReranker
+        from zmwiki.semantic import SemanticEmbeddingProvider
+        from zmwiki.semantic_rerank import CrossEncoderReranker
 
         embedder = SemanticEmbeddingProvider(model_name=EMBEDDING_MODEL_ID)
         reranker = CrossEncoderReranker(model_name=RERANKER_MODEL_ID)

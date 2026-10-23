@@ -2,7 +2,7 @@
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     InMemoryLexicalIndex,
     LexicalIndex,
@@ -286,7 +286,7 @@ def test_tokenizer_injected():
 def test_lexical_index_abstract_and_public_import():
     with pytest.raises(TypeError):
         LexicalIndex()  # type: ignore[abstract]
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Tokenizer", "SimpleTokenizer", "LexicalIndex", "InMemoryLexicalIndex"} <= set(__all__)
 

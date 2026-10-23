@@ -2,7 +2,7 @@
 
 import pytest
 
-from zmrag import Chunk, Chunker, Document, FixedSizeChunker
+from zmwiki import Chunk, Chunker, Document, FixedSizeChunker
 
 
 def _chunk(doc, chunk_size, overlap=0):
@@ -197,6 +197,6 @@ def test_output_is_chunks():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Chunker", "FixedSizeChunker", "Chunk", "Document"} <= set(__all__)

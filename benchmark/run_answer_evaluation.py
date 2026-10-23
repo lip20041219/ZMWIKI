@@ -2,7 +2,7 @@
 
 The answer-side counterpart of the retrieval baseline. It runs the canonical
 Phase 10B pipeline over an answer dataset, scores each answer with the
-deterministic lexical baselines in ``zmrag.answer_evaluation``, and writes
+deterministic lexical baselines in ``zmwiki.answer_evaluation``, and writes
 per-query evidence plus aggregates.
 
     answer_small.json
@@ -51,7 +51,7 @@ from pathlib import Path
 # repo root without ``pip install``. Stdlib only.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from zmrag import (
+from zmwiki import (
     AnswerEvaluator,
     Citation,
     DenseRetriever,

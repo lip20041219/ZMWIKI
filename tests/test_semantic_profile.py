@@ -23,13 +23,13 @@ The runner is only *imported* here -- its heavy work happens in ``main()``,
 which constructs the model. No offline test calls it.
 
 Integration tests (real sentence-transformers model) live at the bottom and
-are gated behind ``ZMRAG_SEMANTIC_INTEGRATION=1`` so the default suite skips
+are gated behind ``zmwiki_SEMANTIC_INTEGRATION=1`` so the default suite skips
 them and never downloads/loads a model. Run them explicitly:
 
-    set ZMRAG_SEMANTIC_INTEGRATION=1
+    set zmwiki_SEMANTIC_INTEGRATION=1
     python -m pytest -m "" tests/test_semantic_profile.py -q   # (or by node id)
 
-    # cross-platform one-liner: ZMRAG_SEMANTIC_INTEGRATION=1 python -m pytest
+    # cross-platform one-liner: zmwiki_SEMANTIC_INTEGRATION=1 python -m pytest
     # tests/test_semantic_profile.py::test_integration_real_semantic_profile
 
 The integration test re-runs the real runner to a fresh output path and
@@ -46,7 +46,7 @@ from pathlib import Path
 
 import pytest
 
-from zmrag import JsonEvaluationDatasetLoader
+from zmwiki import JsonEvaluationDatasetLoader
 
 # Make benchmark/ (and the sibling baseline runner) importable under pytest.
 BENCH_DIR = Path(__file__).resolve().parents[1] / "benchmark"
@@ -202,7 +202,7 @@ class _FakeBackend:
     dimension = 8
 
     def encode(self, texts: list[str]) -> list[tuple[float, ...]]:
-        from zmrag import DeterministicEmbedder
+        from zmwiki import DeterministicEmbedder
 
         embedder = DeterministicEmbedder(dimension=self.dimension)
         return [embedder.embed(text).vector for text in texts]
@@ -211,7 +211,7 @@ class _FakeBackend:
 @pytest.fixture
 def profiled(monkeypatch):
     """One real ``_run_profile()`` pass over the fake backend."""
-    import zmrag.semantic as semantic
+    import zmwiki.semantic as semantic
 
     monkeypatch.setattr(semantic, "_create_backend", lambda **kwargs: _FakeBackend())
     return semantic_profile._run_profile()
@@ -236,7 +236,7 @@ def test_cutoff_columns_match_an_independent_evaluator_run(profiled, monkeypatch
     Rebuild S1's path and evaluate at depth 5 directly; the row's @5 columns
     must equal that run field for field.
     """
-    import zmrag.semantic as semantic
+    import zmwiki.semantic as semantic
 
     monkeypatch.setattr(semantic, "_create_backend", lambda **kwargs: _FakeBackend())
     provider = semantic.SemanticEmbeddingProvider(model_name="unused/fake-model")
@@ -271,7 +271,7 @@ def test_missing_dependency_degrades_without_writing_evidence(tmp_path):
     assert evidence["available"] is False
     assert isinstance(evidence["reason"], str) and evidence["reason"]
     assert evidence["install_hint"] == semantic_profile.UNAVAILABLE_HINT
-    assert "zmrag[semantic]" in evidence["install_hint"]
+    assert "zmwiki[semantic]" in evidence["install_hint"]
     # No metrics, no zeros, and above all no file.
     assert "configs" not in evidence and "hit_rate" not in evidence
     assert not out.exists()
@@ -294,7 +294,7 @@ def test_unavailable_provider_short_circuits_main(tmp_path, monkeypatch):
 
 def test_broken_experiment_is_not_reported_as_unavailable(monkeypatch):
     """A wrong corpus/dataset is a bug, not an absent model: it must raise."""
-    import zmrag.semantic as semantic
+    import zmwiki.semantic as semantic
 
     monkeypatch.setattr(semantic, "_create_backend", lambda **kwargs: _FakeBackend())
     monkeypatch.setattr(
@@ -330,17 +330,17 @@ def test_committed_evidence_cutoff_columns_if_present():
 
 # ---------------------------------------------------------------------------
 # Integration: real sentence-transformers model. Skipped by default; enable
-# with ZMRAG_SEMANTIC_INTEGRATION=1 (requires the `semantic` optional dep and
+# with zmwiki_SEMANTIC_INTEGRATION=1 (requires the `semantic` optional dep and
 # a model cache or network). The default suite must never construct a model.
 # ---------------------------------------------------------------------------
 
 def _integration_enabled() -> bool:
-    return bool(os.environ.get("ZMRAG_SEMANTIC_INTEGRATION"))
+    return bool(os.environ.get("zmwiki_SEMANTIC_INTEGRATION"))
 
 
 @pytest.mark.skipif(
     not _integration_enabled(),
-    reason="real-model integration; set ZMRAG_SEMANTIC_INTEGRATION=1 to run",
+    reason="real-model integration; set zmwiki_SEMANTIC_INTEGRATION=1 to run",
 )
 def test_integration_real_semantic_profile(tmp_path):
     """Re-run the real semantic profile to a fresh path; compare to committed.

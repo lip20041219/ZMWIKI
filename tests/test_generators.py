@@ -2,7 +2,7 @@
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     Context,
     DeterministicGenerator,
@@ -157,7 +157,7 @@ def test_prompt_is_deterministic_and_validated():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"Generator", "DeterministicGenerator", "build_prompt"} <= set(__all__)
     assert isinstance(DeterministicGenerator(), Generator)

@@ -1,16 +1,16 @@
 """Optional semantic cross-encoder reranking behind the existing Reranker contract.
 
-ZMRAG core ships ``DeterministicReranker`` (in ``rerankers.py``) -- a lexical
+zmwiki core ships ``DeterministicReranker`` (in ``rerankers.py``) -- a lexical
 token-overlap stand-in for local development. This module adds a *real*,
 optional cross-encoder reranker for Phase 12's two-stage retrieval profile. It
 mirrors ``semantic.py``'s posture exactly:
 
 - It is **not** part of the top-level public API and is never imported by the
   default import graph (``__init__.py`` does not import it); callers opt in with
-  ``from zmrag.semantic_rerank import CrossEncoderReranker``.
+  ``from zmwiki.semantic_rerank import CrossEncoderReranker``.
 - Importing this module is always safe: ``torch`` / ``sentence-transformers``
   are imported only inside ``_create_backend`` at instantiation time, so
-  ``import zmrag`` (or ``import zmrag.semantic_rerank``) never loads them.
+  ``import zmwiki`` (or ``import zmwiki.semantic_rerank``) never loads them.
 - The heavy backend is hidden behind a narrow seam: :class:`CrossEncoderReranker`
   depends only on ``score_pairs(query, texts) -> list[float]``, never on the
   concrete CrossEncoder API. Tests inject a fake by monkeypatching
@@ -168,7 +168,7 @@ def _create_backend(*, model_source: str, device: str | None) -> "_SentenceTrans
         raise ImportError(
             "CrossEncoderReranker requires the 'semantic' optional "
             "dependency (sentence-transformers + torch). Install it with: "
-            'pip install "zmrag[semantic]"'
+            'pip install "zmwiki[semantic]"'
         ) from exc
     return _SentenceTransformerCrossEncoderBackend(
         CrossEncoder(model_source, device=device)

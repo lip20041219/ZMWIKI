@@ -7,7 +7,7 @@ in ``test_pipeline.py``; this file covers the stage in isolation.
 
 import pytest
 
-from zmrag import DeterministicQueryRewriter, QueryRewriter
+from zmwiki import DeterministicQueryRewriter, QueryRewriter
 
 
 def _rewrite(query):
@@ -123,7 +123,7 @@ def test_not_a_model_no_shape_beyond_the_contract():
 
 
 def test_public_import():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert {"QueryRewriter", "DeterministicQueryRewriter"} <= set(__all__)
     assert isinstance(DeterministicQueryRewriter(), QueryRewriter)

@@ -13,7 +13,7 @@ import json
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     DeterministicContextBuilder,
     DeterministicEmbedder,
     DeterministicRAGPipeline,
@@ -370,7 +370,7 @@ def test_to_dict_is_json_serializable(tmp_path):
 
 
 def test_public_import_loader_types():
-    from zmrag import __all__
+    from zmwiki import __all__
 
     assert "EvaluationDatasetLoader" in __all__
     assert "JsonEvaluationDatasetLoader" in __all__

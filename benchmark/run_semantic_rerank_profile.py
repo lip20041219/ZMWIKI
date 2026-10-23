@@ -1,7 +1,7 @@
 """Semantic rerank profile: real CrossEncoder two-stage retrieval, E2E.
 
 Phase 12 Step 3 proves the optional :class:`CrossEncoderReranker`
-(``zmrag/semantic_rerank.py``) drives a real two-stage retrieval pass through
+(``zmwiki/semantic_rerank.py``) drives a real two-stage retrieval pass through
 the existing stack, end to end, on the *same* locked environment Phase 11 used:
 
 - corpus / dataset / chunking / evaluation are the *same canonical ones* used
@@ -69,7 +69,7 @@ from pathlib import Path
 # repo root without ``pip install``. Stdlib only.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from zmrag import (
+from zmwiki import (
     DenseRetriever,
     EvaluationHarness,
     EvaluationPrediction,
@@ -83,8 +83,8 @@ from zmrag import (
     RRFFusion,
     WeightedScoreFusion,
 )
-from zmrag.semantic import SemanticEmbeddingProvider
-from zmrag.semantic_rerank import CrossEncoderReranker
+from zmwiki.semantic import SemanticEmbeddingProvider
+from zmwiki.semantic_rerank import CrossEncoderReranker
 
 #: Sibling Phase 10B runner: the canonical corpus ingestion + boundary checks.
 import run_retrieval_small_baseline as _baseline

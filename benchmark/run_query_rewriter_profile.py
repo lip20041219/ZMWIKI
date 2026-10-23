@@ -63,7 +63,7 @@ from pathlib import Path
 # repo root without ``pip install``. Stdlib only.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from zmrag import (
+from zmwiki import (
     DenseRetriever,
     DeterministicBenchmarkRunner,
     DeterministicContextBuilder,
@@ -508,8 +508,8 @@ def main_semantic(out_path: str | Path = DEFAULT_SEMANTIC_PATH) -> dict:
     same locked rerank depth (``top_k=8``) as the frozen Phase 12 profile -- the
     rewriter is again the only variable.
     """
-    from zmrag.semantic import SemanticEmbeddingProvider
-    from zmrag.semantic_rerank import CrossEncoderReranker
+    from zmwiki.semantic import SemanticEmbeddingProvider
+    from zmwiki.semantic_rerank import CrossEncoderReranker
 
     output = Path(out_path)
     documents = _baseline.ingest_corpus()

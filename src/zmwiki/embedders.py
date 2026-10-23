@@ -1,6 +1,6 @@
 """Embedding contract: Text -> EmbeddingProvider -> Embedding.
 
-ZMRAG core is embedding-provider-agnostic: no concrete API/model provider is
+zmwiki core is embedding-provider-agnostic: no concrete API/model provider is
 shipped. The only implementation here, ``DeterministicEmbedder``, is a
 **test-only / local-development** stand-in -- it produces no semantic vectors
 and must never be used to benchmark retrieval quality.

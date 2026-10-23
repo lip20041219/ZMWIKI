@@ -13,7 +13,7 @@ import math
 
 import pytest
 
-from zmrag import (
+from zmwiki import (
     Chunk,
     DeterministicContextBuilder,
     DeterministicEmbedder,
