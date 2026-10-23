@@ -192,6 +192,97 @@ json.dump({"version": 1, "pages": [p.to_dict() for p in pages]},
 
 然后启动：`python -m zmrag.tui --workspace my_wiki.json`
 
+### 配置 LLM API（编译文档 / Agent 问答 / 评测时需要）
+
+ZMWiki 的 TUI 浏览和搜索**不需要** API。只有以下三个功能需要调用大模型：
+
+| 功能 | 用途 |
+|------|------|
+| **WikiCompiler** | 把原始文档编译成结构化的 WikiPage（标题、正文、候选链接） |
+| **WikiAgent** | 多步检索问答（搜索 → 读页面 → 沿链接跳转 → 回答） |
+| **对照评测** | `--live` 模式下用真实模型跑 WikiAgent 评测 |
+
+#### 需要准备什么
+
+ZMWiki 使用 **OpenAI 兼容接口**，任何支持 `POST /v1/chat/completions` 的服务都能用（OpenAI、DeepSeek、通义千问、智谱、Ollama、vLLM、LM Studio 等）。你需要三个信息：
+
+1. **base_url** — API 地址，例如 `https://api.deepseek.com/v1`
+2. **model** — 模型名称，例如 `deepseek-chat`
+3. **api_key** — 密钥
+
+#### 第一步：设置 API Key（不要写在代码或命令里）
+
+```powershell
+# Windows PowerShell（当前终端生效）
+$env:ZMRAG_API_KEY = "你的密钥"
+
+# 或者设为用户级环境变量（永久生效，推荐）
+[Environment]::SetEnvironmentVariable("ZMRAG_API_KEY", "你的密钥", "User")
+```
+
+> 注意：环境变量名是 `ZMRAG_API_KEY`，**不是** `OPENAI_API_KEY`。
+
+#### 第二步：在代码中使用
+
+**WikiCompiler（编译文档）：**
+
+```python
+from zmrag.wiki.wiki_compiler import WikiCompiler
+
+compiler = WikiCompiler(
+    base_url="https://api.deepseek.com/v1",
+    model="deepseek-chat",
+    # api_key 不传时自动读取 ZMRAG_API_KEY 环境变量
+)
+page = compiler.compile(document)  # Document → WikiPage
+```
+
+**WikiAgent（多步问答）：**
+
+```python
+from zmrag.wiki.wiki_agent import WikiAgent
+
+agent = WikiAgent(
+    index,  # 你的 WikiIndex
+    base_url="https://api.deepseek.com/v1",
+    model="deepseek-chat",
+    max_steps=8,  # 最多 8 步检索，每步一次 API 调用
+)
+result = agent.answer("谁负责 Project Phoenix？")
+print(result.answer)
+print(result.sources)  # 实际读取过的页面
+```
+
+**对照评测（命令行）：**
+
+```powershell
+python benchmark/run_multihop_evaluation.py `
+  --live `
+  --base-url https://api.deepseek.com/v1 `
+  --model deepseek-chat `
+  --limit 3 `
+  --output results/trial.json
+```
+
+> 如果你的接口不需要密钥（比如本地 Ollama），加 `--allow-anonymous`。
+
+#### 常见 endpoint 示例
+
+| 服务 | base_url | model 示例 |
+|------|----------|-----------|
+| DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` |
+| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
+| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` |
+| 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-flash` |
+| 本地 Ollama | `http://localhost:11434/v1` | `llama3.1`（无需密钥，加 `--allow-anonymous`） |
+
+#### 费用控制
+
+- WikiAgent 每题最多 `max_steps`（默认 8）次 API 调用，每步一次，无重试、无额外请求
+- 3 题受控试运行最多 3 × 8 = **24 次**调用
+- 温度默认 `0.0`（确定性输出），超时默认 30 秒
+- 非 2xx 响应或格式错误会立即停止该题，不会无限重试
+
 ---
 
 ## Quick Start
