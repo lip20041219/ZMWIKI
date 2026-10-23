@@ -1,4 +1,4 @@
-"""zmwiki vs ZMWiki multi-hop QA comparison benchmark.
+"""ZMWiki multi-hop QA benchmark (deterministic baseline vs WikiAgent).
 
 Runs two systems over the same source corpus and the same multi-hop questions:
 
@@ -922,7 +922,7 @@ def serialize_results(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="zmwiki vs ZMWiki multi-hop QA benchmark")
+    parser = argparse.ArgumentParser(description="ZMWiki multi-hop QA benchmark (baseline vs WikiAgent)")
     parser.add_argument("--live", action="store_true", help="Run WikiAgent with a real LLM")
     parser.add_argument("--base-url", default=None, help="OpenAI-compatible API base URL")
     parser.add_argument("--model", default=None, help="Model identifier for live evaluation")
