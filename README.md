@@ -38,9 +38,10 @@ terminal UI on top.
   answers can only cite pages that have actually been read. Budget control via
   `max_steps`, `search_top_k`, `max_consecutive_errors`, and duplicate-action
   deduplication
-- **Retro Terminal UI** — read-only terminal browser with ASCII banner, three-pane
-  layout (search + page list / content reader / metadata + links), fluorescent-green
-  on black theme, keyboard-driven navigation
+- **Retro Terminal UI** — terminal browser with ASCII banner, three-pane layout
+  (search + page list / content reader / metadata + links), fluorescent-green on
+  black theme, keyboard-driven navigation, local page create/edit/delete,
+  Wikipedia import, and explicit workspace save
 
 ### Retrieval & Evaluation Backbone (zmwiki)
 
@@ -85,7 +86,7 @@ WikiCompiler (LLM-assisted) ──► WikiPage (candidate_links, unverified)
               └────────────────────────┼────────────────────────┘
                                        ↓
                               Retro Terminal UI
-                              (read-only browser)
+                              (browser · import · save)
 ```
 
 The zmwiki retrieval pipeline (chunking → embedding → dense/lexical/hybrid
@@ -126,7 +127,7 @@ pip install -e ".[semantic]"
 
 ### 这是什么
 
-ZMWiki 是一个**只读的 Wiki 终端浏览器**。你给它一个包含 Wiki 页面的 JSON 文件，它就能在终端里以三栏布局（搜索 + 页面列表 / 正文阅读 / 元数据与链接）浏览和搜索。
+ZMWiki 是一个**本地 Wiki 终端浏览器**。你给它一个包含 Wiki 页面的 JSON 文件，它就能在终端里以三栏布局（搜索 + 页面列表 / 正文阅读 / 元数据与链接）浏览和搜索；还可以从 Wikipedia 导入条目、显式保存 workspace，配置模型后直接提问。
 
 仓库自带一个演示语料库（虚构的 Acme Corp 公司，9 篇文档），可以直接用来体验。
 
@@ -134,7 +135,7 @@ ZMWiki 是一个**只读的 Wiki 终端浏览器**。你给它一个包含 Wiki 
 
 ```bash
 # 克隆仓库后进入目录
-cd zmwiki
+cd ZMWiki
 
 # 安装（默认零依赖）
 pip install -e .
@@ -151,6 +152,12 @@ pip install -e ".[tui]"
 python -m zmwiki.tui --workspace benchmark/corpus/wiki_workspace.json
 ```
 
+如果要创建全新的空工作区：
+
+```bash
+python -m zmwiki.tui --workspace my_wiki.json --create
+```
+
 启动后你会看到：顶部 ZMWiki 绿色 ASCII 标题，左侧搜索框和页面列表，中间正文，右侧元数据和双向链接，底部状态栏和快捷键提示。
 
 ### 操作说明
@@ -162,7 +169,14 @@ python -m zmwiki.tui --workspace benchmark/corpus/wiki_workspace.json
 | `Enter` | 打开当前选中的页面 |
 | `1`-`9` | 直接跳转到第 N 个页面 |
 | `Tab` | 在搜索框 / 页面列表 / 出站链接 / 入站链接之间切换 |
+| `N` | 新建页面（编辑器中 `Ctrl+S` 保存、`Esc` 取消） |
+| `E` | 编辑当前页面（可修改路径、标题、标签、出链和正文） |
+| `D` | 删除当前页面（按两次确认，自动清理双向链接） |
 | `Esc` | 清空搜索框，返回全部页面列表 |
+| `W` | 搜索 Wikipedia（回车列出结果，再回车阅读条目） |
+| `I` | 导入当前预览的 Wikipedia 条目到内存 |
+| `S` | 保存 workspace（文件已存在时需按两次确认覆盖） |
+| `A` | 向本地 Wiki 提问（启动时需带 `--base-url` 和 `--model`） |
 | `Q` | 退出 |
 
 ### 搜索示例
@@ -176,6 +190,26 @@ python -m zmwiki.tui --workspace benchmark/corpus/wiki_workspace.json
 - `building` — 搜到办公楼页面
 
 > **注意**：如果搜索显示 `NO MATCHES`，不是程序坏了，而是你输入的关键词不在当前语料库里。比如搜索"维基百科"当然搜不到，因为这个演示库是 Acme Corp 公司数据，不是维基百科。按 `Esc` 清空搜索即可返回全部页面。
+
+### 从 Wikipedia 导入并提问
+
+1. 按 `W`，输入主题（例如 `Alan Turing`），回车列出搜索结果。
+2. 再按回车阅读当前条目；预览完成后按 `I` 导入到内存。
+3. 按 `S` 保存 workspace。文件已存在时，第一次 `S` 只提示覆盖，再按一次才写入。
+4. 提问需要模型配置（见下一节）。启动时带上参数：
+
+```bash
+python -m zmwiki.tui --workspace my_wiki.json \
+  --base-url https://api.deepseek.com/v1 --model deepseek-chat
+```
+
+按 `A`，输入问题并回车。没有配置模型时，`A` 只显示 `ASK UNAVAILABLE`。
+
+### 适用规模与模型要求
+
+- 当前演示库为 9 页 / 9 KB。按每页 50 KB 正文 + 550 条链接的实测规模，workspace 约 120 KB/页，10 MiB 上限约 **80 页**。
+- 加载时间随页数增长较快：40 页约需 7 秒（每次导入/加载都会重建 BM25）。公开演示建议保持在几十页以内，更大规模请拆分 workspace。
+- 真实问答需要可访问的 **OpenAI 兼容接口**：启动时提供 `--base-url` 和 `--model`，密钥用环境变量 `ZMWIKI_API_KEY`（或 `--api-key`）。未配置时只影响 `A` 提问，浏览、搜索、导入和保存仍可用；仓库不内置本地模型。
 
 ### 用自己的文档
 
@@ -304,8 +338,18 @@ The workspace is a single JSON document:
 }
 ```
 
-Keyboard shortcuts: `↑↓` move, `Enter` open, `1-9` jump, `/` search, `Esc`
-clear search, `Tab` switch pane, `Q` quit.
+Keyboard shortcuts: `↑↓` move, `Enter` open, `1-9` jump, `/` search, `N` new
+page, `E` edit the current page, `D` delete it (press twice; links are cleaned
+up), `W` search Wikipedia, `A` ask, `I` import the previewed article, `S` save
+the workspace (press twice to overwrite), `Esc` clear search, `Tab` switch
+pane, `Q` quit. Use `--create` to start a new empty workspace file.
+
+`A` requires an OpenAI-compatible endpoint (`--base-url`, `--model`,
+`ZMWIKI_API_KEY`); without it, browsing, page creation/editing, import and
+save still work. The
+workspace schema is capped at 10 MiB; at the measured ~120 KB/page, that is
+about 80 pages. Loading is superlinear beyond a few dozen pages (40 pages
+of 50 KB text take about 7 seconds), so keep demos within that range.
 
 ### HTTP Server
 
@@ -477,11 +521,8 @@ variable. No key is ever written to a file, logged, or rendered by `repr`.
 python -m pytest -q
 ```
 
-Wiki module tests: `273 passed` (WikiPage, WikiIndex, wiki_search/wiki_read,
-WikiCompiler, WikiAgent, link resolver, multi-hop evaluation, TUI).
-
-zmwiki core tests: `1281 passed, 5 skipped` (retrieval, ranking, generation,
-evaluation, attribution).
+Full suite: `1762 passed, 4 skipped` (Python 3.11; retrieval, ranking,
+generation, evaluation, attribution, wiki layer, TUI, and web).
 
 ## Project Scope
 

@@ -79,7 +79,16 @@ def load_workspace(path: str | Path) -> WikiIndex:
         if page.id in seen_ids:
             raise WorkspaceError(f"duplicate page id in workspace: {page.id!r}")
         seen_ids.add(page.id)
-        index.upsert(page)
+        try:
+            index.upsert(page)
+        except ValueError as exc:
+            # Path collisions / paths that normalize to empty pass WikiPage
+            # validation but are rejected by WikiIndex. Report them as a
+            # workspace error so callers (CLI, TUI, server) never see a raw
+            # ValueError or a traceback.
+            raise WorkspaceError(
+                f"invalid page at index {position}: {exc}"
+            ) from None
     return index
 
 

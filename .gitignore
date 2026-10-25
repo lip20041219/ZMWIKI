@@ -8,7 +8,15 @@ dist/
 
 # Env
 .venv/
+.venv-release/
 venv/
+
+# Local generated workspace (see README examples)
+my_wiki.json
+
+# Secrets / local logs
+.env
+*.log
 
 # Tooling
 .pytest_cache/

@@ -9,6 +9,7 @@ standard non-negative BM25, *not* cosine, and are never normalized.
 from __future__ import annotations
 
 import math
+import threading
 from abc import ABC, abstractmethod
 
 from .schema import Chunk
@@ -65,6 +66,12 @@ class InMemoryLexicalIndex(LexicalIndex):
     O(total tokens) per write -- fine at this scale; an incremental inverted
     index belongs to a later phase if throughput ever matters.
 
+    Thread safety: one lock serializes ``upsert``/``delete``/``search``, so a
+    search can never observe ``_tf`` and ``_doc_len`` from different rebuilds.
+    ``get`` and ``count`` stay lock-free single-dict reads.
+    ponytail: one coarse lock; snapshots or striped locks only if search
+    throughput ever matters.
+
     Score semantics are plain BM25 -- never normalized to a cosine-like range.
     """
 
@@ -82,6 +89,7 @@ class InMemoryLexicalIndex(LexicalIndex):
             )
         self.k1 = _check_nonneg(k1, "k1")
         self.b = _check_unit(b)
+        self._lock = threading.RLock()
         self._chunks: dict[str, Chunk] = {}
         self._tf: dict[str, dict[str, int]] = {}  # term -> {chunk_id: count}
         self._doc_len: dict[str, int] = {}  # chunk_id -> token count
@@ -91,15 +99,17 @@ class InMemoryLexicalIndex(LexicalIndex):
     def upsert(self, chunk: Chunk) -> None:
         if not isinstance(chunk, Chunk):
             raise TypeError(f"chunk must be a Chunk, got {type(chunk).__name__}")
-        self._chunks[chunk.id] = chunk
-        self._rebuild()
+        with self._lock:
+            self._chunks[chunk.id] = chunk
+            self._rebuild()
 
     def delete(self, chunk_id: str) -> bool:
-        if chunk_id in self._chunks:
-            del self._chunks[chunk_id]
-            self._rebuild()
-            return True
-        return False
+        with self._lock:
+            if chunk_id in self._chunks:
+                del self._chunks[chunk_id]
+                self._rebuild()
+                return True
+            return False
 
     def get(self, chunk_id: str) -> Chunk | None:
         return self._chunks.get(chunk_id)
@@ -111,29 +121,30 @@ class InMemoryLexicalIndex(LexicalIndex):
 
     def search(self, query: str, top_k: int = 10) -> list[SearchResult]:
         _check_top_k(top_k)
-        terms = self._unique(self.tokenizer.tokenize(query))
-        if not terms or not self._chunks:
-            return []
-        n = len(self._chunks)
-        avgdl = sum(self._doc_len.values()) / n
-        k1, b = self.k1, self.b
-        scores: dict[str, float] = {}
-        for term in terms:
-            postings = self._tf.get(term)
-            if not postings:
-                continue
-            df = len(postings)
-            idf = math.log(1.0 + (n - df + 0.5) / (df + 0.5))
-            for chunk_id, tf in postings.items():
-                dl = self._doc_len[chunk_id]
-                denom = tf + k1 * (1.0 - b + b * dl / avgdl) if avgdl else 1.0
-                scores[chunk_id] = scores.get(chunk_id, 0.0) + idf * (tf * (k1 + 1.0)) / denom
-        results = [
-            SearchResult(chunk=self._chunks[cid], score=scores[cid])
-            for cid in scores
-        ]
-        results.sort(key=lambda r: (-r.score, r.chunk.id))
-        return results[:top_k]
+        with self._lock:
+            terms = self._unique(self.tokenizer.tokenize(query))
+            if not terms or not self._chunks:
+                return []
+            n = len(self._chunks)
+            avgdl = sum(self._doc_len.values()) / n
+            k1, b = self.k1, self.b
+            scores: dict[str, float] = {}
+            for term in terms:
+                postings = self._tf.get(term)
+                if not postings:
+                    continue
+                df = len(postings)
+                idf = math.log(1.0 + (n - df + 0.5) / (df + 0.5))
+                for chunk_id, tf in postings.items():
+                    dl = self._doc_len[chunk_id]
+                    denom = tf + k1 * (1.0 - b + b * dl / avgdl) if avgdl else 1.0
+                    scores[chunk_id] = scores.get(chunk_id, 0.0) + idf * (tf * (k1 + 1.0)) / denom
+            results = [
+                SearchResult(chunk=self._chunks[cid], score=scores[cid])
+                for cid in scores
+            ]
+            results.sort(key=lambda r: (-r.score, r.chunk.id))
+            return results[:top_k]
 
     # --- internals ---
 

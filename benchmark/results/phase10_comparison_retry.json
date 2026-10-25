@@ -1,0 +1,2034 @@
+{
+  "comparability": {
+    "comparable": true,
+    "intended_variable": "link_source",
+    "link_source": {
+      "manual": "manual",
+      "auto": "auto"
+    }
+  },
+  "provenance": {
+    "dataset": "benchmark/datasets/multihop_wiki.json",
+    "dataset_version": "1.0",
+    "dataset_sha256_16": "030c6b589a989165",
+    "model": "deepseek-chat",
+    "base_url": "https://api.deepseek.com/v1",
+    "max_steps": 8,
+    "search_top_k": 5,
+    "limit": null,
+    "source_file_sha256_16": {
+      "benchmark/run_multihop_evaluation.py": "5822a9bf5972d5a4",
+      "src/zmwiki/wiki/wiki_agent.py": "e5b7ad2415427eb0",
+      "src/zmwiki/wiki/wiki_compiler.py": "73c3adcd02f1daa7",
+      "src/zmwiki/wiki/wiki_index.py": "1da07287d408f463",
+      "src/zmwiki/wiki/wiki_retriever.py": "9de57fe1a528109e",
+      "src/zmwiki/wiki/wiki_schema.py": "e82f9d666830f9bf",
+      "src/zmwiki/wiki/wiki_link_resolver.py": "5a18b38f59be549b",
+      "src/zmwiki/llm_generators.py": "06bbc9396917cc87"
+    },
+    "manual_timestamp": "2026-10-24T20:09:18+0800",
+    "auto_timestamp": "2026-10-24T20:13:46+0800",
+    "auto_link_resolution": {
+      "uses_real_resolver": true,
+      "pages_processed": 9,
+      "candidates_total": 19,
+      "resolved_count": 19,
+      "unresolved_count": 0,
+      "ambiguous_count": 0,
+      "self_link_skipped": 0,
+      "resolution_rate": 1.0,
+      "resolution_rate_denominator": 19,
+      "resolution_rate_note": "resolved_count / (candidates_total - self_link_skipped). Empty/non-string candidates are not counted in candidates_total.",
+      "broken_existing_links": 0,
+      "inconsistent_existing_links": 0,
+      "resolved_links": [
+        {
+          "source": "alice",
+          "candidate": "bob",
+          "target": "bob",
+          "match_method": "page_id"
+        },
+        {
+          "source": "alice",
+          "candidate": "project_phoenix",
+          "target": "project_phoenix",
+          "match_method": "page_id"
+        },
+        {
+          "source": "bob",
+          "candidate": "alice",
+          "target": "alice",
+          "match_method": "page_id"
+        },
+        {
+          "source": "bob",
+          "candidate": "carol",
+          "target": "carol",
+          "match_method": "page_id"
+        },
+        {
+          "source": "bob",
+          "candidate": "building_a",
+          "target": "building_a",
+          "match_method": "page_id"
+        },
+        {
+          "source": "carol",
+          "candidate": "bob",
+          "target": "bob",
+          "match_method": "page_id"
+        },
+        {
+          "source": "carol",
+          "candidate": "project_phoenix",
+          "target": "project_phoenix",
+          "match_method": "page_id"
+        },
+        {
+          "source": "carol",
+          "candidate": "project_orion",
+          "target": "project_orion",
+          "match_method": "page_id"
+        },
+        {
+          "source": "project_phoenix",
+          "candidate": "alice",
+          "target": "alice",
+          "match_method": "page_id"
+        },
+        {
+          "source": "project_phoenix",
+          "candidate": "carol",
+          "target": "carol",
+          "match_method": "page_id"
+        },
+        {
+          "source": "project_orion",
+          "candidate": "david",
+          "target": "david",
+          "match_method": "page_id"
+        },
+        {
+          "source": "project_orion",
+          "candidate": "carol",
+          "target": "carol",
+          "match_method": "page_id"
+        },
+        {
+          "source": "david",
+          "candidate": "project_orion",
+          "target": "project_orion",
+          "match_method": "page_id"
+        },
+        {
+          "source": "david",
+          "candidate": "eve",
+          "target": "eve",
+          "match_method": "page_id"
+        },
+        {
+          "source": "eve",
+          "candidate": "bob",
+          "target": "bob",
+          "match_method": "page_id"
+        },
+        {
+          "source": "eve",
+          "candidate": "david",
+          "target": "david",
+          "match_method": "page_id"
+        },
+        {
+          "source": "eve",
+          "candidate": "building_b",
+          "target": "building_b",
+          "match_method": "page_id"
+        },
+        {
+          "source": "building_a",
+          "candidate": "bob",
+          "target": "bob",
+          "match_method": "page_id"
+        },
+        {
+          "source": "building_b",
+          "candidate": "eve",
+          "target": "eve",
+          "match_method": "page_id"
+        }
+      ],
+      "unresolved_candidates": [],
+      "ambiguous_candidates": [],
+      "resolved_pages_count": 9
+    }
+  },
+  "metrics": {
+    "verified_answer_accuracy": {
+      "manual": 1.0,
+      "auto": 1.0,
+      "delta": 0.0
+    },
+    "answer_accuracy": {
+      "manual": 1.0,
+      "auto": 1.0,
+      "delta": 0.0
+    },
+    "unanswerable_handling": {
+      "manual": 1.0,
+      "auto": 1.0,
+      "delta": 0.0
+    },
+    "mean_evidence_recall": {
+      "manual": 0.9761904761904762,
+      "auto": 1.0,
+      "delta": 0.023809523809523836
+    },
+    "mean_source_precision": {
+      "manual": 0.85,
+      "auto": 0.8166666666666667,
+      "delta": -0.033333333333333326
+    },
+    "verified_multi_hop_success_rate": {
+      "manual": 0.8888888888888888,
+      "auto": 1.0,
+      "delta": 0.11111111111111116
+    },
+    "mean_steps": {
+      "manual": 3.2,
+      "auto": 3.1333333333333333,
+      "delta": -0.06666666666666687
+    },
+    "mean_pages_read": {
+      "manual": 2.8,
+      "auto": 2.933333333333333,
+      "delta": 0.1333333333333333
+    },
+    "failure_rate": {
+      "manual": 0.0,
+      "auto": 0.0,
+      "delta": 0.0
+    },
+    "budget_exhausted_rate": {
+      "manual": 0.0,
+      "auto": 0.0,
+      "delta": 0.0
+    }
+  },
+  "status_counts": {
+    "manual": {
+      "answered": 15
+    },
+    "auto": {
+      "answered": 15
+    },
+    "changed_cases": []
+  },
+  "summary": {
+    "total_cases": 15,
+    "answer_correct": {
+      "improved": [],
+      "regressed": [],
+      "unchanged": 15
+    },
+    "grounded_correct": {
+      "improved": [],
+      "regressed": [],
+      "unchanged": 15
+    },
+    "unsupported_correct": {
+      "improved": [],
+      "regressed": [],
+      "unchanged": 15
+    }
+  },
+  "per_case": [
+    {
+      "id": "mh01_manager_title",
+      "question": "What is the job title of the person Alice Smith reports to?",
+      "manual": {
+        "answer": "Alice Smith reports directly to Bob Jones, whose job title is Director of Engineering at Acme Corp.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "alice",
+          "bob"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "alice",
+          "bob"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 4 candidates (4 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "Alice Smith reports directly to Bob Jones, whose job title is Director of Engineering at Acme Corp.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "alice",
+          "bob"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "alice",
+          "bob"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh02_project_budget",
+      "question": "What is the budget of the project led by Alice Smith?",
+      "manual": {
+        "answer": "Alice Smith leads Project Phoenix, which has an allocated budget of five hundred thousand dollars ($500,000).",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 3,
+        "sources": [
+          "alice",
+          "project_phoenix"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "alice",
+          "project_phoenix"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 3 pages (3 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "Alice Smith leads Project Phoenix, which has an allocated budget of five hundred thousand dollars ($500,000).",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 3,
+        "sources": [
+          "alice",
+          "project_phoenix"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "alice",
+          "project_phoenix"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 3 pages (3 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh03_orion_lead_chain",
+      "question": "Who leads Project Orion and who does that person report to?",
+      "manual": {
+        "answer": "Project Orion is led by David Kim, a principal engineer and technical lead for the project. David Kim reports to Eve Martinez, the VP of Engineering.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 0.6666666666666666,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "project_orion",
+          "david"
+        ],
+        "accessed_pages": [
+          "alice",
+          "carol",
+          "david",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "project_orion",
+          "david",
+          "eve"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "Project Orion is led by David Kim, a principal engineer who serves as its technical lead. David Kim reports to Eve Martinez, the VP of Engineering.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "project_orion",
+          "david"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "project_orion",
+          "david",
+          "eve"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh04_cafeteria_floor",
+      "question": "Which floor is the cafeteria on in the building where Bob Jones works?",
+      "manual": {
+        "answer": "Bob Jones works in Building A (his office is on the third floor). The cafeteria in Building A is located on the second floor, adjacent to the kitchenette.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 3,
+        "sources": [
+          "bob",
+          "building_a"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve"
+        ],
+        "required_pages": [
+          "bob",
+          "building_a"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 3 pages (3 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "Bob Jones works in Building A (his office is on the third floor). The cafeteria in Building A is located on the second floor, adjacent to the kitchenette.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 3,
+        "sources": [
+          "bob",
+          "building_a"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve"
+        ],
+        "required_pages": [
+          "bob",
+          "building_a"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 3 pages (3 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh05_total_budget_aggregation",
+      "question": "What is the total budget of all projects Carol Chen works on?",
+      "manual": {
+        "answer": "Carol Chen works on two projects: Project Phoenix (budget: $500,000) and Project Orion (budget: $300,000). The total budget of all projects she works on is $800,000.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 3,
+        "sources": [
+          "carol",
+          "project_phoenix",
+          "project_orion"
+        ],
+        "accessed_pages": [
+          "bob",
+          "building_a",
+          "carol",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "carol",
+          "project_phoenix",
+          "project_orion"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 3 pages (3 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (3 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "Carol Chen works on two projects: Project Phoenix (budget $500,000) and Project Orion (budget $300,000). The total budget of all projects she works on is $800,000.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 3,
+        "sources": [
+          "carol",
+          "project_phoenix",
+          "project_orion"
+        ],
+        "accessed_pages": [
+          "bob",
+          "building_a",
+          "carol",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "carol",
+          "project_phoenix",
+          "project_orion"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 3 pages (3 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (3 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh06_shared_engineer",
+      "question": "Which engineer works on both Project Phoenix and Project Orion?",
+      "manual": {
+        "answer": "Carol Chen is the engineer who works on both Project Phoenix and Project Orion. She is a staff engineer specializing in backend services and API design, and her page states she currently contributes to both active projects: Project Phoenix (where she is a core team member under Alice Smith) and Project Orion (where she contributes to the backend integration layer under David Kim).",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 5,
+        "sources": [
+          "carol",
+          "project_phoenix",
+          "project_orion"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "carol",
+          "david",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "project_phoenix",
+          "project_orion",
+          "carol"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 5 pages (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (3 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "Carol Chen is the engineer who works on both Project Phoenix and Project Orion. She is a staff engineer specializing in backend services and API design, and her page states she currently contributes to both active projects: Project Phoenix (where she is a core team member under Alice Smith) and Project Orion (where she contributes to the backend integration layer under David Kim).",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 5,
+        "sources": [
+          "carol",
+          "project_phoenix",
+          "project_orion"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "carol",
+          "david",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "project_phoenix",
+          "project_orion",
+          "carol"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 5 pages (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (3 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh07_deadline_by_budget",
+      "question": "What is the deadline of the project with a five hundred thousand dollar budget?",
+      "manual": {
+        "answer": "The project with a five hundred thousand dollar budget is Project Phoenix, Acme Corp's internal platform migration initiative. Its target completion date (deadline) is December 31, 2026.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "project_phoenix"
+        ],
+        "accessed_pages": [
+          "alice",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "project_phoenix"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (1 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "The project with a five hundred thousand dollar budget is Project Phoenix, Acme Corp's internal platform migration initiative. Its target completion date (deadline) is December 31, 2026. (Project Orion, by contrast, has a budget of three hundred thousand dollars.)",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 0.5,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "project_phoenix",
+          "project_orion"
+        ],
+        "accessed_pages": [
+          "alice",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "project_phoenix"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh08_ceo_unanswerable",
+      "question": "Who is the CEO of Acme Corp?",
+      "manual": {
+        "answer": "I could not confirm the name of Acme Corp's CEO from the pages I read. The pages mention that the CEO has an office on the fifth floor of Building B (the executive level) and that Eve Martinez, the VP of Engineering, reports directly to the CEO, but no page names the CEO.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": null,
+        "source_precision": 0.0,
+        "steps": 6,
+        "pages_read": 5,
+        "sources": [
+          "building_b",
+          "eve",
+          "bob",
+          "david",
+          "building_a"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "follow_links",
+            "error": null,
+            "result_summary": "followed 2 links: read 2 new pages, 0 missing",
+            "raw_output": null
+          },
+          {
+            "step": 3,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 4,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 1 pages (1 new)",
+            "raw_output": null
+          },
+          {
+            "step": 5,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (5 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "I could not confirm who the CEO of Acme Corp is. The pages I read mention that a CEO exists — Building B's fifth floor contains \"the CEO's office\" alongside the VP of Engineering's office and a boardroom, and Eve Martinez (VP of Engineering) \"reports directly to the CEO\" — but no page I read names the CEO. The pages I read covered Eve Martinez, Bob Jones, David Kim, Alice Smith, Carol Chen, Building A, and Building B, none of which identify the CEO by name.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": null,
+        "source_precision": 0.0,
+        "steps": 5,
+        "pages_read": 7,
+        "sources": [
+          "building_b",
+          "eve",
+          "bob",
+          "david",
+          "alice",
+          "building_a",
+          "carol"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "follow_links",
+            "error": null,
+            "result_summary": "followed 2 links: read 2 new pages, 0 missing",
+            "raw_output": null
+          },
+          {
+            "step": 3,
+            "action": "follow_links",
+            "error": null,
+            "result_summary": "followed 3 links: read 3 new pages, 0 missing",
+            "raw_output": null
+          },
+          {
+            "step": 4,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (7 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": -1,
+        "pages_read": 2
+      }
+    },
+    {
+      "id": "mh09_negative_membership",
+      "question": "Does Alice Smith work on Project Orion?",
+      "manual": {
+        "answer": "No. Alice Smith leads Project Phoenix, an internal platform migration initiative, and there is no indication she works on Project Orion. Project Orion is led by David Kim, with Carol Chen contributing to the backend integration layer.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "alice",
+          "project_orion"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "carol",
+          "david",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "alice",
+          "project_orion"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "No. Alice Smith leads Project Phoenix, an internal platform migration initiative, not Project Orion. Project Orion is led by David Kim, with Carol Chen contributing to the backend integration layer. Alice's page does not mention any involvement with Project Orion.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "alice",
+          "project_orion"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "carol",
+          "david",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "alice",
+          "project_orion"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh10_direct_reports",
+      "question": "List all people who report to Bob Jones.",
+      "manual": {
+        "answer": "Based on the pages read, the people who report to Bob Jones are Alice Smith (senior engineer, leads Project Phoenix) and Carol Chen (staff engineer, backend services). Bob's page states he manages a team of twelve engineers, including Alice Smith and Carol Chen, but only these two are named in the available pages. Note that Bob himself reports to Eve Martinez, not the other way around.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 0.75,
+        "steps": 3,
+        "pages_read": 4,
+        "sources": [
+          "bob",
+          "alice",
+          "carol",
+          "eve"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "bob",
+          "alice",
+          "carol"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 4 pages (4 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (4 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "Based on the pages read, the people who report to Bob Jones are Alice Smith (senior engineer, leads Project Phoenix) and Carol Chen (staff engineer, backend services). Bob's page states he manages a team of twelve engineers, including Alice Smith and Carol Chen, but only these two are named. Note that Eve Martinez is Bob's manager (Bob reports to her), not a report of his.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 0.75,
+        "steps": 3,
+        "pages_read": 4,
+        "sources": [
+          "bob",
+          "alice",
+          "carol",
+          "eve"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "bob",
+          "alice",
+          "carol"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 4 pages (4 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (4 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh11_vp_office_floor",
+      "question": "What is the office floor of the VP of Engineering?",
+      "manual": {
+        "answer": "The VP of Engineering, Eve Martinez, has her office on the fifth floor of Building B (the executive level).",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 0.5,
+        "steps": 3,
+        "pages_read": 3,
+        "sources": [
+          "eve",
+          "building_b"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "eve"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 3 pages (3 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "The VP of Engineering, Eve Martinez, has her office on the fifth floor of Building B (the executive level).",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 0.5,
+        "steps": 3,
+        "pages_read": 3,
+        "sources": [
+          "eve",
+          "building_b"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "eve"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 3 pages (3 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh12_connected_building",
+      "question": "Which building is connected to Building A by a covered walkway?",
+      "manual": {
+        "answer": "Building B is connected to Building A by a covered walkway on the second floor.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 0.5,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "building_b",
+          "building_a"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "building_b"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "Building B is connected to Building A by a covered walkway on the second floor.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 0.5,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "building_b",
+          "building_a"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "building_b"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh13_engineering_budget",
+      "question": "What is the annual engineering budget at Acme Corp?",
+      "manual": {
+        "answer": "The annual engineering budget at Acme Corp is four million dollars. This is stated on Eve Martinez's page, which notes she is responsible for the company's annual engineering budget of four million dollars.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "eve"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "eve"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (1 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "The annual engineering budget at Acme Corp is four million dollars. Eve Martinez, the VP of Engineering, is responsible for this budget.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "eve"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "eve"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (1 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh14_orion_lead_degree",
+      "question": "Who is the technical lead for the data analytics platform project and what is their highest academic degree?",
+      "manual": {
+        "answer": "The technical lead for the data analytics platform project (Project Orion) is David Kim, a principal engineer at Acme Corp. His highest academic degree is a PhD (in distributed systems).",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "project_orion",
+          "david"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "project_orion",
+          "david"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "The technical lead for the data analytics platform project (Project Orion) is David Kim, a principal engineer at Acme Corp. His highest academic degree is a PhD (in distributed systems).",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "project_orion",
+          "david"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve",
+          "project_orion",
+          "project_phoenix"
+        ],
+        "required_pages": [
+          "project_orion",
+          "david"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (2 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    },
+    {
+      "id": "mh15_gym_location",
+      "question": "On which floor and in which building is the gym located?",
+      "manual": {
+        "answer": "The gym is located on the first floor of Building B. Building B's first floor features a fully equipped gym with locker rooms and showers, open to all employees.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "building_b"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve"
+        ],
+        "required_pages": [
+          "building_b"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (1 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "auto": {
+        "answer": "The gym is located on the first floor of Building B. Building B's first floor features a fully equipped gym with locker rooms and showers, open to all employees.",
+        "status": "answered",
+        "answer_correct": true,
+        "grounded_correct": true,
+        "unsupported_correct": false,
+        "evidence_recall": 1.0,
+        "source_precision": 1.0,
+        "steps": 3,
+        "pages_read": 2,
+        "sources": [
+          "building_b"
+        ],
+        "accessed_pages": [
+          "alice",
+          "bob",
+          "building_a",
+          "building_b",
+          "carol",
+          "david",
+          "eve"
+        ],
+        "required_pages": [
+          "building_b"
+        ],
+        "error": null,
+        "step_details": [
+          {
+            "step": 0,
+            "action": "search",
+            "error": null,
+            "result_summary": "search returned 5 candidates (5 new)",
+            "raw_output": null
+          },
+          {
+            "step": 1,
+            "action": "read",
+            "error": null,
+            "result_summary": "read 2 pages (2 new)",
+            "raw_output": null
+          },
+          {
+            "step": 2,
+            "action": "answer",
+            "error": null,
+            "result_summary": "answer produced (1 sources)",
+            "raw_output": null
+          }
+        ]
+      },
+      "delta": {
+        "answer_correct": 0,
+        "grounded_correct": 0,
+        "unsupported_correct": 0,
+        "steps": 0,
+        "pages_read": 0
+      }
+    }
+  ],
+  "source_files": {
+    "manual": "benchmark\\results\\phase10_manual_retry.json",
+    "auto": "benchmark\\results\\phase10_auto_links_retry.json"
+  }
+}

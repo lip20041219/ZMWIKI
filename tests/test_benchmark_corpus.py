@@ -68,6 +68,9 @@ DOC_FILES = [
     "doc_f.txt",
 ]
 
+#: Demo wiki workspace shipped for the TUI; it lives beside the retrieval corpus.
+DEMO_WORKSPACE_ENTRIES = ["wiki", "wiki_workspace.json"]
+
 #: The dataset's 8 cases, in their exact file order, with real chunk ids.
 EXPECTED_CASES = [
     ("database B-tree index query", ("doc_a::1",)),
@@ -142,7 +145,9 @@ def _load_case_set():
 
 def test_corpus_directory_exists_and_has_expected_files():
     assert CORPUS_DIR.is_dir()
-    assert sorted(p.name for p in CORPUS_DIR.iterdir()) == DOC_FILES
+    assert sorted(p.name for p in CORPUS_DIR.iterdir()) == (
+        DOC_FILES + DEMO_WORKSPACE_ENTRIES
+    )
 
 
 @pytest.mark.parametrize("name", DOC_FILES)

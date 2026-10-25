@@ -11,6 +11,9 @@ requires-python = ">=3.10"
 license = { text = "Proprietary" }
 dependencies = []
 
+[project.scripts]
+zmwiki = "zmwiki.tui.__main__:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=7"]
 # Optional retro terminal UI. The default install stays dependency-free.

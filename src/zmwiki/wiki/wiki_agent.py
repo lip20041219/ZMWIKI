@@ -145,6 +145,7 @@ class AgentResult:
     steps: full action history for diagnostics.
     error: terminal error message, or None.
     pages_read: number of distinct pages actually read.
+    read_page_ids: ids of the pages actually read, for diagnostics.
     """
 
     answer: str | None
@@ -153,6 +154,7 @@ class AgentResult:
     steps: tuple[AgentStep, ...]
     error: str | None = None
     pages_read: int = 0
+    read_page_ids: tuple[str, ...] = ()
 
 
 # ---------------------------------------------------------------------------
@@ -240,6 +242,7 @@ class WikiAgent:
                 return AgentResult(
                     answer=None, sources=(), status=AgentStatus.MODEL_ERROR,
                     steps=tuple(steps), error=str(exc), pages_read=len(read_pages),
+                    read_page_ids=tuple(sorted(read_pages)),
                 )
 
             # --- Parse action ---
@@ -262,6 +265,7 @@ class WikiAgent:
                         steps=tuple(steps),
                         error=f"{consecutive_errors} consecutive protocol errors",
                         pages_read=len(read_pages),
+                        read_page_ids=tuple(sorted(read_pages)),
                     )
                 messages.append({"role": "assistant", "content": raw})
                 messages.append({"role": "user", "content": _protocol_error_msg(exc)})
@@ -322,6 +326,7 @@ class WikiAgent:
             steps=tuple(steps),
             error=f"reached max_steps={self.max_steps} without an answer",
             pages_read=len(read_pages),
+            read_page_ids=tuple(sorted(read_pages)),
         )
 
     # ------------------------------------------------------------------
@@ -482,6 +487,7 @@ class WikiAgent:
             steps=tuple(steps),
             error=error,
             pages_read=len(read_pages),
+            read_page_ids=tuple(sorted(read_pages)),
         )
 
 
@@ -494,6 +500,11 @@ def _parse_action(raw: str) -> dict[str, Any]:
     """Parse model output into a validated action dict.
 
     Raises AgentProtocolError for any parsing or validation failure.
+
+    A model occasionally appends prose or a second block after the action
+    object (observed with real endpoints). The first complete JSON object is
+    the action; anything after it is ignored, while output with no complete
+    leading object still fails as a protocol error.
     """
     text = _strip_code_fence(raw).strip()
     if not text:
@@ -501,7 +512,9 @@ def _parse_action(raw: str) -> dict[str, Any]:
     try:
         data = json.loads(text)
     except json.JSONDecodeError as exc:
-        raise AgentProtocolError(f"output is not valid JSON: {exc}") from exc
+        data = _decode_leading_object(text)
+        if data is None:
+            raise AgentProtocolError(f"output is not valid JSON: {exc}") from exc
     if not isinstance(data, dict):
         raise AgentProtocolError(f"output must be a JSON object, got {type(data).__name__}")
 
@@ -595,6 +608,25 @@ def _protocol_error_msg(exc: AgentProtocolError) -> str:
         f"{sorted(_VALID_ACTIONS)}. "
         "Do not include markdown fencing or extra text."
     )
+
+
+def _decode_leading_object(text: str) -> dict[str, Any] | None:
+    """Decode one leading JSON object when followed by non-JSON prose.
+
+    Multiple adjacent JSON values are deliberately NOT accepted: that output
+    is ambiguous and stays a protocol error.
+    """
+    start = text.find("{")
+    if start == -1:
+        return None
+    try:
+        data, end = json.JSONDecoder().raw_decode(text[start:])
+    except json.JSONDecodeError:
+        return None
+    trailing = text[start + end:].lstrip()
+    if trailing.startswith(("{", "[", '"')):
+        return None
+    return data if isinstance(data, dict) else None
 
 
 def _strip_code_fence(text: str) -> str:

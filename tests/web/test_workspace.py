@@ -117,6 +117,29 @@ def test_duplicate_page_id_rejected(tmp_path):
         load_workspace(path)
 
 
+def test_duplicate_normalized_path_rejected_as_workspace_error(tmp_path):
+    path = _write(tmp_path, {
+        "version": 1,
+        "pages": [
+            _page_dict("alice", path="shared/path"),
+            _page_dict("bob", path="SHARED//path/"),
+        ],
+    })
+
+    with pytest.raises(WorkspaceError, match="invalid page at index 1"):
+        load_workspace(path)
+
+
+def test_empty_normalized_path_rejected_as_workspace_error(tmp_path):
+    path = _write(tmp_path, {
+        "version": 1,
+        "pages": [_page_dict("alice", path="///")],
+    })
+
+    with pytest.raises(WorkspaceError, match="invalid page at index 0"):
+        load_workspace(path)
+
+
 def test_wrong_version_rejected(tmp_path):
     path = _write(tmp_path, {"version": 2, "pages": []})
     with pytest.raises(WorkspaceError, match="version must be 1"):
@@ -328,6 +351,21 @@ class TestSaveWorkspace:
         assert index.count() == before_count
         for pid in ("alice", "bob"):
             assert index.get(pid).to_dict() == before[pid]
+
+    def test_repeated_loads_are_independent(self, tmp_path):
+        """Loading the same file twice must not share mutable index state."""
+        path = tmp_path / "ws.json"
+        save_workspace(_build_index("alice"), path)
+
+        first = load_workspace(path)
+        second = load_workspace(path)
+        first.upsert(WikiPage(
+            id="bob", path="topics/bob", title="Bob", content="Bob body.",
+        ))
+
+        assert first.count() == 2
+        assert second.count() == 1
+        assert load_workspace(path).count() == 1
 
     def test_sorted_page_order_is_deterministic(self, tmp_path):
         """Pages must be saved in sorted page_id order regardless of insertion order."""

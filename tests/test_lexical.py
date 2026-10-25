@@ -1,5 +1,7 @@
 """Lexical retrieval tests: tokenizer, BM25 index, LexicalRetriever."""
 
+import threading
+
 import pytest
 
 from zmwiki import (
@@ -254,6 +256,77 @@ def test_repeated_search_stable_and_score_nonnegative():
 
 
 # --- parameter validation ---
+
+
+class _PausingRebuildIndex(InMemoryLexicalIndex):
+    """Test-only hook: pause a rebuild between the _tf and _doc_len swaps.
+
+    ``_rebuild`` is copied around (not replaced) so the real build logic still
+    runs; the rollback recreates the exact cross-version state a concurrent
+    reader could otherwise observe.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.pause_after_tf = False
+        self.after_tf = threading.Event()
+        self.resume = threading.Event()
+
+    def _rebuild(self):
+        previous_doc_len = self._doc_len
+        super()._rebuild()
+        new_tf, new_doc_len = self._tf, self._doc_len
+        if not self.pause_after_tf:
+            return
+        self.pause_after_tf = False
+        self._doc_len = previous_doc_len
+        self._tf = new_tf
+        self.after_tf.set()
+        self.resume.wait(timeout=5)
+        self._doc_len = new_doc_len
+
+
+def test_search_never_observes_state_from_two_rebuilds():
+    """A reader must not see the new postings with the old doc lengths."""
+    index = _PausingRebuildIndex()
+    index.upsert(_chunk("old", "alpha beta"))
+    index.pause_after_tf = True
+
+    writer = threading.Thread(
+        target=index.upsert, args=(_chunk("new", "alpha needle"),)
+    )
+    writer.start()
+    assert index.after_tf.wait(timeout=5)
+
+    started = threading.Event()
+    done = threading.Event()
+    errors = []
+    hits = []
+
+    def read():
+        started.set()
+        try:
+            hits.extend(index.search("alpha needle"))
+        except Exception as exc:  # record, then fail the assertion below
+            errors.append(exc)
+        finally:
+            done.set()
+
+    reader = threading.Thread(target=read)
+    reader.start()
+    assert started.wait(timeout=5)
+
+    # Pre-fix this completes immediately with KeyError('new'). With the
+    # consistent lock it stays blocked until the rebuild finishes.
+    assert not done.wait(timeout=0.2), f"search raced a rebuild: {errors!r}"
+
+    index.resume.set()
+    writer.join(timeout=5)
+    reader.join(timeout=5)
+
+    assert errors == []
+    assert done.is_set()
+    assert {result.chunk.id for result in hits} == {"old", "new"}
 
 
 def test_invalid_k1_and_b():

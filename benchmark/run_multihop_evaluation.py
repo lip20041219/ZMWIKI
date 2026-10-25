@@ -372,6 +372,13 @@ class CaseResult:
     #: Per-step agent diagnostics (step/action/error/result_summary). Empty for
     #: baseline runs and exceptions; populated from AgentResult.steps.
     step_details: list[dict] = field(default_factory=list)
+    #: Keyword-correct AND a successful answer status AND at least one cited
+    #: source. This is the "really answered with evidence" flag; answer_correct
+    #: alone still counts a lucky keyword match with no evidence.
+    grounded_correct: bool = False
+    #: Keyword-correct but not grounded (no source, or a non-answered terminal
+    #: status). Exposes lexical false positives and no-evidence answers.
+    unsupported_correct: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -379,6 +386,8 @@ class CaseResult:
             "question": self.question,
             "answer": self.answer,
             "answer_correct": self.answer_correct,
+            "grounded_correct": self.grounded_correct,
+            "unsupported_correct": self.unsupported_correct,
             "answerable": self.answerable,
             "scoring_rule": self.scoring_rule,
             "link_source": self.link_source,
@@ -445,6 +454,8 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
 
     # --- Answer quality (system-dependent, not directly comparable) ---
     correct = [r for r in results if r.answer_correct]
+    grounded = [r for r in results if r.grounded_correct]
+    unsupported = [r for r in results if r.unsupported_correct]
     answerable_correct = [r for r in answerable if r.answer_correct]
     unanswerable_correct = [r for r in unanswerable if r.answer_correct]
 
@@ -456,6 +467,25 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
             "numerator": len(correct),
             "denominator": total,
             "scope": "all cases",
+            "grounding_note": "LEGACY metric: keyword_group_match only. It can count an "
+                              "answer with no cited evidence as correct. See "
+                              "verified_answer_accuracy.",
+        },
+        "verified_answer_accuracy": {
+            "value": len(grounded) / total if total else 0.0,
+            "numerator": len(grounded),
+            "denominator": total,
+            "scope": "all cases",
+            "definition": "answer_correct AND status=='answered' AND at least one cited source",
+        },
+        "unsupported_correct": {
+            "count": len(unsupported),
+            "rate": len(unsupported) / total if total else 0.0,
+            "definition": "keyword-correct but NOT grounded: no cited source, or a "
+                          "non-answered terminal status (insufficient_evidence / budget / "
+                          "protocol / model error)",
+            "interpretation": "Candidate false positives from the lexical scorer or "
+                              "answers produced without evidence.",
         },
         "answerable_accuracy": {
             "value": len(answerable_correct) / len(answerable) if answerable else 0.0,
@@ -479,10 +509,17 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
     total_recall_numerator = sum(r.evidence_recall_numerator for r in answerable)
     total_recall_denominator = sum(r.evidence_recall_denominator for r in answerable)
     evidence_supported = [r for r in answerable if r.evidence_recall == 1.0 and r.answer_correct]
+    verified_supported = [
+        r for r in answerable if r.grounded_correct and r.evidence_recall == 1.0
+    ]
     multi_hop = [r for r, c in zip(results, cases) if c["hops"] >= 2]
     multi_hop_answerable = [r for r in multi_hop if r.answerable]
     multi_hop_success = [r for r in multi_hop_answerable
                          if r.answer_correct and r.evidence_recall == 1.0]
+    verified_multi_hop_success = [
+        r for r in multi_hop_answerable
+        if r.grounded_correct and r.evidence_recall == 1.0
+    ]
 
     retrieval_evidence = {
         "note": "Comparable across Baseline and Experiment: both measure whether required "
@@ -501,13 +538,31 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
             "value": len(evidence_supported) / len(answerable) if answerable else 0.0,
             "numerator": len(evidence_supported),
             "denominator": len(answerable),
-            "definition": "answer_correct AND evidence_recall==1.0, among answerable cases",
+            "definition": "LEGACY: answer_correct AND evidence_recall==1.0, among answerable "
+                          "cases. Does NOT require cited sources or a successful terminal "
+                          "status; use verified_evidence_support_rate_answerable.",
+        },
+        "verified_evidence_support_rate_answerable": {
+            "value": len(verified_supported) / len(answerable) if answerable else 0.0,
+            "numerator": len(verified_supported),
+            "denominator": len(answerable),
+            "definition": "grounded_correct AND evidence_recall==1.0, among answerable cases. "
+                          "grounded_correct requires a successful answer status and at least "
+                          "one cited source.",
         },
         "multi_hop_success_rate": {
             "value": len(multi_hop_success) / len(multi_hop_answerable) if multi_hop_answerable else 0.0,
             "numerator": len(multi_hop_success),
             "denominator": len(multi_hop_answerable),
-            "definition": "answer_correct AND evidence_recall==1.0, among answerable multi-hop cases",
+            "definition": "LEGACY: answer_correct AND evidence_recall==1.0, among answerable "
+                          "multi-hop cases. See verified_multi_hop_success_rate.",
+        },
+        "verified_multi_hop_success_rate": {
+            "value": len(verified_multi_hop_success) / len(multi_hop_answerable) if multi_hop_answerable else 0.0,
+            "numerator": len(verified_multi_hop_success),
+            "denominator": len(multi_hop_answerable),
+            "definition": "grounded_correct AND evidence_recall==1.0, among answerable "
+                          "multi-hop cases.",
         },
         "unanswerable_cases": {
             "count": len(unanswerable),
@@ -520,11 +575,31 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
         AgentStatus.MODEL_ERROR, AgentStatus.PROTOCOL_ERROR)]
     budget_exhausted = [r for r in results if r.status == AgentStatus.BUDGET_EXHAUSTED]
 
+    status_counts: dict[str, int] = {}
+    for r in results:
+        status_counts[r.status] = status_counts.get(r.status, 0) + 1
+    status_counts = dict(sorted(status_counts.items()))
+
+    def _status_rate(status: str) -> float:
+        return (
+            sum(1 for r in results if r.status == status) / total if total else 0.0
+        )
+
     efficiency = {
         "mean_steps": _safe_mean([r.steps for r in results]),
         "mean_pages_read": _safe_mean([r.pages_read for r in results]),
         "failure_rate": len(failures) / total if total else 0.0,
+        "failure_rate_definition": "cases with a terminal error or status in "
+                                   "(model_error, protocol_error); budget_exhausted also "
+                                   "carries an error string, so it is included",
         "budget_exhausted_rate": len(budget_exhausted) / total if total else 0.0,
+        "status_counts": status_counts,
+        "status_rates": {
+            "insufficient_evidence": _status_rate(AgentStatus.INSUFFICIENT_EVIDENCE),
+            "budget_exhausted": _status_rate(AgentStatus.BUDGET_EXHAUSTED),
+            "protocol_error": _status_rate(AgentStatus.PROTOCOL_ERROR),
+            "model_error": _status_rate(AgentStatus.MODEL_ERROR),
+        },
     }
 
     return {
@@ -537,15 +612,21 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
         "efficiency_metrics": efficiency,
         # Backward-compatible flat keys (pre-M4.2 format).
         "answer_accuracy": answer_quality["answer_accuracy"]["value"],
+        "verified_answer_accuracy": answer_quality["verified_answer_accuracy"]["value"],
+        "unsupported_correct_count": answer_quality["unsupported_correct"]["count"],
         "answerable_accuracy": answer_quality["answerable_accuracy"]["value"],
         "unanswerable_handling": answer_quality["unanswerable_handling"]["value"],
         "mean_evidence_recall": retrieval_evidence["mean_evidence_recall_answerable"]["value"],
         "mean_source_precision": retrieval_evidence["mean_source_precision"]["value"],
         "multi_hop_success_rate": retrieval_evidence["multi_hop_success_rate"]["value"],
+        "verified_multi_hop_success_rate":
+            retrieval_evidence["verified_multi_hop_success_rate"]["value"],
         "mean_steps": efficiency["mean_steps"],
         "mean_pages_read": efficiency["mean_pages_read"],
         "failure_rate": efficiency["failure_rate"],
         "budget_exhausted_rate": efficiency["budget_exhausted_rate"],
+        "status_counts": efficiency["status_counts"],
+        "status_rates": efficiency["status_rates"],
         "correct_count": len(correct),
         "answerable_correct_count": len(answerable_correct),
     }
@@ -572,8 +653,11 @@ def run_baseline(cases: list[dict], pipeline: DeterministicRAGPipeline) -> list[
             for chunk in context.chunks:
                 doc_id = chunk.id.split("::", 1)[0]
                 retrieved_doc_ids.add(doc_id)
-            # Cited source document IDs.
-            cited_doc_ids = [s.chunk_id.split("::", 1)[0] for s in answer_result.sources]
+            # Cited source document IDs, deduplicated in citation order: the
+            # same document cited twice is one source, not two.
+            cited_doc_ids = list(dict.fromkeys(
+                s.chunk_id.split("::", 1)[0] for s in answer_result.sources
+            ))
             answer = answer_result.answer
             status = "answered" if answer.strip() else "no_answer"
             error = None
@@ -585,6 +669,7 @@ def run_baseline(cases: list[dict], pipeline: DeterministicRAGPipeline) -> list[
             error = str(exc)
 
         correct = score_answer(answer, case)
+        grounded = correct and status == "answered" and bool(cited_doc_ids)
         recall, precision, rec_num, rec_den = _compute_evidence_metrics(
             retrieved_doc_ids, case["required_page_ids"], cited_doc_ids
         )
@@ -593,6 +678,8 @@ def run_baseline(cases: list[dict], pipeline: DeterministicRAGPipeline) -> list[
             question=query,
             answer=answer,
             answer_correct=correct,
+            grounded_correct=grounded,
+            unsupported_correct=correct and not grounded,
             status=status,
             sources=cited_doc_ids,
             accessed_pages=sorted(retrieved_doc_ids),
@@ -655,10 +742,12 @@ def run_experiment(
             answer = agent_result.answer
             status = agent_result.status
             error = agent_result.error
-            # Sources are page paths; extract page IDs.
-            source_page_ids = [
-                p.rstrip("/").split("/")[-1] for p in agent_result.sources
-            ]
+            # Sources are page paths; resolve them through the index so nested
+            # paths (e.g. "wikipedia/11675" -> id "wikipedia-11675") are not
+            # truncated by string splitting. Duplicates keep first position.
+            source_page_ids = _source_ids_from_paths(
+                agent_result.sources, wiki_index
+            )
             steps = len(agent_result.steps)
             pages_read = agent_result.pages_read
             step_details = [
@@ -681,6 +770,11 @@ def run_experiment(
             step_details = []
 
         correct = score_answer(answer, case)
+        grounded = (
+            correct
+            and status == AgentStatus.ANSWERED
+            and bool(source_page_ids)
+        )
         recall, precision, rec_num, rec_den = _compute_evidence_metrics(
             monitor.accessed_page_ids, case["required_page_ids"], source_page_ids
         )
@@ -689,6 +783,8 @@ def run_experiment(
             question=case["question"],
             answer=answer,
             answer_correct=correct,
+            grounded_correct=grounded,
+            unsupported_correct=correct and not grounded,
             status=status,
             sources=source_page_ids,
             accessed_pages=sorted(monitor.accessed_page_ids),
@@ -711,6 +807,21 @@ def run_experiment(
             _append_checkpoint(checkpoint_path, case_result)
 
     return results
+
+
+def _source_ids_from_paths(paths: tuple[str, ...], index: WikiIndex) -> list[str]:
+    """Map AgentResult source paths to page ids, preserving citation order.
+
+    Uses the real index so ids with slashes survive. Falls back to the old
+    last-segment heuristic only if a path is missing from the index.
+    """
+    ids: list[str] = []
+    for path in paths:
+        page = index.get_by_path(path)
+        page_id = page.id if page is not None else path.rstrip("/").split("/")[-1]
+        if page_id not in ids:
+            ids.append(page_id)
+    return ids
 
 
 def _append_checkpoint(checkpoint_path: Path, case_result: CaseResult) -> None:
@@ -860,6 +971,16 @@ def serialize_results(
                 "This is not an LLM-as-judge evaluation.",
             "unanswerable_caveat": "Only 1 unanswerable case in this dataset. "
                 "unanswerable_handling is not a reliable measure of refusal ability.",
+            "metric_update_phase_08": "New verified_* metrics require status=='answered' "
+                "AND at least one cited source. The legacy answer_accuracy, "
+                "evidence_support_rate_answerable and multi_hop_success_rate keys keep "
+                "their original keyword/recall definitions so older result files stay "
+                "comparable. unsupported_correct exposes keyword-correct answers without "
+                "a cited, successfully-answered basis.",
+            "source_deduplication": "Cited source lists are deduplicated before "
+                "source_precision is computed. Earlier result files may count the same "
+                "document twice, so mean_source_precision is not directly comparable "
+                "across that change.",
         },
         "config": {
             "baseline": {
@@ -1041,6 +1162,8 @@ def main() -> None:
     baseline_agg = aggregate_results(cases, baseline_results)
     print(f"  Answer accuracy: {baseline_agg['answer_accuracy']:.3f} "
           f"({baseline_agg['correct_count']}/{baseline_agg['total_cases']})")
+    print(f"  Verified answer accuracy: {baseline_agg['verified_answer_accuracy']:.3f} "
+          f"(unsupported correct: {baseline_agg['unsupported_correct_count']})")
     print(f"  Mean evidence recall (answerable): {baseline_agg['mean_evidence_recall']:.3f}")
     print(f"  Multi-hop success: {baseline_agg['multi_hop_success_rate']:.3f}")
 
@@ -1058,9 +1181,12 @@ def main() -> None:
         exp_agg = aggregate_results(cases, experiment_results)
         print(f"  Answer accuracy: {exp_agg['answer_accuracy']:.3f} "
               f"({exp_agg['correct_count']}/{exp_agg['total_cases']})")
+        print(f"  Verified answer accuracy: {exp_agg['verified_answer_accuracy']:.3f} "
+              f"(unsupported correct: {exp_agg['unsupported_correct_count']})")
         print(f"  Mean evidence recall (answerable): {exp_agg['mean_evidence_recall']:.3f}")
         print(f"  Mean steps: {exp_agg['mean_steps']:.2f}")
         print(f"  Failure rate: {exp_agg['failure_rate']:.3f}")
+        print(f"  Status counts: {exp_agg['status_counts']}")
     else:
         print("\n=== Experiment (WikiAgent) ===")
         print("  Skipped in offline mode. Use --live to run with a real model.")

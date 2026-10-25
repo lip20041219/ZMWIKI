@@ -113,7 +113,7 @@ def test_search_and_open_result(tmp_path):
             pages = app.query_one("#pages", OptionList)
             assert pages.option_count == 1
             assert pages.get_option_at_index(0).id == "project/phoenix"
-            assert "SCORE" in app.query_one("#page-meta", Static).content
+            assert "得分" in app.query_one("#page-meta", Static).content
 
             await pilot.press("enter")
             await pilot.pause()
@@ -138,8 +138,8 @@ def test_search_without_matches_shows_empty_state(tmp_path):
             assert pages.option_count == 1
             option = pages.get_option_at_index(0)
             assert option.disabled
-            assert "NO MATCHES" in str(option.prompt)
-            assert "NO MATCHES" in app.query_one("#statusbar", Static).content
+            assert "无匹配结果" in str(option.prompt)
+            assert "无匹配" in app.query_one("#statusbar", Static).content
 
     asyncio.run(scenario())
 
@@ -174,8 +174,34 @@ def test_empty_workspace_state():
             pages = app.query_one("#pages", OptionList)
             assert pages.option_count == 1
             assert pages.get_option_at_index(0).disabled
-            assert "EMPTY WORKSPACE" in str(pages.get_option_at_index(0).prompt)
-            assert "no wiki pages" in app.query_one("#reader", Static).content.lower()
+            assert "空工作区" in str(pages.get_option_at_index(0).prompt)
+            assert "没有任何页面" in app.query_one("#reader", Static).content
+
+    asyncio.run(scenario())
+
+
+def test_ui_text_is_chinese_and_ask_entry_is_visible(tmp_path):
+    async def scenario():
+        app = _app(tmp_path)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            assert app.query_one("#search-label", Static).content == "本地搜索"
+            assert app.query_one("#list-label", Static).content.startswith("页面")
+            assert app.query_one("#wiki-label", Static).content == "维基百科"
+            assert app.query_one("#ask-label", Static).content == "提问"
+            assert "搜索页面" in app.query_one("#search", Input).placeholder
+            assert "搜索维基百科" in app.query_one(
+                "#wiki-search", Input
+            ).placeholder
+            assert "提问" in app.query_one("#ask", Input).placeholder
+            status = app.query_one("#statusbar", Static).content
+            assert "A 提问" in status
+            assert "S 保存" in status
+            assert "Q 退出" in status
+
+            await pilot.press("a")
+            await pilot.pause()
+            assert app.query_one("#ask", Input).has_focus
 
     asyncio.run(scenario())
 
@@ -188,4 +214,21 @@ def test_invalid_workspace_reports_clear_error(tmp_path, capsys):
 
     captured = capsys.readouterr()
     assert "not valid JSON" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_workspace_with_conflicting_paths_reports_clear_error(tmp_path, capsys):
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({
+        "version": 1,
+        "pages": [
+            {"id": "a", "path": "same/path", "title": "A", "content": "a"},
+            {"id": "b", "path": "same/path", "title": "B", "content": "b"},
+        ],
+    }), encoding="utf-8")
+
+    assert main(["--workspace", str(bad)]) == 2
+
+    captured = capsys.readouterr()
+    assert "invalid page at index 1" in captured.err
     assert "Traceback" not in captured.err
