@@ -8,10 +8,10 @@ metadata, and verified bidirectional links. A `WikiAgent` searches, reads, and
 follows links across pages to answer multi-hop questions — instead of relying on
 a single retrieval pass over flat chunks.
 
-ZMWiki builds on the **zmwiki deterministic retrieval & evaluation layer**
-(lexical BM25, dense, hybrid, offline metrics). The RAG pipeline remains the
-retrieval backbone; ZMWiki adds the wiki representation, compiler, agent, and
-terminal UI on top.
+ZMWiki bundles a deterministic retrieval & evaluation layer (the `zmwiki`
+package: lexical BM25, dense, hybrid, offline metrics). The RAG pipeline remains
+the retrieval backbone; ZMWiki adds the wiki representation, compiler, agent,
+and terminal UI on top.
 
 ## 宣传片
 
@@ -31,20 +31,23 @@ terminal UI on top.
 
 ### Wiki Knowledge Layer
 
-- **WikiPage** — frozen dataclass with stable `page_id`, normalized `path`,
-  `title`, `content`, `aliases`, `tags`, `sources`, and verified `links_to` /
+- **WikiPage** — frozen dataclass with a stable `id` (exposed as `page_id` by
+  search and as page ids in agent diagnostics), normalized `path`, `title`,
+  `content`, `aliases`, `tags`, `sources`, and verified `links_to` /
   `links_from`
 - **WikiIndex** — in-memory index with BM25 metadata + content search, path
   lookup, and bidirectional link consistency checking
 - **wiki_search / wiki_read** — deterministic lexical retrieval (metadata weight
   2.0 + content weight 1.0 + exact title/alias bonuses), returning search
   candidates without content; `wiki_read` fetches full pages by path
-- **WikiCompiler** — compiles raw documents into WikiPages via an OpenAI-compatible
-  chat completions endpoint. Model-suggested links are stored as
-  `candidate_links` (unverified), never written directly to `links_to`
-- **Link Resolver** — deterministic candidate-link resolution: matches by
-  `page_id` > normalized path > title > alias, with unique-match acceptance,
-  unresolved / ambiguous / self-link reporting, and bidirectional link enforcement
+- **WikiCompiler** — compiles raw documents into WikiPages (returned as a
+  `CompiledPage` with diagnostics) via an OpenAI-compatible chat completions
+  endpoint. Model-suggested links are stored as `metadata["candidate_links"]`
+  (unverified), never written directly to `links_to`
+- **Link Resolver** — deterministic candidate-link resolution across page ids,
+  normalized paths, titles, and aliases. Only a single unique page match is
+  accepted; unresolved / ambiguous / self-links are reported, and bidirectional
+  link consistency is enforced
 - **WikiAgent** — multi-step retrieval agent with `search` / `read` /
   `follow_links` / `answer` action protocol. Evidence is strictly separated:
   answers can only cite pages that have actually been read. Budget control via
@@ -98,7 +101,7 @@ WikiCompiler (LLM-assisted) ──► WikiPage (candidate_links, unverified)
               └────────────────────────┼────────────────────────┘
                                        ↓
                               Retro Terminal UI
-                              (browser · import · save)
+                              (browse · edit · import · save)
 ```
 
 The zmwiki retrieval pipeline (chunking → embedding → dense/lexical/hybrid
@@ -108,20 +111,21 @@ zmwiki-vs-ZMWiki comparison benchmark.
 
 ## Installation
 
-Default install — deterministic, **zero ML dependencies, no model download,
-no API key**:
+Default install — library and `zmwiki` entry point, deterministic, **zero ML
+dependencies, no model download, no API key** (the TUI itself needs the `tui`
+extra below):
 
 ```bash
 pip install -e .
 ```
 
-Development (adds pytest):
+Development (pytest + TUI tests; the full suite includes TUI tests):
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[dev,tui]"
 ```
 
-Terminal UI (adds `textual`):
+Terminal UI (required to run the TUI; adds `textual`):
 
 ```bash
 pip install -e ".[tui]"
@@ -133,13 +137,15 @@ Semantic (adds `sentence-transformers` for optional real-model features):
 pip install -e ".[semantic]"
 ```
 
+If `pip` points at a different interpreter, use `python -m pip` instead.
+
 ## 快速上手
 
 > 以下是中文简明使用指南。英文完整版见下方 [Quick Start](#quick-start)。
 
 ### 这是什么
 
-ZMWiki 是一个**本地 Wiki 终端浏览器**。你给它一个包含 Wiki 页面的 JSON 文件，它就能在终端里以三栏布局（搜索 + 页面列表 / 正文阅读 / 元数据与链接）浏览和搜索；还可以从 Wikipedia 导入条目、显式保存 workspace，配置模型后直接提问。
+ZMWiki 是一个**本地 Wiki 终端浏览器与编辑器**。你给它一个包含 Wiki 页面的 JSON 文件，它就能在终端里以三栏布局（搜索 + 页面列表 / 正文阅读 / 元数据与链接）浏览、搜索和编辑页面；还可以从 Wikipedia 导入条目、显式保存 workspace，配置模型后直接提问。
 
 仓库自带一个演示语料库（虚构的 Acme Corp 公司，9 篇文档），可以直接用来体验。
 
@@ -149,26 +155,33 @@ ZMWiki 是一个**本地 Wiki 终端浏览器**。你给它一个包含 Wiki 页
 # 克隆仓库后进入目录
 cd ZMWiki
 
-# 安装（默认零依赖）
+# 只安装库（不含 TUI）
 pip install -e .
 
-# 安装终端 UI 依赖（必须，否则无法启动 TUI）
+# 或直接安装 TUI 版本（推荐首次体验；包含上述基础安装）
 pip install -e ".[tui]"
 ```
 
+> 以上命令在 Windows PowerShell、CMD 和常规 Python 环境通用。若 `pip` 指向其他解释器，改用 `python -m pip`。
+
 ### 启动
 
-仓库已自带演示用的 workspace 文件，直接运行：
+仓库已自带演示用的 workspace 文件，直接启动：
 
 ```bash
+# 默认启动仓库自带的演示工作区
+python -m zmwiki.tui
+
+# 或显式指定工作区
 python -m zmwiki.tui --workspace benchmark/corpus/wiki_workspace.json
-```
 
-如果要创建全新的空工作区：
-
-```bash
+# 创建全新的空工作区（目标文件必须不存在）
 python -m zmwiki.tui --workspace my_wiki.json --create
 ```
+
+安装 `.[tui]` 后，等价的 `zmwiki` 命令也可用，例如 `zmwiki --workspace my_wiki.json`。
+
+> 默认工作区路径根据仓库源码位置解析；普通 wheel 安装或源码目录不完整时，请显式传入 `--workspace`。
 
 启动后你会看到：顶部 ZMWiki 绿色 ASCII 标题，左侧搜索框和页面列表，中间正文，右侧元数据和双向链接，底部状态栏和快捷键提示。
 
@@ -180,14 +193,15 @@ python -m zmwiki.tui --workspace my_wiki.json --create
 | `↑` `↓` | 在列表中上下移动选中项 |
 | `Enter` | 打开当前选中的页面 |
 | `1`-`9` | 直接跳转到第 N 个页面 |
-| `Tab` | 在搜索框 / 页面列表 / 出站链接 / 入站链接之间切换 |
+| `Tab` | 在搜索框、页面列表、Wikipedia 搜索、提问框、出站/入站链接之间循环切换 |
 | `N` | 新建页面（编辑器中 `Ctrl+S` 保存、`Esc` 取消） |
 | `E` | 编辑当前页面（可修改路径、标题、标签、出链和正文） |
 | `D` | 删除当前页面（按两次确认，自动清理双向链接） |
-| `Esc` | 清空搜索框，返回全部页面列表 |
+| `Esc` | 清空输入框；取消 Wikipedia 预览或页面编辑；返回页面列表 |
 | `W` | 搜索 Wikipedia（回车列出结果，再回车阅读条目） |
 | `I` | 导入当前预览的 Wikipedia 条目到内存 |
 | `S` | 保存 workspace（文件已存在时需按两次确认覆盖） |
+| `Ctrl+S` | 主界面保存 workspace；页面编辑器中保存当前页面 |
 | `A` | 向本地 Wiki 提问（启动时需带 `--base-url` 和 `--model`） |
 | `Q` | 退出 |
 
@@ -201,7 +215,7 @@ python -m zmwiki.tui --workspace my_wiki.json --create
 - `Bob` — 搜到 Bob Jones（工程总监）
 - `building` — 搜到办公楼页面
 
-> **注意**：如果搜索显示 `NO MATCHES`，不是程序坏了，而是你输入的关键词不在当前语料库里。比如搜索"维基百科"当然搜不到，因为这个演示库是 Acme Corp 公司数据，不是维基百科。按 `Esc` 清空搜索即可返回全部页面。
+> **注意**：如果搜索显示“无匹配结果”，不是程序坏了，而是你输入的关键词不在当前语料库里。比如搜索“维基百科”当然搜不到，因为这个演示库是 Acme Corp 公司数据，不是维基百科。按 `Esc` 清空搜索即可返回全部页面。
 
 ### 从 Wikipedia 导入并提问
 
@@ -211,41 +225,62 @@ python -m zmwiki.tui --workspace my_wiki.json --create
 4. 提问需要模型配置（见下一节）。启动时带上参数：
 
 ```bash
-python -m zmwiki.tui --workspace my_wiki.json \
-  --base-url https://api.deepseek.com/v1 --model deepseek-chat
+python -m zmwiki.tui --workspace my_wiki.json --base-url https://api.deepseek.com/v1 --model deepseek-chat
 ```
 
-按 `A`，输入问题并回车。没有配置模型时，`A` 只显示 `ASK UNAVAILABLE`。
+按 `A`，输入问题并回车。没有配置模型时，提交问题后会显示“问答不可用 / 请以 --base-url 和 --model 启动”。
 
 ### 适用规模与模型要求
 
-- 当前演示库为 9 页 / 9 KB。按每页 50 KB 正文 + 550 条链接的实测规模，workspace 约 120 KB/页，10 MiB 上限约 **80 页**。
-- 加载时间随页数增长较快：40 页约需 7 秒（每次导入/加载都会重建 BM25）。公开演示建议保持在几十页以内，更大规模请拆分 workspace。
-- 真实问答需要可访问的 **OpenAI 兼容接口**：启动时提供 `--base-url` 和 `--model`，密钥用环境变量 `ZMWIKI_API_KEY`（或 `--api-key`）。未配置时只影响 `A` 提问，浏览、搜索、导入和保存仍可用；仓库不内置本地模型。
+- 当前演示库为 9 页 / 约 9 KB。workspace 有 10 MiB 上限；按约 120 KB/页估算，约可容纳 **80 页**。
+- 加载会随页数明显变慢，因为每次导入/加载都会重建 BM25。公开演示建议保持在几十页以内，更大规模请拆分 workspace。
+- 真实问答需要可访问的 **OpenAI 兼容接口**：启动时提供 `--base-url` 和 `--model`，密钥用环境变量 `ZMWIKI_API_KEY`（或 `--api-key`）。未配置时只影响 `A` 提问，浏览、搜索、编辑、导入和保存仍可用；仓库不内置本地模型。
 
 ### 用自己的文档
 
 把你的纯文本文件放到一个目录，然后用以下脚本生成 workspace JSON：
 
 ```python
-import sys, json
-sys.path.insert(0, "benchmark")
-from run_multihop_evaluation import load_documents, build_wiki_pages
-pages = build_wiki_pages(load_documents())
-json.dump({"version": 1, "pages": [p.to_dict() for p in pages]},
-          open("my_wiki.json", "w", encoding="utf-8"), indent=2)
+import json
+from pathlib import Path
+
+from zmwiki.wiki.wiki_schema import WikiPage
+
+source_dir = Path("my_docs")
+pages = [
+    WikiPage(
+        id=path.stem,
+        path=f"docs/{path.stem}",
+        title=path.stem.replace("_", " ").replace("-", " ").title(),
+        content=path.read_text(encoding="utf-8"),
+    )
+    for path in sorted(source_dir.glob("*.txt"))
+]
+Path("my_wiki.json").write_text(
+    json.dumps(
+        {"version": 1, "pages": [page.to_dict() for page in pages]},
+        ensure_ascii=False,
+        indent=2,
+    ),
+    encoding="utf-8",
+)
 ```
 
 然后启动：`python -m zmwiki.tui --workspace my_wiki.json`
 
+> 脚本会写入/覆盖同名的 `my_wiki.json`；如果已有工作区，请先改用其他文件名。
+
+如果需要自动生成页面间链接，可在此基础上使用 `WikiCompiler` 和链接解析器；上面的脚本只创建互不链接的页面。
+
 ### 配置 LLM API（编译文档 / Agent 问答 / 评测时需要）
 
-ZMWiki 的 TUI 浏览和搜索**不需要** API。只有以下三个功能需要调用大模型：
+ZMWiki 的 TUI 浏览、搜索和页面编辑**不需要** API。需要调用大模型的功能主要如下：
 
 | 功能 | 用途 |
 |------|------|
 | **WikiCompiler** | 把原始文档编译成结构化的 WikiPage（标题、正文、候选链接） |
 | **WikiAgent** | 多步检索问答（搜索 → 读页面 → 沿链接跳转 → 回答） |
+| **OpenAICompatibleGenerator** | 可选的通用 LLM 生成适配器（Python API） |
 | **对照评测** | `--live` 模式下用真实模型跑 WikiAgent 评测 |
 
 #### 需要准备什么
@@ -256,7 +291,7 @@ ZMWiki 使用 **OpenAI 兼容接口**，任何支持 `POST /v1/chat/completions`
 2. **model** — 模型名称，例如 `deepseek-chat`
 3. **api_key** — 密钥
 
-#### 第一步：设置 API Key（不要写在代码或命令里）
+#### 第一步：设置 API Key（用环境变量，不要写进源码或提交记录）
 
 ```powershell
 # Windows PowerShell（当前终端生效）
@@ -266,21 +301,32 @@ $env:ZMWIKI_API_KEY = "你的密钥"
 [Environment]::SetEnvironmentVariable("ZMWIKI_API_KEY", "你的密钥", "User")
 ```
 
-> 注意：环境变量名是 `ZMWIKI_API_KEY`，**不是** `OPENAI_API_KEY`。
+```cmd
+REM Windows CMD（当前窗口生效）
+set ZMWIKI_API_KEY=你的密钥
+
+REM 永久生效；需要重新打开终端
+setx ZMWIKI_API_KEY "你的密钥"
+```
+
+> 注意：环境变量名是 `ZMWIKI_API_KEY`，**不是** `OPENAI_API_KEY`。不要把密钥写进 README、代码或提交记录。
 
 #### 第二步：在代码中使用
 
 **WikiCompiler（编译文档）：**
 
 ```python
+from zmwiki.schema import Document
 from zmwiki.wiki.wiki_compiler import WikiCompiler
 
+document = Document(id="doc-1", content="ZMWiki is a local wiki.")
 compiler = WikiCompiler(
     base_url="https://api.deepseek.com/v1",
     model="deepseek-chat",
     # api_key 不传时自动读取 ZMWIKI_API_KEY 环境变量
 )
-page = compiler.compile(document)  # Document → WikiPage
+compiled = compiler.compile(document)  # Document → CompiledPage
+page = compiled.page                    # WikiPage，可交给 WikiIndex.upsert()
 ```
 
 **WikiAgent（多步问答）：**
@@ -296,21 +342,16 @@ agent = WikiAgent(
 )
 result = agent.answer("谁负责 Project Phoenix？")
 print(result.answer)
-print(result.sources)  # 实际读取过的页面
+print(result.sources)  # 实际读取并引用的页面路径
 ```
 
 **对照评测（命令行）：**
 
-```powershell
-python benchmark/run_multihop_evaluation.py `
-  --live `
-  --base-url https://api.deepseek.com/v1 `
-  --model deepseek-chat `
-  --limit 3 `
-  --output results/trial.json
+```bash
+python benchmark/run_multihop_evaluation.py --live --base-url https://api.deepseek.com/v1 --model deepseek-chat --limit 3 --output benchmark/results/trial.json
 ```
 
-> 如果你的接口不需要密钥（比如本地 Ollama），加 `--allow-anonymous`。
+> 如果接口不需要密钥（比如本地 Ollama），benchmark 的 `--live` 模式需要额外加 `--allow-anonymous`。TUI 和 Python API 未设置密钥时不会发送 `Authorization` 请求头，可直接连接本地端点。
 
 #### 常见 endpoint 示例
 
@@ -320,14 +361,15 @@ python benchmark/run_multihop_evaluation.py `
 | OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
 | 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` |
 | 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-flash` |
-| 本地 Ollama | `http://localhost:11434/v1` | `llama3.1`（无需密钥，加 `--allow-anonymous`） |
+| 本地 Ollama | `http://localhost:11434/v1` | `llama3.1`（无需密钥；benchmark `--live` 需加 `--allow-anonymous`） |
 
 #### 费用控制
 
-- WikiAgent 每题最多 `max_steps`（默认 8）次 API 调用，每步一次，无重试、无额外请求
+- WikiAgent 每题最多 `max_steps`（默认 8）次 API 调用，每步一次；总调用数不超过该上限
+- 协议格式错误会带着纠错提示继续，连续 `max_consecutive_errors`（默认 2）次后停止，不会无限重试
+- 非 2xx 响应会立即停止该题；没有网络级重试或退避
 - 3 题受控试运行最多 3 × 8 = **24 次**调用
-- 温度默认 `0.0`（确定性输出），超时默认 30 秒
-- 非 2xx 响应或格式错误会立即停止该题，不会无限重试
+- 温度默认 `0.0`，超时默认 30 秒
 
 ---
 
@@ -336,8 +378,19 @@ python benchmark/run_multihop_evaluation.py `
 ### Retro Terminal UI
 
 ```bash
+# Bundled demo workspace (default)
+python -m zmwiki.tui
+
+# Explicit workspace
 python -m zmwiki.tui --workspace path/to/wiki.json
+
+# New empty workspace
+python -m zmwiki.tui --workspace new.json --create
 ```
+
+After installing `.[tui]`, the equivalent `zmwiki` command is available, e.g.
+`zmwiki --workspace path/to/wiki.json`. The default workspace path assumes the
+source checkout/editable install; pass `--workspace` for other installations.
 
 The workspace is a single JSON document:
 
@@ -353,15 +406,16 @@ The workspace is a single JSON document:
 Keyboard shortcuts: `↑↓` move, `Enter` open, `1-9` jump, `/` search, `N` new
 page, `E` edit the current page, `D` delete it (press twice; links are cleaned
 up), `W` search Wikipedia, `A` ask, `I` import the previewed article, `S` save
-the workspace (press twice to overwrite), `Esc` clear search, `Tab` switch
-pane, `Q` quit. Use `--create` to start a new empty workspace file.
+the workspace (press twice to overwrite), `Ctrl+S` save the workspace from the
+main view or the current page inside the editor, `Esc` clear search, `Tab`
+switch pane, `Q` quit. Use `--create` to start a new empty workspace file.
 
-`A` requires an OpenAI-compatible endpoint (`--base-url`, `--model`,
-`ZMWIKI_API_KEY`); without it, browsing, page creation/editing, import and
-save still work. The
-workspace schema is capped at 10 MiB; at the measured ~120 KB/page, that is
-about 80 pages. Loading is superlinear beyond a few dozen pages (40 pages
-of 50 KB text take about 7 seconds), so keep demos within that range.
+`A` requires an OpenAI-compatible endpoint (`--base-url`, `--model`), plus
+`ZMWIKI_API_KEY` or `--api-key` when the endpoint needs authentication. Without
+model configuration, browsing, page creation/editing, import and save still work. The workspace
+schema is capped at 10 MiB; at roughly 120 KB/page, that is about 80 pages.
+Loading rebuilds BM25 and slows noticeably beyond a few dozen pages, so keep
+demos small and split larger collections.
 
 ### HTTP Server
 
@@ -388,10 +442,11 @@ The workspace is a single JSON document:
 ```
 
 Each page object maps directly to `WikiPage.to_dict()`. Required fields: `id`,
-`path`, `title`, `content`. Optional: `aliases`, `tags`, `sources`, `links_to`,
-`links_from`, `metadata`.
+`path`, `title`, `content`. Optional: `aliases`, `tags`, `description`,
+`sources`, `links_to`, `links_from`, `metadata`.
 
-To build a workspace from plain-text source documents, use the benchmark helper:
+To regenerate the bundled demo workspace from its fixed corpus, use the
+benchmark helper:
 
 ```python
 import sys, json
@@ -401,6 +456,9 @@ pages = build_wiki_pages(load_documents())
 json.dump({"version": 1, "pages": [p.to_dict() for p in pages]},
           open("wiki.json", "w", encoding="utf-8"), indent=2)
 ```
+
+This helper is pinned to the demo Acme corpus; for arbitrary text files, build
+`WikiPage` objects directly as shown in the Chinese “用自己的文档” section.
 
 ### Wiki Agent (Python API)
 
@@ -418,12 +476,13 @@ index.upsert(WikiPage(id="project/phoenix", path="projects/phoenix",
                        links_from=("alice",)))
 
 # Run the agent (requires a real LLM endpoint)
-agent = WikiAgent(base_url="https://api.example.com/v1", model="your-model",
-                  api_key="...", max_steps=8)
-result = agent.answer("Who leads Project Phoenix?", index)
+# api_key is optional: ZMWIKI_API_KEY is read automatically when omitted.
+agent = WikiAgent(index, base_url="https://api.example.com/v1",
+                  model="your-model", max_steps=8)
+result = agent.answer("Who leads Project Phoenix?")
 print(result.answer)
-print(result.sources)   # pages actually read
-print(result.status)    # answered / budget_exhausted / model_error / ...
+print(result.sources)   # page paths actually read and cited
+print(result.status)    # answered / insufficient_evidence / budget_exhausted / model_error / protocol_error
 ```
 
 ### Deterministic RAG Pipeline (baseline)
@@ -476,19 +535,21 @@ precision, multi-hop success, and efficiency metrics.
 
 ```bash
 # Offline baseline only (no LLM, no network)
-python benchmark/run_multihop_evaluation.py --output results/baseline.json
+python benchmark/run_multihop_evaluation.py --output benchmark/results/baseline.json
 
 # Live experiment with real LLM (3-case controlled trial)
-python benchmark/run_multihop_evaluation.py \
-  --live --base-url https://api.example.com/v1 --model your-model \
-  --limit 3 --output results/trial_3cases.json
+python benchmark/run_multihop_evaluation.py --live --base-url https://api.example.com/v1 --model your-model --limit 3 --output benchmark/results/trial_3cases_local.json
 ```
 
 API keys are read from `--api-key` or the `ZMWIKI_API_KEY` environment variable.
-Anonymous endpoints require `--allow-anonymous`. Results are written to a
-timestamped JSON file with per-case records, aggregate metrics, configuration,
-git SHA, and source file hashes. A per-case checkpoint JSONL provides
-incremental persistence.
+Anonymous endpoints require `--allow-anonymous` for `--live`. Results are
+written to the requested JSON file (it must not already exist), with per-case
+records, aggregate metrics, configuration, git SHA, and source file hashes.
+For live runs, a per-case checkpoint JSONL is written beside it for incremental
+persistence.
+
+In this benchmark section, lowercase `zmwiki` refers to the retrieval/evaluation
+package and backbone; `ZMWiki` refers to the wiki system built on top of it.
 
 ## Retrieval Evaluation (zmwiki backbone)
 
@@ -533,8 +594,13 @@ variable. No key is ever written to a file, logged, or rendered by `repr`.
 python -m pytest -q
 ```
 
-Full suite: `1762 passed, 4 skipped` (Python 3.11; retrieval, ranking,
-generation, evaluation, attribution, wiki layer, TUI, and web).
+The full suite includes TUI tests; install with
+`pip install -e ".[dev,tui]"` (pytest + Textual) before running it.
+
+Last verified locally: `1762 passed, 4 skipped` with Python 3.11.9 on Windows.
+The current code commit also passes GitHub Actions (Ubuntu/Python 3.11). The
+four skips are semantic integration tests gated behind environment variables,
+not failures.
 
 ## Project Scope
 
@@ -544,8 +610,9 @@ evaluation**. Not in scope:
 
 - LLM answer generation as a standalone product (generation is a pluggable adapter)
 - Streaming, retries/backoff, agent frameworks beyond WikiAgent
-- Semantic query rewriting (HyDE, multi-query, expansion)
-- MCP, memory, runtime serving, chat UI
+- Semantic query-rewriting variants such as HyDE, multi-query, and expansion
+  beyond the existing `QueryRewriter` hook
+- MCP, memory, production runtime serving, chat UI
 - Faithfulness / RAGAS-style evaluation
 
 ## Documentation
