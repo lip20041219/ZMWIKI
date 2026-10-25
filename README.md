@@ -13,6 +13,18 @@ ZMWiki builds on the **zmwiki deterministic retrieval & evaluation layer**
 retrieval backbone; ZMWiki adds the wiki representation, compiler, agent, and
 terminal UI on top.
 
+## 宣传片
+
+<p align="center">
+  <a href="https://github.com/lip20041219/ZMWIKI/raw/master/docs/videos/zmwiki-promo.mp4">
+    <img src="docs/images/zmwiki-promo.gif" alt="ZMWiki 宣传片预览：终端 Wiki、检索与多跳 Agent 问答" width="820">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/lip20041219/ZMWIKI/raw/master/docs/videos/zmwiki-promo.mp4"><strong>▶ 观看完整宣传片（60 秒，MP4）</strong></a>
+</p>
+
 ![ZMWiki Retro Terminal UI](docs/images/zmwiki_tui.png)
 
 ## Features
