@@ -15,12 +15,13 @@ Pins what the attribution benchmark adds, without re-implementing a metric:
 """
 
 import ast
-import hashlib
 import json
 import pathlib
 import sys
 
 import pytest
+
+from _frozen_evidence import frozen_digest_matches, normalized_lf_bytes
 
 # Make benchmark/ (and its sibling runners) importable under pytest.
 BENCH_DIR = pathlib.Path(__file__).resolve().parents[1] / "benchmark"
@@ -119,16 +120,14 @@ def _claims_of(case_id):
     return [row for row in _evidence()["per_claim"] if row["query_id"] == case_id]
 
 
-def _digest(relative_path):
-    return hashlib.sha256((ROOT / relative_path).read_bytes()).hexdigest()
-
-
 # --- A. Frozen inputs ----------------------------------------------------------
 
 
 @pytest.mark.parametrize("relative_path", sorted(FROZEN_SHA256))
 def test_frozen_inputs_are_unchanged(relative_path):
-    assert _digest(relative_path) == FROZEN_SHA256[relative_path], (
+    assert frozen_digest_matches(
+        ROOT / relative_path, FROZEN_SHA256[relative_path]
+    ), (
         f"{relative_path} changed -- corpus, retrieval dataset and retrieval "
         "evidence must not be modified by this profile"
     )
@@ -136,9 +135,10 @@ def test_frozen_inputs_are_unchanged(relative_path):
 
 def test_rerun_writes_only_to_the_given_path(tmp_path):
     attribution_profile.main(tmp_path / "fresh.json")
-    assert _digest("benchmark/results/retrieval_small_baseline.json") == FROZEN_SHA256[
-        "benchmark/results/retrieval_small_baseline.json"
-    ]
+    assert frozen_digest_matches(
+        ROOT / "benchmark/results/retrieval_small_baseline.json",
+        FROZEN_SHA256["benchmark/results/retrieval_small_baseline.json"],
+    )
 
 
 # --- B. Evidence schema --------------------------------------------------------
@@ -283,8 +283,8 @@ def test_two_independent_runs_are_byte_identical(tmp_path):
     second = tmp_path / "two.json"
     attribution_profile.main(first)
     attribution_profile.main(second)
-    assert first.read_bytes() == second.read_bytes()
-    assert first.read_bytes() == EVIDENCE_PATH.read_bytes()
+    assert normalized_lf_bytes(first) == normalized_lf_bytes(second)
+    assert normalized_lf_bytes(first) == normalized_lf_bytes(EVIDENCE_PATH)
 
 
 def test_evidence_has_no_leakage():

@@ -13,12 +13,13 @@ Pins what the answer-side profile adds, without re-implementing a metric:
 """
 
 import ast
-import hashlib
 import json
 import pathlib
 import sys
 
 import pytest
+
+from _frozen_evidence import frozen_digest_matches
 
 # Make benchmark/ (and its sibling frozen runners) importable under pytest.
 BENCH_DIR = pathlib.Path(__file__).resolve().parents[1] / "benchmark"
@@ -145,16 +146,14 @@ def _row(case_id):
     return next(row for row in _evidence()["per_query"] if row["id"] == case_id)
 
 
-def _digest(relative_path):
-    return hashlib.sha256((ROOT / relative_path).read_bytes()).hexdigest()
-
-
 # --- A. Frozen inputs and retrieval evidence are untouched ---------------------
 
 
 @pytest.mark.parametrize("relative_path", sorted(FROZEN_SHA256))
 def test_frozen_inputs_and_retrieval_evidence_are_unchanged(relative_path):
-    assert _digest(relative_path) == FROZEN_SHA256[relative_path], (
+    assert frozen_digest_matches(
+        ROOT / relative_path, FROZEN_SHA256[relative_path]
+    ), (
         f"{relative_path} changed -- the corpus, datasets and retrieval evidence "
         "must not be modified by this profile"
     )
@@ -162,9 +161,10 @@ def test_frozen_inputs_and_retrieval_evidence_are_unchanged(relative_path):
 
 def test_rerun_writes_only_to_the_given_path(tmp_path):
     answer_profile.main(tmp_path / "fresh.json")
-    assert _digest("benchmark/results/retrieval_small_baseline.json") == FROZEN_SHA256[
-        "benchmark/results/retrieval_small_baseline.json"
-    ]
+    assert frozen_digest_matches(
+        ROOT / "benchmark/results/retrieval_small_baseline.json",
+        FROZEN_SHA256["benchmark/results/retrieval_small_baseline.json"],
+    )
 
 
 # --- B. Dataset -----------------------------------------------------------------

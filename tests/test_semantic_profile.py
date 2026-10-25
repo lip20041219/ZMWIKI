@@ -38,7 +38,6 @@ environment, and (b) real semantic dense retrieval clears the synthetic
 floor: hit_rate / recall above zero on the 7 corpus-grounded cases.
 """
 
-import hashlib
 import json
 import os
 import sys
@@ -46,6 +45,7 @@ from pathlib import Path
 
 import pytest
 
+from _frozen_evidence import frozen_digest_matches
 from zmwiki import JsonEvaluationDatasetLoader
 
 # Make benchmark/ (and the sibling baseline runner) importable under pytest.
@@ -183,8 +183,7 @@ def test_semantic_dense_evidence_is_off_the_synthetic_floor():
 @pytest.mark.parametrize("name", sorted(FROZEN_EVIDENCE_SHA256))
 def test_frozen_deterministic_evidence_unchanged(name):
     path = RESULTS_DIR / name
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    assert digest == FROZEN_EVIDENCE_SHA256[name], (
+    assert frozen_digest_matches(path, FROZEN_EVIDENCE_SHA256[name]), (
         f"{name} changed vs HEAD 03c093f -- frozen evidence must not be modified"
     )
 

@@ -45,7 +45,6 @@ that (a) it reproduces the committed profile under this pinned environment and
 Phase 11 deltas.
 """
 
-import hashlib
 import json
 import math
 import os
@@ -53,6 +52,8 @@ import sys
 from pathlib import Path
 
 import pytest
+
+from _frozen_evidence import frozen_digest_matches
 
 # Make benchmark/ (and the sibling baseline runner) importable under pytest.
 BENCH_DIR = Path(__file__).resolve().parents[1] / "benchmark"
@@ -226,8 +227,7 @@ def test_rerank_runner_is_real_two_stage_and_ml_core_free():
 @pytest.mark.parametrize("name", sorted(FROZEN_EVIDENCE_SHA256))
 def test_frozen_evidence_unchanged(name):
     path = RESULTS_DIR / name
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    assert digest == FROZEN_EVIDENCE_SHA256[name], (
+    assert frozen_digest_matches(path, FROZEN_EVIDENCE_SHA256[name]), (
         f"{name} changed vs its committed HEAD -- frozen evidence must not be modified"
     )
 
