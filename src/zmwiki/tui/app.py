@@ -21,6 +21,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Input, OptionList, Static, TextArea
 from textual.widgets.option_list import Option
 
+from zmwiki.file_ingestion import PlainTextFileIngestor
 from zmwiki.web.workspace import WorkspaceError, load_workspace, save_workspace
 from zmwiki.wiki.wikipedia import (
     WikipediaArticle,
@@ -31,7 +32,9 @@ from zmwiki.wiki.wikipedia import (
 )
 from zmwiki.wiki.wikipedia_import import WikipediaImportError, import_wikipedia_article
 from zmwiki.wiki.wiki_agent import AgentResult, AgentStatus, WikiAgent
+from zmwiki.wiki.wiki_compiler import CompiledPage, WikiCompiler, WikiCompilerError
 from zmwiki.wiki.wiki_index import WikiIndex
+from zmwiki.wiki.wiki_link_resolver import resolve_candidate_links
 from zmwiki.wiki.wiki_retriever import WikiSearchResult, wiki_search
 from zmwiki.wiki.wiki_schema import WikiPage
 
@@ -57,7 +60,7 @@ BANNER = r"""
 
 FOOTER_KEYS = (
     "↑↓ 移动 · ENTER 打开 · 1-9 跳转 · / 搜索 · N 新建 · E 编辑 · "
-    "D 删除 · W 维基 · A 提问 · I 导入 · S 保存 · ESC 返回 · Q 退出"
+    "D 删除 · W 维基 · L 本地 · A 提问 · I 导入 · S 保存 · ESC 返回 · Q 退出"
 )
 
 CSS = """
@@ -117,13 +120,13 @@ Screen {
     padding: 0 1;
 }
 
-#search-label, #list-label, #wiki-label, #ask-label, #meta-label, #outbound-label, #inbound-label {
+#search-label, #list-label, #wiki-label, #ask-label, #doc-label, #meta-label, #outbound-label, #inbound-label {
     color: #3fbf77;
     text-style: bold;
     height: auto;
 }
 
-#search-label, #list-label, #wiki-label, #ask-label {
+#search-label, #list-label, #wiki-label, #ask-label, #doc-label {
     margin-top: 1;
 }
 
@@ -401,6 +404,7 @@ class ZMWikiApp(App[None]):
         Binding("a,A", "ask", "提问"),
         Binding("w,W", "wikipedia_search", "维基"),
         Binding("i,I", "import_wikipedia", "导入"),
+        Binding("l,L", "import_local_document", "本地文档"),
         Binding("s,S", "save_workspace", "保存"),
         Binding("ctrl+s", "save_workspace", "保存", show=False),
     ]
@@ -412,6 +416,7 @@ class ZMWikiApp(App[None]):
         workspace_path: str | Path | None = None,
         wikipedia: WikipediaConnector | None = None,
         agent_factory: Callable[[WikiIndex], WikiAgent] | None = None,
+        compiler_factory: Callable[[], WikiCompiler] | None = None,
     ) -> None:
         super().__init__()
         self.index = index
@@ -420,7 +425,11 @@ class ZMWikiApp(App[None]):
         )
         self.wikipedia = wikipedia if wikipedia is not None else WikipediaConnector()
         self.agent_factory = agent_factory
+        self.compiler_factory = compiler_factory
         self.last_agent_result: AgentResult | None = None
+        self.last_agent_question: str | None = None
+        self._agent_panels_active = False
+        self._agent_source_navigation = False
         self.pages: list[WikiPage] = []
         self.current_page: WikiPage | None = None
         self.mode = "pages"  # "pages" | "search" | "wikipedia" | "ask"
@@ -451,6 +460,8 @@ class ZMWikiApp(App[None]):
                     yield Input(placeholder="搜索维基百科…", id="wiki-search")
                     yield Static("提问", id="ask-label")
                     yield Input(placeholder="向本地知识库提问…", id="ask")
+                    yield Static("本地文档", id="doc-label")
+                    yield Input(placeholder=".txt 文件路径，回车编译导入", id="doc-path")
                 with Vertical(id="center"):
                     yield Static("", id="page-title")
                     yield Static("", id="page-path")
@@ -486,6 +497,8 @@ class ZMWikiApp(App[None]):
 
     def _populate_pages(self, highlight_id: str | None = None) -> None:
         self.mode = "pages"
+        self._agent_source_navigation = False
+        self._agent_panels_active = False
         self.search_results = {}
         self.wikipedia_results = {}
         self.preview_article = None
@@ -511,6 +524,8 @@ class ZMWikiApp(App[None]):
 
     def _run_search(self, raw_query: str) -> None:
         self.preview_article = None
+        self._agent_source_navigation = False
+        self._set_panel_labels("出链", "入链")
         query = raw_query.strip()
         if not query:
             self._populate_pages(self.current_page.id if self.current_page else None)
@@ -562,6 +577,7 @@ class ZMWikiApp(App[None]):
         result = self.search_results.get(page_id)
         if result is None:
             return
+        self._set_panel_labels("出链", "入链")
         self.query_one("#meta-label", Static).update("搜索命中")
         description = getattr(result, "description", None) or "—"
         self.query_one("#page-meta", Static).update(
@@ -579,6 +595,8 @@ class ZMWikiApp(App[None]):
     # ------------------------------------------------------------------
 
     def _start_wikipedia_search(self, raw_query: str) -> None:
+        self._agent_source_navigation = False
+        self._agent_panels_active = False
         query = raw_query.strip()
         if not query:
             self._set_status("维基百科 // 查询为空")
@@ -608,6 +626,9 @@ class ZMWikiApp(App[None]):
         )
         if not results:
             list_widget.add_option(Option("  无维基百科结果", disabled=True))
+            self._set_panel_labels("出链", "入链")
+            self._fill_links(self.query_one("#outbound", OptionList), [], "—")
+            self._fill_links(self.query_one("#inbound", OptionList), [], "—")
             self.query_one("#meta-label", Static).update("维基百科")
             self.query_one("#page-meta", Static).update(
                 f"查询     {query}\n结果     0\n\n没有文章匹配此查询。"
@@ -629,6 +650,7 @@ class ZMWikiApp(App[None]):
         result = self.wikipedia_results.get(option_id)
         if result is None:
             return
+        self._set_panel_labels("出链", "入链")
         self.query_one("#meta-label", Static).update("维基百科结果")
         self.query_one("#page-meta", Static).update(
             f"标题     {result.title}\n"
@@ -672,6 +694,7 @@ class ZMWikiApp(App[None]):
         self.preview_article = article
         self.preview_links = links
         self.preview_link_error = link_error
+        self._set_panel_labels("出链", "入链")
         self.query_one("#page-title", Static).update(article.title)
         self.query_one("#page-path", Static).update(article.url)
         self.query_one("#reader", Static).update(
@@ -728,10 +751,134 @@ class ZMWikiApp(App[None]):
         self._set_status(message)
 
     # ------------------------------------------------------------------
+    # Local document compilation
+    # ------------------------------------------------------------------
+
+    def _start_document_import(self, raw_path: str) -> None:
+        path_text = raw_path.strip().strip('"').strip("'")
+        if not path_text:
+            self._set_status("本地导入 // 路径不能为空")
+            return
+        if self.compiler_factory is None:
+            self._set_status(
+                "本地导入不可用 // 请以 --base-url 和 --model 启动"
+            )
+            return
+        path = Path(path_text).expanduser()
+        if not path.exists():
+            self._set_status(f"本地导入失败 // 文件不存在：{path}")
+            return
+        if not path.is_file():
+            self._set_status(f"本地导入失败 // 不是文件：{path}")
+            return
+        if path.suffix.lower() != ".txt":
+            self._set_status("本地导入失败 // 仅支持 UTF-8 .txt 文件")
+            return
+        self._set_status(f"正在编译本地文档 // {path.name}")
+        self._import_document_worker(path)
+
+    @work(thread=True)
+    def _import_document_worker(self, path: Path) -> None:
+        factory = self.compiler_factory
+        if factory is None:
+            self.call_from_thread(
+                self._show_document_import_error, path,
+                "compiler is not configured",
+            )
+            return
+        try:
+            document = PlainTextFileIngestor().ingest(
+                path, document_id=f"local-{path.stem}"
+            )
+            compiled = factory().compile(document)
+        except (WikiCompilerError, OSError, ValueError, TypeError) as exc:
+            self.call_from_thread(
+                self._show_document_import_error, path, str(exc)
+            )
+            return
+        except Exception as exc:  # keep the TUI alive on unexpected failures
+            self.call_from_thread(
+                self._show_document_import_error, path,
+                f"{type(exc).__name__}: {exc}",
+            )
+            return
+        self.call_from_thread(self._apply_compiled_document, path, compiled)
+
+    def _show_document_import_error(self, path: Path, message: str) -> None:
+        self._set_status(
+            f"本地导入失败 // {path.name} // {_clip(message, 120)}"
+        )
+
+    def _restore_index_snapshot(self, before: dict[str, WikiPage]) -> None:
+        for page_id in [page.id for page in self.index.list_pages()]:
+            if page_id not in before:
+                self.index.delete(page_id)
+        for page in before.values():
+            self.index.upsert(page)
+
+    def _apply_compiled_document(
+        self, path: Path, compiled: CompiledPage
+    ) -> None:
+        page = compiled.page
+        existing = self.index.get(page.id)
+        if existing is not None:
+            self._show_document_import_error(
+                path, f"页面已存在：{page.id}（未覆盖）"
+            )
+            return
+        occupant = self.index.get_by_path(page.path)
+        if occupant is not None:
+            self._show_document_import_error(
+                path,
+                f"路径已被页面 {occupant.id} 使用：{page.path}",
+            )
+            return
+
+        before = {p.id: p for p in self.index.list_pages()}
+        saved = False
+        try:
+            resolved_pages, report = resolve_candidate_links(
+                self.index.list_pages() + [page]
+            )
+            for resolved in resolved_pages:
+                self.index.upsert(resolved)
+            if self.workspace_path is not None:
+                save_workspace(
+                    self.index, self.workspace_path, overwrite=True
+                )
+                saved = True
+        except (WorkspaceError, OSError, TypeError, ValueError) as exc:
+            self._restore_index_snapshot(before)
+            self._show_document_import_error(path, str(exc))
+            return
+        except Exception as exc:  # never leave a half-applied import
+            self._restore_index_snapshot(before)
+            self._show_document_import_error(
+                path, f"{type(exc).__name__}: {exc}"
+            )
+            return
+
+        self.pages = self.index.list_pages()
+        self._populate_pages(page.id)
+        self._open_page(page.id)
+        self.query_one("#doc-path", Input).value = ""
+        link_text = (
+            f"链接 {report.resolved_count} 解析 / "
+            f"{report.ambiguous_count} 歧义 / {report.unresolved_count} 未解析"
+        )
+        saved_text = "已保存" if saved else "未持久化（未指定工作区）"
+        self._set_status(
+            f"已导入 // {page.id} // {link_text} // {saved_text}"
+        )
+        self.query_one("#doc-path", Input).focus()
+
+    # ------------------------------------------------------------------
     # Local wiki agent Q&A
     # ------------------------------------------------------------------
 
     def _start_ask(self, raw_question: str) -> None:
+        self._agent_source_navigation = False
+        self._agent_panels_active = False
         question = raw_question.strip()
         if not question:
             self._set_status("提问 // 问题不能为空")
@@ -756,12 +903,19 @@ class ZMWikiApp(App[None]):
 
     def _show_agent_result(self, question: str, result: AgentResult) -> None:
         self.last_agent_result = result
+        self.last_agent_question = question
+        self._agent_source_navigation = False
         self.preview_article = None
         self.preview_links = None
         self.mode = "ask"
 
         label = _AGENT_STATUS_LABELS.get(result.status, result.status.upper())
-        sources = self._source_pages(result.sources)
+        sources = self._source_pages(result.sources, result.read_page_ids)
+        self._set_panel_labels("答案来源", "已读页面")
+        valid_sources, missing_sources = self._fill_agent_sources(
+            result.sources, result.read_page_ids
+        )
+        missing_reads = self._fill_agent_read_pages(result.read_page_ids)
         self.query_one("#page-title", Static).update(f"提问 // {question}")
         self.query_one("#page-path", Static).update(
             f"状态 {label}  //  步骤 {len(result.steps)}  //  "
@@ -775,14 +929,26 @@ class ZMWikiApp(App[None]):
         self.query_one("#page-meta", Static).update(
             self._agent_diagnostics(result, label, sources)
         )
-        self._fill_links(self.query_one("#outbound", OptionList), [], "—")
-        self._fill_links(self.query_one("#inbound", OptionList), [], "—")
-        self._set_status(
-            f"问答 // {label} // {len(result.steps)} 步 // 阅读 {result.pages_read} 页"
+        status = (
+            f"问答 // {label} // {len(result.steps)} 步 // "
+            f"阅读 {result.pages_read} 页"
         )
+        if missing_sources:
+            status += f" // {missing_sources} 个来源缺失"
+        if missing_reads:
+            status += f" // {missing_reads} 个已读页面缺失"
+        self._set_status(status)
+        if valid_sources and not isinstance(self.screen, PageEditorScreen):
+            self.query_one("#outbound", OptionList).focus()
 
     def _show_ask_error(self, message: str) -> None:
         self.mode = "ask"
+        self.last_agent_result = None
+        self.last_agent_question = None
+        self._agent_source_navigation = False
+        self._set_panel_labels("出链", "入链")
+        self._fill_links(self.query_one("#outbound", OptionList), [], "—")
+        self._fill_links(self.query_one("#inbound", OptionList), [], "—")
         self.query_one("#page-title", Static).update("提问 // 失败")
         self.query_one("#page-path", Static).update("状态 失败")
         self.query_one("#reader", Static).update(f"[提问失败]\n\n{message}")
@@ -791,12 +957,19 @@ class ZMWikiApp(App[None]):
         self.query_one("#page-meta", Static).update(f"状态     失败\n\n{message}")
         self._set_status(f"问答失败 // {message}")
 
-    def _source_pages(self, paths: tuple[str, ...]) -> list[WikiPage]:
+    def _source_pages(
+        self, paths: tuple[str, ...], read_page_ids: tuple[str, ...] = ()
+    ) -> list[WikiPage]:
+        read_ids = set(read_page_ids)
         pages: list[WikiPage] = []
         seen: set[str] = set()
         for path in paths:
             page = self.index.get_by_path(path)
-            if page is not None and page.id not in seen:
+            if (
+                page is not None
+                and (not read_ids or page.id in read_ids)
+                and page.id not in seen
+            ):
                 seen.add(page.id)
                 pages.append(page)
         return pages
@@ -995,6 +1168,9 @@ class ZMWikiApp(App[None]):
         self.mode = "wikipedia"
         self.preview_article = None
         self.wikipedia_results = {}
+        self._set_panel_labels("出链", "入链")
+        self._fill_links(self.query_one("#outbound", OptionList), [], "—")
+        self._fill_links(self.query_one("#inbound", OptionList), [], "—")
         list_widget = self.query_one("#pages", OptionList)
         list_widget.clear_options()
         list_widget.add_option(Option("  维基百科搜索失败", disabled=True))
@@ -1040,7 +1216,78 @@ class ZMWikiApp(App[None]):
         if page_id in ids:
             list_widget.highlighted = ids.index(page_id)
 
+    def _set_panel_labels(self, outbound: str, inbound: str) -> None:
+        self.query_one("#outbound-label", Static).update(outbound)
+        self.query_one("#inbound-label", Static).update(inbound)
+        self._agent_panels_active = outbound == "答案来源"
+
+    def _fill_agent_sources(
+        self, paths: tuple[str, ...], read_page_ids: tuple[str, ...] = ()
+    ) -> tuple[int, int]:
+        """Fill the right panel with clickable answer sources.
+
+        Returns (valid_source_count, missing_source_count). Missing or
+        mismatched paths stay visible as disabled entries so the user sees why
+        they cannot open.
+        """
+        widget = self.query_one("#outbound", OptionList)
+        widget.clear_options()
+        read_ids = set(read_page_ids)
+        seen_paths: set[str] = set()
+        seen_ids: set[str] = set()
+        first_valid: int | None = None
+        missing = 0
+        for path in paths:
+            if path in seen_paths:
+                continue
+            seen_paths.add(path)
+            try:
+                page = self.index.get_by_path(path)
+            except (TypeError, ValueError):
+                page = None
+            if page is None or (read_ids and page.id not in read_ids):
+                widget.add_option(
+                    Option(f"  {path}  (来源缺失)", disabled=True)
+                )
+                missing += 1
+            elif page.id not in seen_ids:
+                seen_ids.add(page.id)
+                if first_valid is None:
+                    first_valid = widget.option_count
+                widget.add_option(Option(f"  {page.title}", id=page.id))
+        if widget.option_count == 0:
+            widget.add_option(Option("  无经核实的来源", disabled=True))
+        widget.highlighted = first_valid if first_valid is not None else 0
+        return len(seen_ids), missing
+
+    def _fill_agent_read_pages(self, page_ids: tuple[str, ...]) -> int:
+        """Fill the right panel with clickable pages the Agent actually read."""
+        widget = self.query_one("#inbound", OptionList)
+        widget.clear_options()
+        seen: set[str] = set()
+        first_valid: int | None = None
+        missing = 0
+        for page_id in page_ids:
+            if page_id in seen:
+                continue
+            seen.add(page_id)
+            page = self.index.get(page_id)
+            if page is None:
+                widget.add_option(
+                    Option(f"  {page_id}  (缺失)", disabled=True)
+                )
+                missing += 1
+            else:
+                if first_valid is None:
+                    first_valid = widget.option_count
+                widget.add_option(Option(f"  {page.title}", id=page.id))
+        if widget.option_count == 0:
+            widget.add_option(Option("  未读取页面", disabled=True))
+        widget.highlighted = first_valid if first_valid is not None else 0
+        return missing
+
     def _render_page_side(self, page: WikiPage) -> None:
+        self._set_panel_labels("出链", "入链")
         self.query_one("#page-meta", Static).update(
             f"编号     {page.id}\n"
             f"路径     {page.path}\n"
@@ -1084,6 +1331,7 @@ class ZMWikiApp(App[None]):
     def _show_empty_workspace(self) -> None:
         self.pages = self.index.list_pages()
         self.current_page = None
+        self._set_panel_labels("出链", "入链")
         self._update_topmeta()
         self.query_one("#list-label", Static).update("页面 (0)")
         list_widget = self.query_one("#pages", OptionList)
@@ -1093,8 +1341,9 @@ class ZMWikiApp(App[None]):
         self.query_one("#page-path", Static).update("")
         self.query_one("#reader", Static).update(
             "此工作区还没有任何页面。\n\n"
-            "按 N 新建页面，按 W 搜索维基百科并按 I 导入，或向 JSON 工作区"
-            "添加页面后重启 ZMWiki。"
+            "按 N 新建页面，按 L 导入本地 .txt 文档，"
+            "按 W 搜索维基百科并按 I 导入，或向 JSON 工作区添加页面后"
+            "重启 ZMWiki。"
         )
         self.query_one("#meta-label", Static).update("页面信息")
         self.query_one("#page-meta", Static).update("空工作区")
@@ -1139,6 +1388,10 @@ class ZMWikiApp(App[None]):
         self._reset_arming()
         self._import_preview()
 
+    def action_import_local_document(self) -> None:
+        self._reset_arming()
+        self.query_one("#doc-path", Input).focus()
+
     def action_save_workspace(self) -> None:
         self._delete_armed = False
         self._save_workspace()
@@ -1154,6 +1407,8 @@ class ZMWikiApp(App[None]):
             self._start_wikipedia_search(event.value)
         elif event.input.id == "ask":
             self._start_ask(event.value)
+        elif event.input.id == "doc-path":
+            self._start_document_import(event.value)
 
     def on_option_list_option_highlighted(
         self, event: OptionList.OptionHighlighted
@@ -1177,6 +1432,12 @@ class ZMWikiApp(App[None]):
             self._read_wikipedia_article(event.option_id)
             return
         if event.option_list.id in ("pages", "outbound", "inbound"):
+            if (
+                event.option_list.id in ("outbound", "inbound")
+                and self._agent_panels_active
+                and self.last_agent_result is not None
+            ):
+                self._agent_source_navigation = True
             self._open_page(event.option_id)
 
     def on_key(self, event: events.Key) -> None:
@@ -1219,6 +1480,23 @@ class ZMWikiApp(App[None]):
                     self._preview_page(self.current_page.id)
                     self._set_status(f"页面列表 // {self.current_page.id}")
                 self.query_one("#pages", OptionList).focus()
+            event.stop()
+            return
+
+        if event.key == "escape" and self._agent_source_navigation:
+            self._agent_source_navigation = False
+            if (
+                self.last_agent_question is not None
+                and self.last_agent_result is not None
+            ):
+                self._show_agent_result(
+                    self.last_agent_question, self.last_agent_result
+                )
+            event.stop()
+            return
+
+        if event.key == "escape" and self.mode == "ask":
+            self._restore_pages()
             event.stop()
             return
 
@@ -1267,9 +1545,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--create", action="store_true",
                         help="创建新的空工作区文件（目标文件必须不存在）")
     parser.add_argument("--base-url", default=None,
-                        help="OpenAI 兼容 API 基础地址（启用提问）")
+                        help="OpenAI 兼容 API 基础地址（启用提问 / 本地文档编译）")
     parser.add_argument("--model", default=None,
-                        help="提问所用的模型标识")
+                        help="提问和文档编译所用的模型标识")
     parser.add_argument("--api-key", default=None,
                         help="提问所用的 API 密钥（也可设置 ZMWIKI_API_KEY）")
     args = parser.parse_args(argv)
@@ -1300,7 +1578,21 @@ def main(argv: list[str] | None = None) -> int:
 
         agent_factory = build_agent
 
+    compiler_factory: Callable[[], WikiCompiler] | None = None
+    if args.base_url is not None:
+        def build_compiler() -> WikiCompiler:
+            return WikiCompiler(
+                base_url=args.base_url,
+                model=args.model,
+                api_key=args.api_key,
+            )
+
+        compiler_factory = build_compiler
+
     ZMWikiApp(
-        index, workspace_path=args.workspace, agent_factory=agent_factory
+        index,
+        workspace_path=args.workspace,
+        agent_factory=agent_factory,
+        compiler_factory=compiler_factory,
     ).run()
     return 0

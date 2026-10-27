@@ -95,6 +95,17 @@ async def _ask(pilot, app, question, *, press_key=True):
     await pilot.pause()
 
 
+def _option_ids(widget: OptionList) -> list[str | None]:
+    return [widget.get_option_at_index(i).id for i in range(widget.option_count)]
+
+
+async def _open_option(pilot, widget: OptionList, index: int) -> None:
+    widget.highlighted = index
+    widget.focus()
+    await pilot.press("enter")
+    await pilot.pause()
+
+
 def _run(scenario):
     asyncio.run(scenario())
 
@@ -137,6 +148,18 @@ def test_question_triggers_agent_and_displays_answer_and_sources():
             assert "已读页面" in diagnostics
             assert "来源" in diagnostics
             assert "01 search" in diagnostics
+
+            outbound = app.query_one("#outbound", OptionList)
+            inbound = app.query_one("#inbound", OptionList)
+            assert app.query_one("#outbound-label", Static).content == "答案来源"
+            assert app.query_one("#inbound-label", Static).content == "已读页面"
+            assert _option_ids(outbound) == ["btree"]
+            assert _option_ids(inbound) == ["btree"]
+
+            await _open_option(pilot, outbound, 0)
+            assert app.current_page.id == "btree"
+            assert app.query_one("#outbound-label", Static).content == "出链"
+            assert app.query_one("#inbound-label", Static).content == "入链"
 
     _run(scenario)
 
@@ -181,6 +204,42 @@ def test_multihop_question_reads_linked_pages_and_cites_both():
             assert "follow_links" in app.query_one("#page-meta", Static).content
             assert "02 read" in app.query_one("#page-meta", Static).content
 
+            outbound = app.query_one("#outbound", OptionList)
+            inbound = app.query_one("#inbound", OptionList)
+            assert app.query_one("#outbound-label", Static).content == "答案来源"
+            assert app.query_one("#inbound-label", Static).content == "已读页面"
+            assert _option_ids(outbound) == ["alice", "project/phoenix"]
+            assert _option_ids(inbound) == ["alice", "project/phoenix"]
+
+            # Open the second source, return to the answer with Escape, and
+            # open the first source as well.
+            await _open_option(pilot, outbound, 1)
+            assert app.current_page.id == "project/phoenix"
+
+            await pilot.press("escape")
+            await pilot.pause()
+            assert app.query_one("#outbound-label", Static).content == "答案来源"
+            outbound = app.query_one("#outbound", OptionList)
+            assert _option_ids(outbound) == ["alice", "project/phoenix"]
+
+            inbound = app.query_one("#inbound", OptionList)
+            await _open_option(pilot, inbound, 1)
+            assert app.current_page.id == "project/phoenix"
+
+            await pilot.press("escape")
+            await pilot.pause()
+            outbound = app.query_one("#outbound", OptionList)
+            await _open_option(pilot, outbound, 0)
+            assert app.current_page.id == "alice"
+            assert app.query_one("#outbound-label", Static).content == "出链"
+            assert _option_ids(app.query_one("#outbound", OptionList)) == [
+                "project/phoenix"
+            ]
+
+            # Continue along the existing page link.
+            await _open_option(pilot, app.query_one("#outbound", OptionList), 0)
+            assert app.current_page.id == "project/phoenix"
+
     _run(scenario)
 
 
@@ -203,6 +262,95 @@ def test_cited_sources_that_were_not_read_are_not_displayed():
             assert app.last_agent_result.sources == ("databases/btree",)
             assert "ghost-page" not in app.query_one("#reader", Static).content
             assert "ghost-page" not in app.query_one("#page-meta", Static).content
+            assert _option_ids(app.query_one("#outbound", OptionList)) == ["btree"]
+
+    _run(scenario)
+
+
+def test_deleted_source_option_does_not_navigate_to_a_wrong_page():
+    async def scenario():
+        responses = [
+            _completion({"action": "search", "query": "b-tree"}),
+            _completion({"action": "read", "paths": ["databases/btree"]}),
+            _completion({
+                "action": "answer",
+                "text": "A B-tree indexes databases.",
+                "sources": ["btree"],
+            }),
+        ]
+        app = _app(_single_page_index(), responses)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await _ask(pilot, app, "What is a B-tree?")
+
+            outbound = app.query_one("#outbound", OptionList)
+            assert _option_ids(outbound) == ["btree"]
+            app.index.delete("btree")
+            before = app.current_page
+
+            await _open_option(pilot, outbound, 0)
+            assert app.current_page is before
+            assert "未找到页面" in app.query_one("#statusbar", Static).content
+
+    _run(scenario)
+
+
+def test_missing_agent_source_is_disabled_and_reported():
+    async def scenario():
+        app = _app(_single_page_index(), [])
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            before = app.current_page
+            result = AgentResult(
+                answer="An answer with a stale source.",
+                sources=("missing/page",),
+                status=AgentStatus.ANSWERED,
+                steps=(),
+                pages_read=0,
+                read_page_ids=(),
+            )
+
+            app._show_agent_result("Where is it?", result)
+            await pilot.pause()
+
+            outbound = app.query_one("#outbound", OptionList)
+            assert outbound.option_count == 1
+            option = outbound.get_option_at_index(0)
+            assert option.disabled
+            assert "来源缺失" in str(option.prompt)
+            assert "1 个来源缺失" in app.query_one("#statusbar", Static).content
+
+            outbound.focus()
+            await pilot.press("enter")
+            await pilot.pause()
+            assert app.current_page is before
+
+    _run(scenario)
+
+
+def test_source_path_must_match_a_read_page_id():
+    async def scenario():
+        app = _app(_single_page_index(), [])
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            result = AgentResult(
+                answer="A stale source identity.",
+                sources=("databases/btree",),
+                status=AgentStatus.ANSWERED,
+                steps=(),
+                pages_read=1,
+                read_page_ids=("some-other-page",),
+            )
+
+            app._show_agent_result("Where is it?", result)
+            await pilot.pause()
+
+            outbound = app.query_one("#outbound", OptionList)
+            assert outbound.option_count == 1
+            option = outbound.get_option_at_index(0)
+            assert option.disabled
+            assert "来源缺失" in str(option.prompt)
+            assert "1 个来源缺失" in app.query_one("#statusbar", Static).content
 
     _run(scenario)
 
@@ -230,6 +378,15 @@ def test_empty_workspace_reports_insufficient_evidence():
             assert "模型备注（未经验证）" in reader
             assert "无经核实的来源" in reader
             assert result.sources == ()
+
+            outbound = app.query_one("#outbound", OptionList)
+            inbound = app.query_one("#inbound", OptionList)
+            assert outbound.option_count == 1
+            assert outbound.get_option_at_index(0).disabled
+            assert "无经核实的来源" in str(outbound.get_option_at_index(0).prompt)
+            assert inbound.option_count == 1
+            assert inbound.get_option_at_index(0).disabled
+            assert "未读取页面" in str(inbound.get_option_at_index(0).prompt)
 
     _run(scenario)
 

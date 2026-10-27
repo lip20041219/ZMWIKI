@@ -16,6 +16,7 @@ from zmwiki.tui.app import (
 from zmwiki.web.workspace import WorkspaceError, load_workspace
 from zmwiki.wiki.wiki_agent import AgentStatus, WikiAgent
 from zmwiki.wiki.wiki_index import WikiIndex
+from zmwiki.wiki.wiki_retriever import wiki_search
 from zmwiki.wiki.wiki_schema import WikiPage
 
 
@@ -245,6 +246,91 @@ def test_delete_page_cleans_links_and_saves(tmp_path):
         reloaded = load_workspace(app.workspace_path)
         assert reloaded.get("alice") is None
         assert reloaded.get("bob").links_from == ()
+
+    asyncio.run(scenario())
+
+
+def test_edit_and_delete_update_search_index_immediately(tmp_path):
+    alice = WikiPage(
+        id="alice",
+        path="people/alice",
+        title="Alice",
+        content="Alice body has oldtoken.",
+    )
+
+    async def scenario():
+        app = _app(tmp_path, [alice])
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            assert [r.page_id for r in wiki_search(app.index, "oldtoken")] == [
+                "alice"
+            ]
+
+            await pilot.press("e")
+            await pilot.pause()
+            app.screen.query_one("#edit-content", TextArea).text = (
+                "Alice body has newtoken."
+            )
+            await pilot.press("ctrl+s")
+            await pilot.pause()
+
+            assert [r.page_id for r in wiki_search(app.index, "newtoken")] == [
+                "alice"
+            ]
+            assert wiki_search(app.index, "oldtoken") == []
+
+            await pilot.press("d")
+            await pilot.pause()
+            await pilot.press("d")
+            await pilot.pause()
+            assert app.index.get("alice") is None
+            assert wiki_search(app.index, "newtoken") == []
+
+    asyncio.run(scenario())
+
+
+def test_deleting_link_target_cleans_inbound_links_and_saves(tmp_path):
+    alice = WikiPage(
+        id="alice",
+        path="people/alice",
+        title="Alice",
+        content="Alice body.",
+        links_to=("bob",),
+    )
+    bob = WikiPage(
+        id="bob",
+        path="people/bob",
+        title="Bob",
+        content="Bob body.",
+        links_from=("alice",),
+    )
+
+    async def scenario():
+        app = _app(tmp_path, [alice, bob])
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            pages = app.query_one("#pages", OptionList)
+            pages.focus()
+            await pilot.press("down")
+            await pilot.press("enter")
+            await pilot.pause()
+            assert app.current_page.id == "bob"
+
+            await pilot.press("d")
+            await pilot.pause()
+            await pilot.press("d")
+            await pilot.pause()
+
+            assert app.index.get("bob") is None
+            assert app.index.get("alice").links_to == ()
+            assert app.index.check_links().is_clean
+            assert wiki_search(app.index, "Bob") == []
+            await _save_overwrite(pilot, app)
+
+        reloaded = load_workspace(app.workspace_path)
+        assert reloaded.get("bob") is None
+        assert reloaded.get("alice").links_to == ()
+        assert reloaded.check_links().is_clean
 
     asyncio.run(scenario())
 
