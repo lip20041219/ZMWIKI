@@ -132,6 +132,19 @@ def load_dataset() -> dict:
         seen.add(case["id"])
         if not isinstance(case["required_page_ids"], list):
             raise RuntimeError(f"case {case['id']}: required_page_ids must be a list")
+        alternatives = case.get("alternative_evidence_sets", [])
+        if not isinstance(alternatives, list) or any(
+            not isinstance(path, list) for path in alternatives
+        ):
+            raise RuntimeError(
+                f"case {case['id']}: alternative_evidence_sets must be a list of lists"
+            )
+        for path in alternatives:
+            bad = set(path) - set(_PAGE_LINKS)
+            if bad:
+                raise RuntimeError(
+                    f"case {case['id']}: alternative evidence has unknown pages {bad}"
+                )
     return payload
 
 
@@ -205,7 +218,10 @@ def build_wiki_index(pages: list[WikiPage]) -> WikiIndex:
 class MonitoringWikiIndex(WikiIndex):
     """A WikiIndex subclass that records every page access (get / get_by_path).
 
-    Used to track which pages the Agent actually reads, for evidence metrics.
+    ``accessed_page_ids`` is intentionally broad: it includes pages touched
+    while searching as well as pages opened by read/follow_links. It is kept
+    for legacy access_recall. For actual read evidence, use
+    ``AgentResult.read_page_ids`` (the source for read_evidence_recall).
     Inherits from WikiIndex so it passes WikiAgent's isinstance check while
     copying the inner index's fully-built state.
     """
@@ -322,24 +338,33 @@ def _normalize(text: str) -> str:
     return _NORMALIZE_RE.sub("", text.lower())
 
 
+def _matches_any(text: str, keywords: list[str]) -> bool:
+    """True if any non-empty normalized keyword is a substring of ``text``."""
+    return any((kw := _normalize(k)) and kw in text for k in keywords)
+
+
 def score_answer(answer: str | None, case: dict) -> bool:
     """Deterministic answer scoring.
 
     For answerable cases: every keyword group in answer_keyword_groups must
     have at least one keyword present in the normalized answer.
-    For unanswerable cases: at least one refusal_keyword must appear.
+    For unanswerable cases: at least one refusal_keyword must appear, and no
+    case-specific fabrication_keyword may appear. The fabrication guard is a
+    lexical heuristic for "refused, then invented an answer"; it is not a
+    semantic judge.
     """
     if answer is None or not answer.strip():
         return False
     norm = _normalize(answer)
     if not case["answerable"]:
-        refusal = case.get("refusal_keywords", [])
-        return any(_normalize(kw) in norm for kw in refusal)
+        if not _matches_any(norm, case.get("refusal_keywords", [])):
+            return False
+        return not _matches_any(norm, case.get("fabrication_keywords", []))
     groups = case.get("answer_keyword_groups", [])
     if not groups:
         return False
     for group in groups:
-        if not any(_normalize(kw) in norm for kw in group):
+        if not _matches_any(norm, group):
             return False
     return True
 
@@ -369,9 +394,26 @@ class CaseResult:
     evidence_recall_numerator: int = 0
     evidence_recall_denominator: int = 0
     error: str | None = None
-    #: Per-step agent diagnostics (step/action/error/result_summary). Empty for
-    #: baseline runs and exceptions; populated from AgentResult.steps.
+    #: Per-step agent diagnostics (step/action/params/result_summary/errors).
+    #: Empty for baseline runs and exceptions; populated from AgentResult.steps.
     step_details: list[dict] = field(default_factory=list)
+    #: Pages returned by successful Agent search actions (union over all steps).
+    search_hit_page_ids: list[str] = field(default_factory=list)
+    #: Pages actually read by the Agent (AgentResult.read_page_ids). For the
+    #: baseline, this is the retrieved document set because its single-pass
+    #: pipeline consumes that context.
+    read_page_ids: list[str] = field(default_factory=list)
+    #: |accessed_pages ∩ required| / |required|. This keeps the legacy
+    #: evidence_recall semantics under an explicit name; accessed_pages also
+    #: includes search candidate lookups.
+    access_recall: float | None = None
+    access_recall_numerator: int = 0
+    access_recall_denominator: int = 0
+    #: |read_page_ids ∩ required| / |required|. Unlike access_recall, this
+    #: uses only pages actually read by the Agent.
+    read_evidence_recall: float | None = None
+    read_evidence_recall_numerator: int = 0
+    read_evidence_recall_denominator: int = 0
     #: Keyword-correct AND a successful answer status AND at least one cited
     #: source. This is the "really answered with evidence" flag; answer_correct
     #: alone still counts a lucky keyword match with no evidence.
@@ -403,32 +445,69 @@ class CaseResult:
             "pages_read": self.pages_read,
             "error": self.error,
             "step_details": self.step_details,
+            "search_hit_page_ids": self.search_hit_page_ids,
+            "read_page_ids": self.read_page_ids,
+            "access_recall": self.access_recall,
+            "access_recall_numerator": self.access_recall_numerator,
+            "access_recall_denominator": self.access_recall_denominator,
+            "read_evidence_recall": self.read_evidence_recall,
+            "read_evidence_recall_numerator": self.read_evidence_recall_numerator,
+            "read_evidence_recall_denominator": self.read_evidence_recall_denominator,
         }
 
 
+def _compute_recall(
+    page_ids: set[str],
+    required: list[str],
+    alternative_sets: list[list[str]] | None = None,
+) -> tuple[float | None, int, int]:
+    """Return (recall, numerator, denominator) for the best evidence path.
+
+    The primary path is ``required``. Each entry in ``alternative_sets`` is a
+    complete legal evidence path; the path with the highest page coverage wins.
+    A fully covered alternative path therefore yields recall 1.0 without
+    weakening the primary requirement for cases that use the primary path.
+    For unanswerable cases (required empty), recall is None and counts are zero.
+    """
+    if not required:
+        return None, 0, 0
+    paths = [list(required)] + [list(p) for p in (alternative_sets or []) if p]
+    best_path = max(
+        paths,
+        key=lambda path: len(page_ids & set(path)) / len(path),
+    )
+    numerator = len(page_ids & set(best_path))
+    denominator = len(best_path)
+    return numerator / denominator, numerator, denominator
+
+
 def _compute_evidence_metrics(
-    accessed: set[str], required: list[str], sources: list[str]
+    accessed: set[str],
+    required: list[str],
+    sources: list[str],
+    alternative_sets: list[list[str]] | None = None,
 ) -> tuple[float | None, float, int, int]:
     """Return (evidence_recall, source_precision, recall_numerator, recall_denominator).
 
-    evidence_recall = |accessed ∩ required| / |required|
-      - For answerable cases (required non-empty): a float in [0, 1].
-      - For unanswerable cases (required empty): None (not applicable, NOT 1.0).
-        Unanswerable cases are excluded from mean_evidence_recall.
-    source_precision = |sources ∩ required| / |sources| (0 if sources empty).
-      - For unanswerable cases, required is empty so precision is always 0.
-    recall_numerator / recall_denominator: explicit counts for auditability.
-      - Unanswerable: numerator=0, denominator=0.
+    evidence_recall uses the best legal evidence path (primary required pages or
+    an annotated alternative_evidence_sets path). source_precision treats every
+    page in the primary and alternative paths as relevant evidence.
+      - For unanswerable cases (required empty): recall is None (not applicable,
+        NOT 1.0); unanswerable cases are excluded from mean_evidence_recall.
+    recall_numerator / recall_denominator: counts for the selected best path.
     """
+    recall, numerator, denominator = _compute_recall(
+        accessed, required, alternative_sets
+    )
     if not required:
-        return None, 0.0, 0, 0
-    numerator = len(accessed & set(required))
-    denominator = len(required)
-    recall = numerator / denominator
+        return recall, 0.0, numerator, denominator
+    relevant = set(required)
+    for path in alternative_sets or []:
+        relevant.update(path)
     if not sources:
         precision = 0.0
     else:
-        precision = len(set(sources) & set(required)) / len(sources)
+        precision = len(set(sources) & relevant) / len(sources)
     return recall, precision, numerator, denominator
 
 
@@ -443,7 +522,10 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
         uses a real LLM. Reported as independent system results.
 
     Evidence recall is computed ONLY over answerable cases. Unanswerable cases
-    carry evidence_recall=None and are excluded from the mean.
+    carry evidence_recall=None and are excluded from the mean. access_recall
+    and read_evidence_recall are likewise excluded for unanswerable cases;
+    access_recall preserves the legacy accessed_pages definition, while
+    read_evidence_recall uses AgentResult.read_page_ids only.
     """
     total = len(results)
     answerable = [r for r, c in zip(results, cases) if c["answerable"]]
@@ -498,7 +580,9 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
             "numerator": len(unanswerable_correct),
             "denominator": len(unanswerable),
             "scope": "unanswerable cases only",
-            "caveat": "Only 1 unanswerable case in this dataset; not a reliable measure of refusal ability.",
+            "caveat": f"{len(unanswerable)} unanswerable case(s); keyword-only refusal "
+                      "scoring can accept a refusal followed by a fabricated answer. "
+                      "Treat as a manual-audit metric.",
         },
         "scoring_rule": "keyword_group_match (lexical heuristic, NOT semantic correctness; "
                          "paraphrases may score low even when correct)",
@@ -508,6 +592,35 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
     answerable_recalls = [r.evidence_recall for r in answerable if r.evidence_recall is not None]
     total_recall_numerator = sum(r.evidence_recall_numerator for r in answerable)
     total_recall_denominator = sum(r.evidence_recall_denominator for r in answerable)
+    # New explicit metrics. access_recall mirrors legacy evidence_recall.
+    # Falls back to legacy evidence_recall for CaseResults constructed without
+    # the new fields (e.g. third-party tests or old in-memory fixtures).
+    access_recalls: list[float] = []
+    access_numerator_sum = 0
+    access_denominator_sum = 0
+    read_recalls: list[float] = []
+    read_numerator_sum = 0
+    read_denominator_sum = 0
+    for r in answerable:
+        access_value = (
+            r.access_recall if r.access_recall is not None else r.evidence_recall
+        )
+        if access_value is not None:
+            access_recalls.append(access_value)
+            access_numerator_sum += (
+                r.access_recall_numerator
+                if r.access_recall is not None
+                else r.evidence_recall_numerator
+            )
+            access_denominator_sum += (
+                r.access_recall_denominator
+                if r.access_recall is not None
+                else r.evidence_recall_denominator
+            )
+        if r.read_evidence_recall is not None:
+            read_recalls.append(r.read_evidence_recall)
+            read_numerator_sum += r.read_evidence_recall_numerator
+            read_denominator_sum += r.read_evidence_recall_denominator
     evidence_supported = [r for r in answerable if r.evidence_recall == 1.0 and r.answer_correct]
     verified_supported = [
         r for r in answerable if r.grounded_correct and r.evidence_recall == 1.0
@@ -529,6 +642,30 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
             "numerator_sum": total_recall_numerator,
             "denominator_sum": total_recall_denominator,
             "scope": "answerable cases only (unanswerable excluded; evidence_recall=None)",
+            "definition": "LEGACY: |accessed_pages ∩ required| / |required|. "
+                          "accessed_pages includes search candidate accesses."""
+        },
+        "mean_access_recall_answerable": {
+            "value": _safe_mean(access_recalls),
+            "numerator_sum": access_numerator_sum,
+            "denominator_sum": access_denominator_sum,
+            "cases_with_access_data": len(access_recalls),
+            "scope": "answerable cases only (unanswerable excluded; access_recall=None)",
+            "definition": "|accessed_pages ∩ required| / |required|. "
+                          "accessed_pages records every get/get_by_path lookup, "
+                          "including search candidates; it is not read-only.",
+        },
+        "mean_read_evidence_recall_answerable": {
+            "value": _safe_mean(read_recalls),
+            "numerator_sum": read_numerator_sum,
+            "denominator_sum": read_denominator_sum,
+            "cases_with_read_data": len(read_recalls),
+            "scope": "answerable cases only (unanswerable excluded; "
+                     "read_evidence_recall=None)",
+            "definition": "|read_page_ids ∩ required| / |required|. "
+                          "read_page_ids comes from AgentResult.read_page_ids "
+                          "(actual read/follow_links results), not search candidates. "
+                          "Baseline maps read_page_ids to its retrieved context set.",
         },
         "mean_source_precision": {
             "value": _safe_mean([r.source_precision for r in results]),
@@ -617,6 +754,9 @@ def aggregate_results(cases: list[dict], results: list[CaseResult]) -> dict:
         "answerable_accuracy": answer_quality["answerable_accuracy"]["value"],
         "unanswerable_handling": answer_quality["unanswerable_handling"]["value"],
         "mean_evidence_recall": retrieval_evidence["mean_evidence_recall_answerable"]["value"],
+        "mean_access_recall": retrieval_evidence["mean_access_recall_answerable"]["value"],
+        "mean_read_evidence_recall":
+            retrieval_evidence["mean_read_evidence_recall_answerable"]["value"],
         "mean_source_precision": retrieval_evidence["mean_source_precision"]["value"],
         "multi_hop_success_rate": retrieval_evidence["multi_hop_success_rate"]["value"],
         "verified_multi_hop_success_rate":
@@ -671,7 +811,8 @@ def run_baseline(cases: list[dict], pipeline: DeterministicRAGPipeline) -> list[
         correct = score_answer(answer, case)
         grounded = correct and status == "answered" and bool(cited_doc_ids)
         recall, precision, rec_num, rec_den = _compute_evidence_metrics(
-            retrieved_doc_ids, case["required_page_ids"], cited_doc_ids
+            retrieved_doc_ids, case["required_page_ids"], cited_doc_ids,
+            case.get("alternative_evidence_sets"),
         )
         results.append(CaseResult(
             id=case["id"],
@@ -693,6 +834,17 @@ def run_baseline(cases: list[dict], pipeline: DeterministicRAGPipeline) -> list[
             link_source="none",  # baseline has no wiki links
             evidence_recall_numerator=rec_num,
             evidence_recall_denominator=rec_den,
+            # Baseline has no Agent search/read steps. Its single-pass
+            # pipeline retrieves and consumes this context, so both diagnostic
+            # sets are the retrieved document set.
+            search_hit_page_ids=sorted(retrieved_doc_ids),
+            read_page_ids=sorted(retrieved_doc_ids),
+            access_recall=recall,
+            access_recall_numerator=rec_num,
+            access_recall_denominator=rec_den,
+            read_evidence_recall=recall,
+            read_evidence_recall_numerator=rec_num,
+            read_evidence_recall_denominator=rec_den,
             error=error,
         ))
     return results
@@ -737,6 +889,8 @@ def run_experiment(
             max_steps=max_steps,
             search_top_k=AGENT_SEARCH_TOP_K,
         )
+        search_hit_page_ids: list[str] = []
+        read_page_ids: list[str] = []
         try:
             agent_result = agent.answer(case["question"])
             answer = agent_result.answer
@@ -750,13 +904,26 @@ def run_experiment(
             )
             steps = len(agent_result.steps)
             pages_read = agent_result.pages_read
+            search_hit_page_ids = sorted({
+                page_id
+                for s in agent_result.steps
+                for page_id in getattr(s, "search_hit_page_ids", ())
+            })
+            read_page_ids = sorted(set(
+                getattr(agent_result, "read_page_ids", ()) or ()
+            ))
             step_details = [
                 {
                     "step": s.step,
                     "action": s.action,
+                    "params": getattr(s, "params", {}),
                     "error": s.error,
                     "result_summary": s.result_summary,
                     "raw_output": s.raw_output,
+                    "read_page_ids": list(getattr(s, "read_page_ids", ())),
+                    "search_hit_page_ids": list(
+                        getattr(s, "search_hit_page_ids", ())
+                    ),
                 }
                 for s in agent_result.steps
             ]
@@ -776,7 +943,12 @@ def run_experiment(
             and bool(source_page_ids)
         )
         recall, precision, rec_num, rec_den = _compute_evidence_metrics(
-            monitor.accessed_page_ids, case["required_page_ids"], source_page_ids
+            monitor.accessed_page_ids, case["required_page_ids"], source_page_ids,
+            case.get("alternative_evidence_sets"),
+        )
+        read_recall, read_rec_num, read_rec_den = _compute_recall(
+            set(read_page_ids), case["required_page_ids"],
+            case.get("alternative_evidence_sets"),
         )
         case_result = CaseResult(
             id=case["id"],
@@ -800,6 +972,14 @@ def run_experiment(
             evidence_recall_denominator=rec_den,
             error=error,
             step_details=step_details,
+            search_hit_page_ids=search_hit_page_ids,
+            read_page_ids=read_page_ids,
+            access_recall=recall,
+            access_recall_numerator=rec_num,
+            access_recall_denominator=rec_den,
+            read_evidence_recall=read_recall,
+            read_evidence_recall_numerator=read_rec_num,
+            read_evidence_recall_denominator=read_rec_den,
         )
         results.append(case_result)
 
@@ -961,7 +1141,10 @@ def serialize_results(
         "comparability_notes": {
             "retrieval_evidence_metrics": "COMPARABLE across Baseline and Experiment. "
                 "Both measure whether required pages were found (evidence_recall, source_precision, "
-                "multi_hop_success), independent of the answer generator.",
+                "multi_hop_success), independent of the answer generator. evidence_recall is "
+                "the legacy name for access_recall (accessed_pages also includes search "
+                "candidate lookups). read_evidence_recall uses only pages actually read by "
+                "the Agent; for the baseline, read_page_ids is its retrieved context set.",
             "answer_quality_metrics": "NOT directly comparable. Baseline uses DeterministicGenerator "
                 "(offline extractive, copies text from retrieved chunks). Experiment uses a real LLM. "
                 "Differences in answer_accuracy may come from retrieval, evidence organization, OR the "
@@ -969,8 +1152,9 @@ def serialize_results(
             "scoring_caveat": "Answer scoring uses keyword_group_match (lexical heuristic). "
                 "A semantically correct paraphrase may score 0; a verbatim copy may score 1. "
                 "This is not an LLM-as-judge evaluation.",
-            "unanswerable_caveat": "Only 1 unanswerable case in this dataset. "
-                "unanswerable_handling is not a reliable measure of refusal ability.",
+            "unanswerable_caveat": f"{sum(1 for c in dataset['cases'] if not c['answerable'])} "
+                "unanswerable case(s). Keyword-only refusal scoring can accept a refusal "
+                "followed by a fabricated answer; unanswerable results require manual audit.",
             "metric_update_phase_08": "New verified_* metrics require status=='answered' "
                 "AND at least one cited source. The legacy answer_accuracy, "
                 "evidence_support_rate_answerable and multi_hop_success_rate keys keep "

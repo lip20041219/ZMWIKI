@@ -28,9 +28,9 @@ from zmwiki.wiki.wiki_schema import WikiPage  # noqa: E402
 
 
 class TestDatasetLoading:
-    def test_loads_15_cases(self):
+    def test_loads_26_cases(self):
         dataset = m4.load_dataset()
-        assert len(dataset["cases"]) == 15
+        assert len(dataset["cases"]) == 26
 
     def test_all_cases_have_required_fields(self):
         dataset = m4.load_dataset()
@@ -169,6 +169,96 @@ class TestAnswerScoring:
 
 
 # ---------------------------------------------------------------------------
+# M4.3.1: false-negative fixes and legal alternative evidence paths
+# ---------------------------------------------------------------------------
+
+
+class TestM431ScoringFixes:
+    @staticmethod
+    def _case(case_id: str) -> dict:
+        dataset = m4.load_dataset()
+        return next(c for c in dataset["cases"] if c["id"] == case_id)
+
+    def test_pronoun_subject_matches_mh20(self):
+        case = self._case("mh20_phoenix_deadline_office")
+        answer = (
+            "Project Phoenix has a target completion date of December 31, 2026. "
+            "It is led by Alice Smith. Alice Smith's office is on the second "
+            "floor of Building A."
+        )
+        assert m4.score_answer(answer, case) is True
+
+    def test_clean_refusals_still_score(self):
+        answers = {
+            "mh08_ceo_unanswerable":
+                "I could not confirm the CEO; no page names the CEO.",
+            "mh28_first_floor_office_premise":
+                "The first floor of Building B does not contain an office; it "
+                "is a gym. There is no such person or project.",
+            "mh29_alice_salary":
+                "The corpus does not contain any information about Alice "
+                "Smith's salary; no compensation details are provided.",
+            "mh30_david_university":
+                "The page does not state which university David Kim attended; "
+                "I could not confirm it.",
+        }
+        for case_id, answer in answers.items():
+            assert m4.score_answer(answer, self._case(case_id)) is True, case_id
+
+    def test_refusal_plus_fabrication_rejected(self):
+        answers = {
+            "mh08_ceo_unanswerable":
+                "I could not confirm the CEO; the CEO is Bob Jones.",
+            "mh28_first_floor_office_premise":
+                "I cannot find the first-floor office; maybe it belongs to "
+                "David Kim, who leads Project Orion.",
+            "mh29_alice_salary":
+                "Alice Smith's salary is not stated; it is probably 150,000 "
+                "dollars.",
+            "mh30_david_university":
+                "David Kim attended MIT; the wiki is unclear.",
+        }
+        for case_id, answer in answers.items():
+            assert m4.score_answer(answer, self._case(case_id)) is False, case_id
+
+    def test_alternative_evidence_path_satisfies_recall(self):
+        case = self._case("mh21_team_intersection")
+        found = {"bob", "project_phoenix", "project_orion"}
+        recall, precision, numerator, denominator = m4._compute_evidence_metrics(
+            found, case["required_page_ids"], sorted(found),
+            case["alternative_evidence_sets"],
+        )
+        assert recall == 1.0
+        assert precision == 1.0
+        assert (numerator, denominator) == (3, 3)
+
+    def test_partial_alternative_path_not_full_recall(self):
+        case = self._case("mh21_team_intersection")
+        recall, _, _ = m4._compute_recall(
+            {"bob"}, case["required_page_ids"],
+            case["alternative_evidence_sets"],
+        )
+        assert recall is not None and recall < 1.0
+
+    def test_hops_matches_primary_required_pages(self):
+        dataset = m4.load_dataset()
+        for case in dataset["cases"]:
+            assert case["hops"] == len(case["required_page_ids"]), case["id"]
+
+    def test_every_reference_answer_scores(self):
+        dataset = m4.load_dataset()
+        for case in dataset["cases"]:
+            assert m4.score_answer(case["reference_answer"], case), case["id"]
+
+    def test_alternative_evidence_sets_use_known_pages(self):
+        dataset = m4.load_dataset()
+        for case in dataset["cases"]:
+            for path in case.get("alternative_evidence_sets", []):
+                assert path
+                assert set(path) <= set(m4._PAGE_LINKS), case["id"]
+
+
+# ---------------------------------------------------------------------------
 # Metric computation
 # ---------------------------------------------------------------------------
 
@@ -293,7 +383,7 @@ class TestBaselineIntegration:
         docs = m4.load_documents()
         pipeline = m4.build_baseline_pipeline(docs)
         results = m4.run_baseline(dataset["cases"], pipeline)
-        assert len(results) == 15
+        assert len(results) == 26
         for r in results:
             assert r.id
             assert r.status in ("answered", "no_answer", "error")
@@ -398,7 +488,7 @@ class TestSerialization:
         m4.serialize_results(dataset, results, None, live=False, model=None, output_path=output)
         payload = json.loads(output.read_text(encoding="utf-8"))
         per_case = payload["results"]["baseline"]["per_case"]
-        assert len(per_case) == 15
+        assert len(per_case) == 26
         for row in per_case:
             for key in ("id", "answer_correct", "status", "evidence_recall",
                         "source_precision", "steps", "pages_read"):
@@ -497,9 +587,10 @@ class TestEvidenceRecallSeparation:
         pipeline = m4.build_baseline_pipeline(docs)
         results = m4.run_baseline(dataset["cases"], pipeline)
         unanswerable = [r for r, c in zip(results, dataset["cases"]) if not c["answerable"]]
-        assert len(unanswerable) == 1
-        assert unanswerable[0].evidence_recall is None
-        assert unanswerable[0].evidence_recall_denominator == 0
+        assert len(unanswerable) == 4
+        for result in unanswerable:
+            assert result.evidence_recall is None
+            assert result.evidence_recall_denominator == 0
 
 
 # ---------------------------------------------------------------------------
@@ -798,7 +889,7 @@ class TestOutputOverwriteProtection:
                              output_path=output)
         assert output.exists()
         payload = json.loads(output.read_text(encoding="utf-8"))
-        assert payload["results"]["baseline"]["aggregate"]["total_cases"] == 15
+        assert payload["results"]["baseline"]["aggregate"]["total_cases"] == 26
 
     def test_existing_file_raises_file_exists_error(self, tmp_path):
         dataset = m4.load_dataset()
@@ -1065,7 +1156,7 @@ class TestLimitParameter:
     """M4.3 P3-Task2: --limit restricts evaluation to first N cases."""
 
     def test_limit_three_runs_only_three_cases(self, tmp_path, monkeypatch):
-        """--limit 3 must produce exactly 3 baseline results, not 15."""
+        """--limit 3 must produce exactly 3 baseline results, not 26."""
         output = tmp_path / "limit3.json"
         monkeypatch.setattr(sys, "argv", [
             "run_multihop_evaluation.py",
@@ -1094,7 +1185,7 @@ class TestLimitParameter:
         assert payload["config"]["limit"] == 2
 
     def test_no_limit_runs_all_cases(self, tmp_path, monkeypatch):
-        """Without --limit, all 15 cases are evaluated."""
+        """Without --limit, all 26 cases are evaluated."""
         output = tmp_path / "nolimit.json"
         monkeypatch.setattr(sys, "argv", [
             "run_multihop_evaluation.py",
@@ -1102,7 +1193,7 @@ class TestLimitParameter:
         ])
         m4.main()
         payload = json.loads(output.read_text(encoding="utf-8"))
-        assert len(payload["results"]["baseline"]["per_case"]) == 15
+        assert len(payload["results"]["baseline"]["per_case"]) == 26
         assert payload["config"]["limit"] is None
 
     def test_limit_zero_rejected(self, tmp_path, monkeypatch):
@@ -1286,3 +1377,123 @@ class TestStepDiagnostics:
         )
         assert result.step_details == []
         assert result.to_dict()["step_details"] == []
+        assert result.search_hit_page_ids == []
+        assert result.read_page_ids == []
+        assert result.access_recall is None
+        assert result.read_evidence_recall is None
+
+
+class TestReadEvidenceAudit:
+    """Search hits, actual reads, and legacy access must stay distinguishable."""
+
+    CASE = {
+        "id": "read_audit", "question": "q", "answerable": True,
+        "required_page_ids": ["hit", "read"], "hops": 2,
+        "answer_keyword_groups": [["ok"]],
+    }
+
+    @staticmethod
+    def _agent_result():
+        from zmwiki.wiki.wiki_agent import AgentResult, AgentStatus, AgentStep
+
+        return AgentResult(
+            answer="ok", sources=("wiki/read",), status=AgentStatus.ANSWERED,
+            read_page_ids=("read",), pages_read=1,
+            steps=(
+                AgentStep(
+                    step=0, action="search",
+                    params={"query": "needle", "top_k": 5},
+                    result_summary="search returned 2 candidates",
+                    search_hit_page_ids=("hit", "other"),
+                ),
+                AgentStep(
+                    step=1, action="read",
+                    params={"paths": ["wiki/read"], "offset": 12},
+                    result_summary="read 1 page at offset 12",
+                    read_page_ids=("read",),
+                ),
+                AgentStep(
+                    step=2, action="answer",
+                    params={"text": "ok", "sources": ["read"]},
+                    result_summary="answer produced (1 sources)",
+                ),
+            ),
+        )
+
+    def _run(self, monkeypatch, index):
+        agent_result = self._agent_result()
+
+        class FakeAgent:
+            def __init__(self, index, **kwargs):
+                self.index = index
+
+            def answer(self, question):
+                # Simulate the monitor-visible accesses of a search and read.
+                self.index.get("hit")
+                self.index.get("other")
+                self.index.get_by_path("wiki/read")
+                return agent_result
+
+        monkeypatch.setattr(m4, "WikiAgent", FakeAgent)
+        return m4.run_experiment(
+            [self.CASE], index, base_url="http://fake.invalid",
+            model="fake-model", api_key="sk-secret-not-in-logs",
+        )
+
+    def test_access_and_read_recall_use_different_sets(self, monkeypatch):
+        index = WikiIndex()
+        for page_id in ("hit", "read", "other"):
+            path = f"wiki/{page_id}"
+            index.upsert(WikiPage(
+                id=page_id, path=path, title=page_id.title(),
+                content=f"{page_id} content",
+            ))
+
+        results = self._run(monkeypatch, index)
+        assert len(results) == 1
+        result = results[0]
+
+        assert result.accessed_pages == ["hit", "other", "read"]
+        assert result.search_hit_page_ids == ["hit", "other"]
+        assert result.read_page_ids == ["read"]
+        assert result.evidence_recall == 1.0
+        assert result.access_recall == 1.0
+        assert result.read_evidence_recall == 0.5
+
+        agg = m4.aggregate_results([self.CASE], results)
+        metrics = agg["retrieval_evidence_metrics"]
+        assert metrics["mean_evidence_recall_answerable"]["value"] == 1.0
+        assert metrics["mean_access_recall_answerable"]["value"] == 1.0
+        assert metrics["mean_access_recall_answerable"]["cases_with_access_data"] == 1
+        assert metrics["mean_read_evidence_recall_answerable"]["value"] == 0.5
+        assert metrics["mean_read_evidence_recall_answerable"]["cases_with_read_data"] == 1
+        assert agg["mean_evidence_recall"] == 1.0
+        assert agg["mean_access_recall"] == 1.0
+        assert agg["mean_read_evidence_recall"] == 0.5
+
+    def test_step_params_and_page_ids_are_serialized(self, monkeypatch):
+        index = WikiIndex()
+        for page_id in ("hit", "read", "other"):
+            index.upsert(WikiPage(
+                id=page_id, path=f"wiki/{page_id}", title=page_id.title(),
+                content=f"{page_id} content",
+            ))
+
+        result = self._run(monkeypatch, index)[0]
+        payload = json.loads(json.dumps(result.to_dict()))
+        details = payload["step_details"]
+
+        assert details[0]["params"] == {"query": "needle", "top_k": 5}
+        assert details[0]["search_hit_page_ids"] == ["hit", "other"]
+        assert details[0]["read_page_ids"] == []
+        assert details[1]["params"] == {
+            "paths": ["wiki/read"], "offset": 12,
+        }
+        assert details[1]["search_hit_page_ids"] == []
+        assert details[1]["read_page_ids"] == ["read"]
+        assert details[2]["params"]["sources"] == ["read"]
+        assert payload["search_hit_page_ids"] == ["hit", "other"]
+        assert payload["read_page_ids"] == ["read"]
+
+        raw = json.dumps(payload)
+        assert "sk-secret-not-in-logs" not in raw

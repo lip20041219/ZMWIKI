@@ -1,10 +1,10 @@
 {
   "dataset": "multihop_wiki",
-  "version": "1.0",
-  "description": "Multi-hop question answering dataset for ZMWiki baseline vs experiment comparison. Built over a fictional company wiki (Acme Corp) with 9 interlinked pages. Answers require combining information across 1-3 pages. Standard answers and keyword groups are used only by the evaluator, never passed to the system under test.",
+  "version": "1.2",
+  "description": "Multi-hop question answering dataset for ZMWiki baseline vs experiment comparison. Built over a fictional company wiki (Acme Corp) with 9 interlinked pages. 26 questions; answers require combining information across 1-3 pages. Standard answers and keyword groups are used only by the evaluator, never passed to the system under test. Some cases annotate complete alternative evidence paths; evidence recall uses the best legal path.",
   "corpus": "benchmark/corpus/wiki/",
   "link_construction": "WikiPage links_to/links_from are manually verified from source document content, NOT produced by WikiCompiler. WikiCompiler currently leaves links_to empty; this dataset uses hand-built linked pages to evaluate follow_links capability. This is explicitly recorded as a capability gap of the current compiler.",
-  "scoring_rule": "answer_correct = for every group in answer_keyword_groups, at least one keyword appears in the normalized answer. For unanswerable cases, answer_correct = at least one refusal_keyword appears. All matching is case-insensitive after stripping punctuation.",
+  "scoring_rule": "answer_correct = for every group in answer_keyword_groups, at least one keyword appears in the normalized answer. For unanswerable cases, answer_correct = at least one refusal_keyword appears and no case-specific fabrication_keyword appears. All matching is case-insensitive after stripping punctuation. The fabrication guard is a lexical heuristic for refusal-plus-invention; it does not replace manual audit of unanswerable cases.",
   "cases": [
     {
       "id": "mh01_manager_title",
@@ -32,9 +32,11 @@
       "reference_answer": "David Kim leads Project Orion and reports to Eve Martinez.",
       "answer_keyword_groups": [["david"], ["eve"]],
       "answerable": true,
-      "required_page_ids": ["project_orion", "david", "eve"],
-      "hops": 3,
-      "question_type": "three_page_chain"
+      "required_page_ids": ["project_orion", "david"],
+      "required_page_ids_original": ["project_orion", "david", "eve"],
+      "evidence_note": "The eve page only confirms Eve's VP title; project_orion states David leads and david states he reports to Eve. The original three-page requirement included a confirmation page.",
+      "hops": 2,
+      "question_type": "two_page_chain"
     },
     {
       "id": "mh04_cafeteria_floor",
@@ -82,6 +84,7 @@
       "reference_answer": "The CEO is not named in any page. Eve Martinez reports to the CEO, but the CEO's identity is not provided.",
       "answer_keyword_groups": [],
       "refusal_keywords": ["cannot", "could not", "not mentioned", "no information", "unclear", "not found", "unknown", "not stated", "does not say", "don't know", "not provided"],
+      "fabrication_keywords": ["ceo is bob", "ceo is eve", "ceo is david", "ceo is alice", "ceo is carol", "ceo is john", "ceo is jane", "ceo's name is", "is the ceo"],
       "answerable": false,
       "required_page_ids": [],
       "hops": 0,
@@ -156,6 +159,154 @@
       "required_page_ids": ["building_b"],
       "hops": 1,
       "question_type": "single_page_fact"
+    },
+    {
+      "id": "mh17_carol_two_project_leads",
+      "question": "Carol Chen contributes to two projects. Who leads each of those projects, and on which floor of which building is each leader's office?",
+      "reference_answer": "Project Phoenix is led by Alice Smith, whose office is on the second floor of Building A. Project Orion is led by David Kim, whose office is on the fourth floor of Building B.",
+      "answer_keyword_groups": [
+        ["alice smith leads project phoenix", "alice smith leads phoenix", "project phoenix is led by alice smith", "project phoenix is led by alice", "phoenix is led by alice smith", "phoenix is led by alice", "alice smith is the leader of project phoenix", "alice smith is the leader of phoenix", "alice smith who leads project phoenix", "alice smith who leads phoenix", "alice smith who is the leader of project phoenix", "alice leads project phoenix", "alice leads phoenix", "phoenix alice smith", "alice smith phoenix"],
+        ["alice smith's office is on the second floor of building a", "alice's office is on the second floor of building a", "alice smith's office is located on the second floor of building a", "alice's office is located on the second floor of building a", "alice smith's office is on the 2nd floor of building a", "alice's office is on the 2nd floor of building a", "alice smith's office is in building a on the second floor", "alice's office is in building a on the second floor", "alice smith whose office is on the second floor of building a", "alice smith whose office is on the 2nd floor of building a", "she has an office on the second floor of building a", "her office is on the second floor of building a", "her office is located on the second floor of building a", "her office is on the 2nd floor of building a", "alice smith is on the second floor of building a", "alice is on the second floor of building a", "alice smith second floor building a", "second floor building a alice smith", "alice smith building a second floor", "building a second floor alice smith"],
+        ["david kim leads project orion", "david kim leads orion", "project orion is led by david kim", "project orion is led by david", "orion is led by david kim", "orion is led by david", "david kim is the leader of project orion", "david kim is the leader of orion", "david kim who leads project orion", "david kim who leads orion", "david kim who is the leader of project orion", "david leads project orion", "david leads orion", "orion david kim", "david kim orion"],
+        ["david kim's office is on the fourth floor of building b", "david's office is on the fourth floor of building b", "david kim's office is located on the fourth floor of building b", "david's office is located on the fourth floor of building b", "david kim's office is on the 4th floor of building b", "david's office is on the 4th floor of building b", "david kim's office is in building b on the fourth floor", "david's office is in building b on the fourth floor", "david kim whose office is on the fourth floor of building b", "david kim whose office is on the 4th floor of building b", "he has an office on the fourth floor of building b", "his office is on the fourth floor of building b", "his office is located on the fourth floor of building b", "his office is on the 4th floor of building b", "david kim is on the fourth floor of building b", "david is on the fourth floor of building b", "david kim fourth floor building b", "fourth floor building b david kim", "david kim building b fourth floor", "building b fourth floor david kim"]
+      ],
+      "answerable": true,
+      "required_page_ids": ["carol", "alice", "david"],
+      "hops": 3,
+      "question_type": "three_page_multi_branch"
+    },
+    {
+      "id": "mh18_orion_contributor_manager_office",
+      "question": "Carol Chen contributes to Project Orion. Who does she report to, on which floor of Building A is that manager's office, and how many floors does Building A have?",
+      "reference_answer": "Carol Chen reports to Bob Jones. Bob Jones's office is on the third floor of Building A, and Building A has three floors.",
+      "answer_keyword_groups": [
+        ["carol chen reports to bob jones", "carol reports to bob jones", "carol chen reports to bob", "carol reports to bob", "carol chen's manager is bob jones", "carol's manager is bob jones", "bob jones is carol chen's manager", "bob jones is carol's manager", "carol chen reports directly to bob jones", "carol reports directly to bob jones"],
+        ["bob jones's office is on the third floor of building a", "bob's office is on the third floor of building a", "bob jones's office is located on the third floor of building a", "bob's office is located on the third floor of building a", "bob jones's office is on the 3rd floor of building a", "bob's office is on the 3rd floor of building a", "bob jones's office is in building a on the third floor", "bob's office is in building a on the third floor", "bob jones office is on the third floor of building a", "bob jones whose office is on the third floor of building a", "he has an office on the third floor of building a", "his office is on the third floor of building a", "his office is located on the third floor of building a", "his office is on the 3rd floor of building a", "bob jones third floor building a", "third floor building a bob jones", "bob jones building a third floor", "building a third floor bob jones"],
+        ["building a has three floors", "building a has 3 floors", "building a contains three floors", "building a consists of three floors", "building a is a three story building", "building a is a 3 story building", "building a is a three storey building", "building a is a 3 storey building", "three floors building a", "3 floors building a"]
+      ],
+      "answerable": true,
+      "required_page_ids": ["carol", "bob", "building_a"],
+      "hops": 3,
+      "question_type": "three_page_chain"
+    },
+    {
+      "id": "mh20_phoenix_deadline_office",
+      "question": "What is the target completion date of Project Phoenix, who leads the project, and on which floor of which building is that leader's office?",
+      "reference_answer": "Project Phoenix has a target completion date of December 31, 2026. Project Phoenix is led by Alice Smith. Alice Smith's office is on the second floor of Building A.",
+      "answer_keyword_groups": [
+        ["december 31 2026", "december 31, 2026", "2026 12 31", "20261231", "31 december 2026", "december 31st 2026", "december 31st, 2026"],
+        ["alice smith leads project phoenix", "alice smith leads phoenix", "project phoenix is led by alice smith", "project phoenix is led by alice", "phoenix is led by alice smith", "phoenix is led by alice", "alice smith is the leader of project phoenix", "alice smith is the leader of phoenix", "alice smith who leads project phoenix", "alice smith who leads phoenix", "alice smith who is the leader of project phoenix", "alice leads project phoenix", "alice leads phoenix", "phoenix alice smith", "alice smith phoenix", "it is led by alice smith", "it is led by alice", "the project is led by alice smith", "alice smith is its leader", "its leader is alice smith", "alice smith leads it"],
+        ["alice smith's office is on the second floor of building a", "alice's office is on the second floor of building a", "alice smith's office is located on the second floor of building a", "alice's office is located on the second floor of building a", "alice smith's office is on the 2nd floor of building a", "alice's office is on the 2nd floor of building a", "alice smith whose office is on the second floor of building a", "alice smith whose office is on the 2nd floor of building a", "she has an office on the second floor of building a", "her office is on the second floor of building a", "her office is located on the second floor of building a", "her office is on the 2nd floor of building a", "alice smith is on the second floor of building a", "alice is on the second floor of building a", "alice smith second floor building a", "second floor building a alice smith", "alice smith building a second floor", "building a second floor alice smith"]
+      ],
+      "answerable": true,
+      "required_page_ids": ["project_phoenix", "alice"],
+      "alternative_evidence_sets": [["project_phoenix", "building_a"]],
+      "evidence_note": "project_phoenix supplies the deadline and leader; the office is stated on alice and on building_a (second floor). The building_a path is a complete legal alternative.",
+      "hops": 2,
+      "question_type": "two_page_relation"
+    },
+    {
+      "id": "mh21_team_intersection",
+      "question": "Who is the Director of Engineering to whom both the leader of Project Phoenix and a contributor to Project Orion report?",
+      "reference_answer": "Both Alice Smith, the leader of Project Phoenix, and Carol Chen, a contributor to Project Orion, report to Bob Jones, the Director of Engineering.",
+      "answer_keyword_groups": [["bob jones", "bob"], ["director of engineering", "director"]],
+      "answerable": true,
+      "required_page_ids": ["alice", "carol"],
+      "alternative_evidence_sets": [["bob", "project_phoenix", "project_orion"]],
+      "evidence_note": "alice gives Alice's Phoenix role and reporting line; carol gives Carol's Orion role and reporting line. bob plus the two project pages is a complete alternative: the project pages name the roles and bob names the common Director.",
+      "hops": 2,
+      "question_type": "two_page_intersection"
+    },
+    {
+      "id": "mh23_building_floor_difference",
+      "question": "Which of Building A and Building B has more floors, and how many more?",
+      "reference_answer": "Building B has five floors and Building A has three, so Building B has two more floors.",
+      "answer_keyword_groups": [
+        ["building b has two more floors", "building b has 2 more floors", "building b has two more", "building b has 2 more", "building b has more floors", "building b has more floors than building a", "building b is taller than building a", "building b is taller", "building b has the greater number of floors", "building b has the larger number of floors"],
+        ["two more floors", "2 more floors", "two floors more", "two more", "2 more", "difference of two floors", "difference of 2 floors", "difference is two floors", "difference is 2 floors", "difference is two", "difference is 2", "difference of two", "difference of 2", "by two floors", "by 2 floors"]
+      ],
+      "answerable": true,
+      "required_page_ids": ["building_a", "building_b"],
+      "hops": 2,
+      "question_type": "cross_page_comparison"
+    },
+    {
+      "id": "mh24_engineering_budget_vs_projects",
+      "question": "Is Acme's annual engineering budget greater than the combined budgets of Project Phoenix and Project Orion?",
+      "reference_answer": "Yes. Acme's annual engineering budget is four million dollars ($4,000,000), which is greater than the combined budgets of Project Phoenix ($500,000) and Project Orion ($300,000), totaling eight hundred thousand dollars ($800,000).",
+      "answer_keyword_groups": [
+        ["greater than", "larger than", "bigger than", "exceeds", "more than", "is greater", "is larger", "is bigger", "the larger amount", "the larger figure", "the larger budget"],
+        ["4000000", "four million", "$4,000,000"],
+        ["800000", "eight hundred thousand", "$800,000"]
+      ],
+      "answerable": true,
+      "required_page_ids": ["eve", "project_phoenix", "project_orion"],
+      "hops": 3,
+      "question_type": "cross_page_aggregation"
+    },
+    {
+      "id": "mh25_project_launch_order",
+      "question": "Which project was launched or initiated first, Project Phoenix or Project Orion?",
+      "reference_answer": "Project Phoenix was launched first, in early 2025. Project Orion was initiated later, in mid-2025.",
+      "answer_keyword_groups": [
+        ["project phoenix was launched first", "project phoenix was launched earlier", "project phoenix started first", "project phoenix started earlier", "project phoenix was initiated first", "project phoenix was initiated earlier", "project phoenix was first", "project phoenix came first", "project phoenix was earlier", "project phoenix is the earlier project", "project phoenix launched before project orion", "project phoenix started before project orion", "project phoenix is earlier", "phoenix was launched first", "phoenix was launched earlier", "phoenix started first", "phoenix started earlier", "phoenix was first", "phoenix came first", "phoenix was earlier", "phoenix is earlier", "phoenix is the earlier project", "phoenix launched before orion", "phoenix started before orion"],
+        ["early 2025"],
+        ["mid 2025", "mid2025"]
+      ],
+      "answerable": true,
+      "required_page_ids": ["project_phoenix", "project_orion"],
+      "hops": 2,
+      "question_type": "cross_page_comparison"
+    },
+    {
+      "id": "mh26_alice_david_same_building",
+      "question": "Do Alice Smith and David Kim work in the same building?",
+      "reference_answer": "No. Alice Smith's office is on the second floor of Building A, while David Kim's office is on the fourth floor of Building B, so they do not work in the same building.",
+      "answer_keyword_groups": [
+        ["no", "not in the same building", "do not work in the same building", "work in different buildings", "are in different buildings"],
+        ["alice smith works in building a", "alice smith is in building a", "alice works in building a", "alice is in building a", "alice smith's office is in building a", "alice smith's office is on the second floor of building a", "alice's office is on the second floor of building a", "alice smith's office is located on the second floor of building a", "alice's office is located on the second floor of building a", "alice smith's office is on the 2nd floor of building a", "alice's office is on the 2nd floor of building a", "alice smith whose office is on the second floor of building a", "she has an office on the second floor of building a", "her office is on the second floor of building a", "alice smith second floor building a", "second floor building a alice smith", "alice smith building a second floor", "building a second floor alice smith"],
+        ["david kim works in building b", "david kim is in building b", "david works in building b", "david is in building b", "david kim's office is in building b", "david kim's office is on the fourth floor of building b", "david's office is on the fourth floor of building b", "david kim's office is located on the fourth floor of building b", "david's office is located on the fourth floor of building b", "david kim's office is on the 4th floor of building b", "david's office is on the 4th floor of building b", "david kim whose office is on the fourth floor of building b", "he has an office on the fourth floor of building b", "his office is on the fourth floor of building b", "david kim fourth floor building b", "fourth floor building b david kim", "david kim building b fourth floor", "building b fourth floor david kim"]
+      ],
+      "answerable": true,
+      "required_page_ids": ["alice", "david"],
+      "hops": 2,
+      "question_type": "two_page_negative"
+    },
+    {
+      "id": "mh28_first_floor_office_premise",
+      "question": "Who uses the office on the first floor of Building B, and which project does that person lead?",
+      "reference_answer": "The corpus does not provide this. Building B's first floor is a gym with locker rooms and showers, not an office; David Kim's office is on the fourth floor and Eve Martinez's office is on the fifth floor. Therefore the premise of a first-floor office is not supported, and no such person or project is stated.",
+      "answer_keyword_groups": [],
+      "refusal_keywords": ["cannot", "could not", "not mentioned", "no information", "unclear", "not found", "unknown", "not stated", "does not say", "don't know", "not provided", "does not provide", "not supported", "not an office", "does not contain an office", "does not contain any office", "no such person", "no such project", "no such office", "no person uses", "no person who uses", "no project lead", "no project lead associated", "no office on the first floor", "no first floor office", "does not state", "does not name"],
+      "fabrication_keywords": ["project phoenix", "project orion", "leads project", "leads the project", "is the leader of", "project lead is", "office is used by", "office belongs to", "belongs to david", "used by david"],
+      "answerable": false,
+      "required_page_ids": [],
+      "hops": 0,
+      "question_type": "false_premise"
+    },
+    {
+      "id": "mh29_alice_salary",
+      "question": "What is Alice Smith's salary?",
+      "reference_answer": "The corpus does not provide Alice Smith's salary; none of the 9 wiki pages states an amount.",
+      "answer_keyword_groups": [],
+      "refusal_keywords": ["cannot", "could not", "not mentioned", "no information", "unclear", "not found", "unknown", "not stated", "does not say", "does not state", "don't know", "not provided", "does not provide", "does not contain any information", "does not contain information", "no compensation details", "does not mention", "does not list", "no salary", "no salary information", "salary is not", "salary information is not"],
+      "fabrication_keywords": ["dollars", "usd", "earns", "paid", "salary of", "compensation of", "per year", "annual salary"],
+      "answerable": false,
+      "required_page_ids": [],
+      "hops": 0,
+      "question_type": "unanswerable"
+    },
+    {
+      "id": "mh30_david_university",
+      "question": "Which university did David Kim attend?",
+      "reference_answer": "The corpus does not provide the name of the university David Kim attended; his page only states that he holds a PhD in distributed systems, with no school name.",
+      "answer_keyword_groups": [],
+      "refusal_keywords": ["cannot", "could not", "not mentioned", "no information", "unclear", "not found", "unknown", "not stated", "does not say", "does not state", "does not name", "don't know", "not provided", "does not provide", "could not confirm", "no university", "school name is not"],
+      "fabrication_keywords": ["attended mit", "at mit", "to mit", "from mit", "university is mit", "mit university", "stanford", "harvard", "berkeley", "carnegie mellon", "graduated from", "studied at", "attended university", "went to university", "degree from"],
+      "answerable": false,
+      "required_page_ids": [],
+      "hops": 0,
+      "question_type": "unanswerable"
     }
   ]
 }
