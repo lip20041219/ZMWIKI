@@ -16,6 +16,8 @@ from zmwiki.wiki.wiki_agent import (
     AgentStatus,
     AgentStep,
     WikiAgent,
+    _format_read_pages,
+    _parse_action,
 )
 from zmwiki.wiki.wiki_index import WikiIndex
 from zmwiki.wiki.wiki_retriever import wiki_read, wiki_search
@@ -108,8 +110,15 @@ class TestSinglePageQuestion:
         assert result.pages_read == 1
         assert len(result.steps) == 3
         assert result.steps[0].action == "search"
+        assert result.steps[0].params == {"query": "B-tree", "top_k": 5}
+        assert result.steps[0].search_hit_page_ids == ("btree",)
+        assert result.steps[0].read_page_ids == ()
         assert result.steps[1].action == "read"
+        assert result.steps[1].params == {"paths": ["databases/btree"]}
+        assert result.steps[1].search_hit_page_ids == ()
+        assert result.steps[1].read_page_ids == ("btree",)
         assert result.steps[2].action == "answer"
+        assert result.steps[2].params["sources"] == ["btree"]
 
     def test_search_candidates_not_treated_as_evidence(self):
         """If the model answers after only searching (no read), status must be
@@ -128,6 +137,31 @@ class TestSinglePageQuestion:
         assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
         assert result.pages_read == 0
         assert result.sources == ()
+
+    def test_search_hits_and_read_pages_are_recorded_separately(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Alpha One", "alpha content"))
+        idx.upsert(_page("p2", "a/p2", "Alpha Two", "alpha content"))
+        responses = [
+            _json_response(_completion(json.dumps({
+                "action": "search", "query": "alpha",
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "read", "paths": ["a/p1"],
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "alpha", "sources": ["p1"],
+            }))),
+        ]
+        result = _agent(idx, responses).answer("Which page has alpha?")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert set(result.steps[0].search_hit_page_ids) == {"p1", "p2"}
+        assert result.steps[0].read_page_ids == ()
+        assert result.steps[1].read_page_ids == ("p1",)
+        assert result.steps[1].search_hit_page_ids == ()
+        assert result.read_page_ids == ("p1",)
+        assert result.pages_read == 1
 
     def test_answer_without_sources_is_insufficient(self):
         idx = WikiIndex()
@@ -196,6 +230,9 @@ class TestMultiHopQuestion:
         # Verify follow_links step actually read bob.
         actions = [s.action for s in result.steps]
         assert "follow_links" in actions
+        follow_step = next(s for s in result.steps if s.action == "follow_links")
+        assert follow_step.params == {"from_page": "alice"}
+        assert follow_step.read_page_ids == ("bob",)
 
     def test_research_then_read_multi_hop(self):
         """Agent searches, reads one page, then searches again for the second
@@ -499,7 +536,7 @@ class TestSourceTracking:
         for step in result.steps:
             assert isinstance(step, AgentStep)
             assert step.step >= 0
-        assert result.steps[0].params == {"query": "Page"}
+        assert result.steps[0].params == {"query": "Page", "top_k": 5}
         assert result.steps[1].params == {"paths": ["a/p1"]}
 
 
@@ -554,3 +591,70 @@ class TestRegressionGuards:
 
         for name in ("WikiAgent", "AgentResult", "AgentStatus"):
             assert not hasattr(zmwiki, name)
+
+
+# ---------------------------------------------------------------------------
+# Long-page continuation
+# ---------------------------------------------------------------------------
+
+
+class TestLongPageContinuation:
+    def _long_page(self) -> WikiPage:
+        content = "A" * 3500 + "TARGET_EVIDENCE" + "B" * 3000
+        return _page("long", "long/page", "Long Page", content)
+
+    def test_format_reports_continuation_offset_and_hides_late_evidence(self):
+        page = self._long_page()
+
+        first = _format_read_pages([page])
+        assert "TARGET_EVIDENCE" not in first
+        assert "use offset=3000 to continue" in first
+
+        second = _format_read_pages([page], offset=3000)
+        assert "TARGET_EVIDENCE" in second
+        assert "use offset=6000 to continue" in second
+
+    def test_parse_read_accepts_non_negative_offset(self):
+        action = _parse_action(
+            json.dumps(
+                {"action": "read", "paths": ["long/page"], "offset": 3000}
+            )
+        )
+        assert action["offset"] == 3000
+
+    @pytest.mark.parametrize("bad_offset", [-1, True, "3000", 1.5])
+    def test_parse_read_rejects_invalid_offset(self, bad_offset):
+        with pytest.raises(AgentProtocolError):
+            _parse_action(
+                json.dumps(
+                    {"action": "read", "paths": ["long/page"],
+                     "offset": bad_offset}
+                )
+            )
+
+    def test_agent_can_page_to_late_evidence(self):
+        index = WikiIndex()
+        index.upsert(self._long_page())
+        responses = [
+            _json_response(_completion(json.dumps({
+                "action": "read", "paths": ["long/page"],
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "read", "paths": ["long/page"], "offset": 3000,
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "answer",
+                "text": "The evidence is TARGET_EVIDENCE.",
+                "sources": ["long"],
+            }))),
+        ]
+
+        result = _agent(index, responses).answer("Where is the evidence?")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert result.pages_read == 1
+        assert result.sources == ("long/page",)
+        assert result.steps[1].action == "read"
+        assert result.steps[1].params == {
+            "paths": ["long/page"], "offset": 3000,
+        }

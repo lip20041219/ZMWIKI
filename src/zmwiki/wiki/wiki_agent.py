@@ -65,8 +65,9 @@ _SYSTEM_PROMPT = (
     "Available actions — output ONLY a JSON object for one action each turn:\n"
     '1. {"action": "search", "query": "..."} — Search for relevant pages. '
     "Returns candidate titles and paths.\n"
-    '2. {"action": "read", "paths": ["path1", "path2"]} — Read pages by path. '
-    "Returns full content.\n"
+    '2. {"action": "read", "paths": ["path1"], "offset": 0} — Read pages by '
+    "path. Optional offset (characters) continues a long page. Long pages "
+    "include a continuation offset in the result.\n"
     '3. {"action": "follow_links", "from_page": "page_id"} — Follow links from '
     "a page you already read. Reads all linked pages.\n"
     '4. {"action": "answer", "text": "...", "sources": ["page_id1", "page_id2"]} '
@@ -74,6 +75,8 @@ _SYSTEM_PROMPT = (
     "Rules:\n"
     "- You MUST read at least one page before answering.\n"
     "- Base your answer ONLY on content from pages you have read.\n"
+    "- If a page result is truncated, use its continuation offset before "
+    "answering if the missing part may contain the evidence.\n"
     "- If evidence is insufficient, answer with text explaining what you could "
     "not confirm, and list the pages you did read as sources.\n"
     "- Do not repeat the exact same search or read.\n"
@@ -118,11 +121,16 @@ class AgentStep:
     ----------
     step: 0-based iteration number.
     action: the action type executed, or "protocol_error" / "duplicate".
-    params: normalized action parameters (for diagnostics).
+    params: normalized action parameters (for diagnostics); search steps also
+        record the effective top_k.
     result_summary: short description of what happened.
     error: error message if this step failed, else None.
     raw_output: source model text when parsing failed (only on protocol_error
         steps), truncated to _MAX_RAW_OUTPUT_CHARS; None on success steps.
+    read_page_ids: page ids actually returned by this step's read or
+        follow_links action; empty for other actions and failed reads.
+    search_hit_page_ids: page ids returned by this step's search action;
+        empty for other actions and searches with no hits.
     """
 
     step: int
@@ -131,6 +139,8 @@ class AgentStep:
     result_summary: str
     error: str | None = None
     raw_output: str | None = None
+    read_page_ids: tuple[str, ...] = ()
+    search_hit_page_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -373,7 +383,9 @@ class WikiAgent:
         summary = f"search returned {len(results)} candidates ({new_count} new)"
         step = AgentStep(
             step=step_num, action="search",
-            params={"query": query}, result_summary=summary,
+            params={"query": query, "top_k": self.search_top_k},
+            result_summary=summary,
+            search_hit_page_ids=tuple(r.page_id for r in results),
         )
         tool_msg = _format_search_results(results)
         return step, tool_msg
@@ -382,21 +394,30 @@ class WikiAgent:
         self, step_num: int, action_data: dict[str, Any], read_pages: dict[str, WikiPage]
     ) -> tuple[AgentStep, str, list[WikiPage]]:
         paths = action_data["paths"]
+        offset = action_data.get("offset", 0)
         try:
             pages = wiki_read(self.index, paths)
         except KeyError as exc:
+            params = {"paths": paths}
+            if offset:
+                params["offset"] = offset
             step = AgentStep(
-                step=step_num, action="read", params={"paths": paths},
+                step=step_num, action="read", params=params,
                 result_summary="read failed: paths not found", error=str(exc),
             )
             return step, f"Read error: {exc}", []
         new_pages = [p for p in pages if p.id not in read_pages]
         summary = f"read {len(pages)} pages ({len(new_pages)} new)"
+        params = {"paths": paths}
+        if offset:
+            params["offset"] = offset
+            summary += f" at offset {offset}"
         step = AgentStep(
-            step=step_num, action="read", params={"paths": paths},
+            step=step_num, action="read", params=params,
             result_summary=summary,
+            read_page_ids=tuple(p.id for p in pages),
         )
-        tool_msg = _format_read_pages(pages)
+        tool_msg = _format_read_pages(pages, offset=offset)
         return step, tool_msg, new_pages
 
     def _do_follow_links(
@@ -441,6 +462,7 @@ class WikiAgent:
             step=step_num, action="follow_links",
             params={"from_page": from_page_id}, result_summary=summary,
             error=f"missing target pages: {missing}" if missing else None,
+            read_page_ids=tuple(p.id for p in new_pages),
         )
         tool_msg = _format_read_pages(new_pages)
         if missing:
@@ -537,6 +559,11 @@ def _parse_action(raw: str) -> dict[str, Any]:
         for i, p in enumerate(paths):
             if not isinstance(p, str) or not p.strip():
                 raise AgentProtocolError(f"read paths[{i}] must be a non-empty string")
+        offset = data.get("offset", 0)
+        if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
+            raise AgentProtocolError(
+                "read 'offset' must be a non-negative integer"
+            )
         data["paths"] = [p.strip() for p in paths]
 
     elif action == "follow_links":
@@ -563,7 +590,10 @@ def _action_key(action: str, data: dict[str, Any]) -> str:
     if action == "search":
         return f"search:{data['query'].lower()}"
     if action == "read":
-        return f"read:{','.join(sorted(p.lower() for p in data['paths']))}"
+        return (
+            f"read:{data.get('offset', 0)}:"
+            f"{','.join(sorted(p.lower() for p in data['paths']))}"
+        )
     if action == "follow_links":
         return f"follow_links:{data['from_page']}"
     return "answer"
@@ -583,14 +613,24 @@ def _format_search_results(results: list[WikiSearchResult]) -> str:
     return "\n".join(lines)
 
 
-def _format_read_pages(pages: list[WikiPage]) -> str:
+def _format_read_pages(
+    pages: list[WikiPage], *, offset: int = 0
+) -> str:
     if not pages:
         return "No pages were read."
     parts = []
     for p in pages:
-        content = p.content[:_READ_CONTENT_CAP]
-        if len(p.content) > _READ_CONTENT_CAP:
-            content += f"... [{len(p.content)} chars total]"
+        total = len(p.content)
+        start = min(offset, total)
+        end = min(total, start + _READ_CONTENT_CAP)
+        content = p.content[start:end]
+        if start >= total:
+            content = f"[offset {offset} is at or past the end of this page]"
+        elif end < total:
+            content += (
+                f"\n... [chars {start}-{end} of {total}; "
+                f"use offset={end} to continue]"
+            )
         aliases = f", aliases: {list(p.aliases)}" if p.aliases else ""
         tags = f", tags: {list(p.tags)}" if p.tags else ""
         links_to = f", links_to: {list(p.links_to)}" if p.links_to else ""
