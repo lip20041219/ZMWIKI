@@ -1,5 +1,12 @@
 # zmwiki → ZMWiki 只读架构审计报告
 
+> **文档状态（2026-10-28 修订）**
+>
+> 本报告是 ZMWiki 实现前的只读架构审计与实施计划。文中目录树、文件/测试数量、
+> “当前缺失”“推荐目标架构”“分阶段计划”等描述均为审计当时状态；后续阶段已实现
+> Wiki 编译、链接解析、WikiAgent、TUI 与本地文档生命周期等功能。当前能力、安装
+> 与操作方式请以 README 为准；本报告保留作为设计依据，不再逐项更新。
+
 > **审计性质**
 >
 > ：只读源码审计，未修改 / 创建 / 删除 / 移动任何文件，未运行测试，未安装依赖。
@@ -41,7 +48,7 @@
 
 
 ```
-D:\desk\zmwiki\
+ZMWiki\
 ├── README.md                          # 25KB，功能说明与评测结果
 ├── pyproject.toml                     # 零运行时依赖，semantic 为可选 extra
 ├── src\zmwiki\                         # 33 个 .py 模块
@@ -88,6 +95,11 @@ D:\desk\zmwiki\
     ├── retrieval_strategy_benchmark.md
     └── semantic_retrieval_benchmark.md
 ```
+
+> **结构核对（2026-10-28）**：以上目录树为审计时快照。当前 `src/zmwiki/` 已新增
+> `wiki/`、`tui/`、`web/` 三个子包，共 45 个 .py 文件；`tests/` 现有 61 个测试文件；
+> 演示语料新增 `benchmark/corpus/wiki/`（9 篇）。测试通过/跳过数、评测结果文件数等
+> 量化数据属历史审计记录，本次未复验。
 
 ### 1.2 主要模块职责与依赖关系
 

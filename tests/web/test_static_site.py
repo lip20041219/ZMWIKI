@@ -164,12 +164,12 @@ def test_github_links_point_to_repository():
 
 
 def test_no_fictional_commands_or_wrong_license():
-    text = _text(_parse())
+    parser = _parse()
+    text = _text(parser)
     lowered = text.lower()
 
     for forbidden in (
         "zmwiki serve",
-        "python -m zmwiki.web",
         "localhost:",
         "pip install zmwiki",
         "npm install",
@@ -178,10 +178,13 @@ def test_no_fictional_commands_or_wrong_license():
         assert forbidden not in lowered, f"fictional command present: {forbidden}"
 
     assert "pip install -e ." in text
+    assert "python -m zmwiki.web.server" in text
     assert f"git clone {REPO_URL}" in text
-    assert "Proprietary" in text
-    assert not re.search(r"\bMIT\b", text), "license must match pyproject (Proprietary)"
+    assert "MIT License" in text
+    assert "Proprietary" not in text
     assert not re.search(r"\bApache\b", text)
+    license_links = [attrs.get("href", "") for attrs in _tags(parser, "a")]
+    assert f"{REPO_URL}/blob/master/LICENSE" in license_links
 
 
 def test_inline_svg_illustrations_present():

@@ -2,9 +2,15 @@
 
 The workspace is a single JSON document::
 
-    {"version": 1, "pages": [<WikiPage.to_dict()>, ...]}
+    {"version": 1, "pages": [<WikiPage.to_dict()>, ...],
+     "sources": {"<normalized path>": {"page_id", "document_id", "fingerprint"}}}
 
-``load_workspace`` turns a validated file into an in-memory WikiIndex.
+``sources`` is an optional source-file registry (M4.5): it maps a normalized
+local file path to the wiki page compiled from it, so re-imports and renames
+resolve to the same page. It is omitted when empty.
+
+``load_workspace`` turns a validated file into an in-memory WikiIndex;
+``load_workspace_state`` additionally returns the registry.
 ``save_workspace`` writes a WikiIndex back to disk using an atomic
 temp-file-and-replace strategy, so a crash mid-write never leaves a
 half-written JSON file in place of the original.
@@ -20,18 +26,70 @@ from pathlib import Path
 from zmwiki.wiki.wiki_index import WikiIndex
 from zmwiki.wiki.wiki_schema import WikiPage
 
-__all__ = ["MAX_WORKSPACE_BYTES", "WorkspaceError", "load_workspace", "save_workspace"]
+__all__ = [
+    "MAX_WORKSPACE_BYTES",
+    "WorkspaceError",
+    "SourceRegistry",
+    "load_workspace",
+    "load_workspace_state",
+    "save_workspace",
+    "source_key",
+]
 
 SUPPORTED_VERSION = 1
 MAX_WORKSPACE_BYTES = 10 * 1024 * 1024
+
+# Normalized source path -> {"page_id", "document_id", "fingerprint"}.
+SourceRegistry = dict[str, dict[str, str]]
+
+_SOURCE_FIELDS = ("page_id", "document_id", "fingerprint")
 
 
 class WorkspaceError(Exception):
     """The workspace file is missing, too large, or structurally invalid."""
 
 
+def source_key(path: str | Path) -> str:
+    """Normalized registry key for a local source file path.
+
+    ``resolve`` makes different spellings of the same file (relative vs
+    absolute, symlinks) agree; ``normcase`` folds Windows case differences.
+    """
+    return os.path.normcase(str(Path(path).resolve()))
+
+
+def _parse_sources(payload: dict) -> SourceRegistry:
+    raw = payload.get("sources", {})
+    if not isinstance(raw, dict):
+        raise WorkspaceError("workspace 'sources' must be an object")
+    sources: SourceRegistry = {}
+    for key, entry in raw.items():
+        if not isinstance(key, str) or not key:
+            raise WorkspaceError("workspace source keys must be non-empty strings")
+        if not isinstance(entry, dict):
+            raise WorkspaceError(f"workspace source {key!r} must be an object")
+        values: dict[str, str] = {}
+        for field in _SOURCE_FIELDS:
+            value = entry.get(field)
+            if not isinstance(value, str) or not value:
+                raise WorkspaceError(
+                    f"workspace source {key!r} field {field!r} must be a "
+                    "non-empty string"
+                )
+            values[field] = value
+        sources[key] = values
+    return sources
+
+
 def load_workspace(path: str | Path) -> WikiIndex:
     """Load one read-only workspace file into a WikiIndex."""
+    return load_workspace_state(path)[0]
+
+
+def load_workspace_state(
+    path: str | Path,
+) -> tuple[WikiIndex, SourceRegistry]:
+    """Load a workspace file into a (WikiIndex, source registry) pair."""
     workspace_path = Path(path)
     try:
         size = workspace_path.stat().st_size
@@ -89,16 +147,21 @@ def load_workspace(path: str | Path) -> WikiIndex:
             raise WorkspaceError(
                 f"invalid page at index {position}: {exc}"
             ) from None
-    return index
+    return index, _parse_sources(payload)
 
 
 def save_workspace(
-    index: WikiIndex, path: str | Path, *, overwrite: bool = False,
+    index: WikiIndex,
+    path: str | Path,
+    *,
+    overwrite: bool = False,
+    sources: SourceRegistry | None = None,
 ) -> None:
     """Persist every page in ``index`` to a workspace JSON file.
 
     The output uses the same ``{"version": 1, "pages": [...]}`` schema as
-    :func:`load_workspace`, so a saved file can be reloaded verbatim.
+    :func:`load_workspace`, plus a ``sources`` registry when ``sources`` is
+    non-empty, so a saved file can be reloaded verbatim.
 
     Write safety:
       * The target directory must already exist — it is never created.
@@ -129,10 +192,15 @@ def save_workspace(
 
     # Serialize before touching the filesystem — if this fails, no file is created.
     pages = index.list_pages()
-    payload = {
+    payload: dict = {
         "version": SUPPORTED_VERSION,
         "pages": [page.to_dict() for page in pages],
     }
+    if sources:
+        payload["sources"] = {
+            key: {field: entry[field] for field in _SOURCE_FIELDS}
+            for key, entry in sources.items()
+        }
     try:
         raw = json.dumps(payload, ensure_ascii=False, indent=2)
     except (TypeError, ValueError) as exc:

@@ -145,7 +145,7 @@ If `pip` points at a different interpreter, use `python -m pip` instead.
 
 ### 这是什么
 
-ZMWiki 是一个**本地 Wiki 终端浏览器与编辑器**。你给它一个包含 Wiki 页面的 JSON 文件，它就能在终端里以三栏布局（搜索 + 页面列表 / 正文阅读 / 元数据与链接）浏览、搜索和编辑页面；还可以从 Wikipedia 导入条目、显式保存 workspace，配置模型后直接提问。
+ZMWiki 是一个**本地 Wiki 终端浏览器与编辑器**。你给它一个包含 Wiki 页面的 JSON 文件，它就能在终端里以三栏布局（搜索 + 页面列表 / 正文阅读 / 元数据与链接）浏览、搜索和编辑页面；还可以从 Wikipedia 导入条目、把本地 `.txt` 文档编译成 Wiki 页面、撤销最近一次页面编辑、显式保存 workspace，配置模型后直接提问。
 
 仓库自带一个演示语料库（虚构的 Acme Corp 公司，9 篇文档），可以直接用来体验。
 
@@ -182,6 +182,8 @@ python -m zmwiki.tui --workspace my_wiki.json --create
 安装 `.[tui]` 后，等价的 `zmwiki` 命令也可用，例如 `zmwiki --workspace my_wiki.json`。
 
 > 默认工作区路径根据仓库源码位置解析；普通 wheel 安装或源码目录不完整时，请显式传入 `--workspace`。
+>
+> 默认工作区就是仓库里的演示文件，**只读保护**：按 `S` 不会写回。要保存自己的编辑，请先创建自己的工作区：`python -m zmwiki.tui --workspace my_wiki.json --create`。
 
 启动后你会看到：顶部 ZMWiki 绿色 ASCII 标题，左侧搜索框和页面列表，中间正文，右侧元数据和双向链接，底部状态栏和快捷键提示。
 
@@ -196,11 +198,14 @@ python -m zmwiki.tui --workspace my_wiki.json --create
 | `Tab` | 在搜索框、页面列表、Wikipedia 搜索、提问框、出站/入站链接之间循环切换 |
 | `N` | 新建页面（编辑器中 `Ctrl+S` 保存、`Esc` 取消） |
 | `E` | 编辑当前页面（可修改路径、标题、标签、出链和正文） |
+| `Ctrl+Z` | 撤销最近一次页面编辑（仅内存，需按 `S` 保存；导入/删除不可撤销） |
 | `D` | 删除当前页面（按两次确认，自动清理双向链接） |
 | `Esc` | 清空输入框；取消 Wikipedia 预览或页面编辑；返回页面列表 |
 | `W` | 搜索 Wikipedia（回车列出结果，再回车阅读条目） |
 | `I` | 导入当前预览的 Wikipedia 条目到内存 |
-| `S` | 保存 workspace（文件已存在时需按两次确认覆盖） |
+| `L` | 导入本地 `.txt` 文档（需 `--base-url` 和 `--model`；编译后自动保存） |
+| `U` | 源同步：清理源文件已删除的受管页面（手工页面不会删除） |
+| `S` | 保存 workspace（文件已存在时需按两次确认覆盖；演示工作区只读） |
 | `Ctrl+S` | 主界面保存 workspace；页面编辑器中保存当前页面 |
 | `A` | 向本地 Wiki 提问（启动时需带 `--base-url` 和 `--model`） |
 | `Q` | 退出 |
@@ -216,6 +221,24 @@ python -m zmwiki.tui --workspace my_wiki.json --create
 - `building` — 搜到办公楼页面
 
 > **注意**：如果搜索显示“无匹配结果”，不是程序坏了，而是你输入的关键词不在当前语料库里。比如搜索“维基百科”当然搜不到，因为这个演示库是 Acme Corp 公司数据，不是维基百科。按 `Esc` 清空搜索即可返回全部页面。
+
+### 导入本地文档（.txt）
+
+本地导入会把纯文本编译成结构化 Wiki 页面（标题、正文、候选链接），适合把手头笔记接进现有知识库。
+
+1. 启动时带上模型配置（编译器需要 OpenAI 兼容接口）：
+
+```bash
+python -m zmwiki.tui --workspace my_wiki.json --base-url https://api.deepseek.com/v1 --model deepseek-chat
+```
+
+2. 按 `L`，输入 UTF-8 `.txt` 文件路径并回车。编译完成后页面立即加入列表并**自动保存**到当前 workspace（这一步不需要再按 `S`）。
+3. 再次导入同一文件会原地更新该页面。文件重命名但内容未变、且原路径已不存在时，也会复用原页面，不会新建重复页。
+4. 源文件被移动或删除后，按 `U` 执行源同步：只清理由该源文件生成、且来源可确认的页面；手工新建的页面和源文件仍存在的页面不受影响。
+
+仅支持 UTF-8 `.txt`。启动时未提供 `--base-url` / `--model` 时，按 `L` 会提示“本地导入不可用”；浏览、搜索、手工编辑和保存不需要模型。
+
+若当前打开的是仓库演示工作区（只读），导入的页面只留在内存、不会写回演示文件；请先用 `--create` 创建自己的工作区。
 
 ### 从 Wikipedia 导入并提问
 
@@ -270,7 +293,7 @@ Path("my_wiki.json").write_text(
 
 > 脚本会写入/覆盖同名的 `my_wiki.json`；如果已有工作区，请先改用其他文件名。
 
-如果需要自动生成页面间链接，可在此基础上使用 `WikiCompiler` 和链接解析器；上面的脚本只创建互不链接的页面。
+如果需要自动生成页面间链接，可在此基础上使用 `WikiCompiler` 和链接解析器；上面的脚本只创建互不链接的页面。用 TUI 的本地导入（`L`）导入文档后，workspace 会自动多出可选的 `sources` 登记表（源文件路径 → 页面），用于重复导入、重命名识别和源同步；手写 workspace 时可以不写。
 
 ### 配置 LLM API（编译文档 / Agent 问答 / 评测时需要）
 
@@ -404,11 +427,18 @@ The workspace is a single JSON document:
 ```
 
 Keyboard shortcuts: `↑↓` move, `Enter` open, `1-9` jump, `/` search, `N` new
-page, `E` edit the current page, `D` delete it (press twice; links are cleaned
-up), `W` search Wikipedia, `A` ask, `I` import the previewed article, `S` save
+page, `E` edit the current page, `Ctrl+Z` undo the last page edit (in memory;
+press `S` to persist), `D` delete it (press twice; links are cleaned up), `W`
+search Wikipedia, `A` ask, `I` import the previewed article, `L` import a local
+`.txt` document (needs `--base-url`/`--model`; saves immediately), `U` sync
+registered source files (removes only pages whose source file is gone), `S` save
 the workspace (press twice to overwrite), `Ctrl+S` save the workspace from the
 main view or the current page inside the editor, `Esc` clear search, `Tab`
 switch pane, `Q` quit. Use `--create` to start a new empty workspace file.
+
+The bundled demo workspace is read-only: `S` will not overwrite
+`benchmark/corpus/wiki_workspace.json`. Create your own workspace with
+`--create` to persist changes.
 
 `A` requires an OpenAI-compatible endpoint (`--base-url`, `--model`), plus
 `ZMWIKI_API_KEY` or `--api-key` when the endpoint needs authentication. Without
@@ -416,6 +446,30 @@ model configuration, browsing, page creation/editing, import and save still work
 schema is capped at 10 MiB; at roughly 120 KB/page, that is about 80 pages.
 Loading rebuilds BM25 and slows noticeably beyond a few dozen pages, so keep
 demos small and split larger collections.
+
+#### Local document import (`.txt`)
+
+The TUI can compile local plain-text files into wiki pages. The compiler calls
+an OpenAI-compatible endpoint, so start with a model configured:
+
+```bash
+python -m zmwiki.tui --workspace my_wiki.json \
+  --base-url https://api.deepseek.com/v1 --model deepseek-chat
+```
+
+1. Press `L`, enter the path of a UTF-8 `.txt` file, and press `Enter`.
+2. The compiled page appears immediately and is saved to the workspace
+   automatically (no `S` needed).
+3. Importing the same file again updates that page in place. A renamed file
+   with unchanged content and a missing old path reuses the same page.
+4. After deleting or moving a source file, press `U` to sync: only pages whose
+   source is gone and whose provenance matches are removed. Manually created
+   pages and pages whose source file still exists are kept.
+
+Only UTF-8 `.txt` is supported. Without `--base-url` / `--model`, `L` reports
+that local import is unavailable; browsing, search, editing and saving still
+work. On the read-only demo workspace, imports stay in memory and are not
+written back.
 
 ### HTTP Server
 
@@ -444,6 +498,10 @@ The workspace is a single JSON document:
 Each page object maps directly to `WikiPage.to_dict()`. Required fields: `id`,
 `path`, `title`, `content`. Optional: `aliases`, `tags`, `description`,
 `sources`, `links_to`, `links_from`, `metadata`.
+
+The TUI also maintains an optional top-level `sources` registry after local
+document imports (source path, page id, document id, content fingerprint). It is
+written automatically and can be omitted when authoring a workspace by hand.
 
 To regenerate the bundled demo workspace from its fixed corpus, use the
 benchmark helper:
@@ -528,10 +586,11 @@ A controlled multi-hop QA benchmark compares:
 - **Baseline** — zmwiki single-pass hybrid retrieval + deterministic extractive generation
 - **Experiment** — ZMWiki WikiAgent multi-step search / read / follow_links / answer
 
-The benchmark includes 15 multi-hop questions (2-page, 3-page, single-page,
-negative, and unanswerable cases) over 9 synthetic source documents, with
-offline evaluation of answer accuracy, evidence recall, page recall, source
-precision, multi-hop success, and efficiency metrics.
+The benchmark includes 26 evaluation questions over 9 synthetic source
+documents: 22 answerable cases spanning single-page, two-page, three-page, and
+cross-page reasoning, plus 3 unanswerable and 1 false-premise case. It evaluates
+answer accuracy, evidence recall, page recall, source precision, multi-hop
+success, and efficiency metrics offline.
 
 ```bash
 # Offline baseline only (no LLM, no network)
@@ -623,4 +682,4 @@ evaluation**. Not in scope:
 
 ## License
 
-Proprietary.
+MIT License. See [LICENSE](LICENSE).

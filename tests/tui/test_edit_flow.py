@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from dataclasses import replace
 
 import pytest
 from textual.widgets import Input, OptionList, Static, TextArea
@@ -73,8 +74,8 @@ async def _save_overwrite(pilot, app):
 def test_create_page_saves_and_reloads(tmp_path):
     async def scenario():
         path = tmp_path / "fresh.json"
-        index = _load_or_create_workspace(path, create=True)
-        app = ZMWikiApp(index, workspace_path=path)
+        index, sources = _load_or_create_workspace(path, create=True)
+        app = ZMWikiApp(index, workspace_path=path, sources=sources)
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause()
             assert app.current_page is None
@@ -517,8 +518,9 @@ def test_ctrl_s_saves_workspace_without_moving_focus(tmp_path):
 
 def test_create_flag_creates_empty_workspace(tmp_path):
     path = tmp_path / "fresh.json"
-    index = _load_or_create_workspace(path, create=True)
+    index, sources = _load_or_create_workspace(path, create=True)
     assert index.count() == 0
+    assert sources == {}
     assert json.loads(path.read_text(encoding="utf-8")) == {
         "version": 1, "pages": [],
     }
@@ -593,9 +595,11 @@ def test_terminal_full_flow_create_save_reload_search_and_ask(tmp_path):
                 "sources": ["carol"],
             },
         ]
+        index, sources = _load_or_create_workspace(path, create=True)
         app = ZMWikiApp(
-            _load_or_create_workspace(path, create=True),
+            index,
             workspace_path=path,
+            sources=sources,
             agent_factory=_agent_factory(responses),
         )
         async with app.run_test(size=(120, 40)) as pilot:
@@ -644,3 +648,330 @@ def test_terminal_full_flow_create_save_reload_search_and_ask(tmp_path):
             assert "Carol Chen" in reader
 
     asyncio.run(scenario())
+
+
+def test_undo_edit_restores_page_links_and_persists(tmp_path):
+    alice = WikiPage(
+        id="alice",
+        path="people/alice",
+        title="Alice",
+        content="Alice body has oldtoken.",
+    )
+    bob = WikiPage(
+        id="bob", path="people/bob", title="Bob", content="Bob body."
+    )
+    app = _app(tmp_path, [alice, bob])
+
+    async def scenario():
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await pilot.press("e")
+            await pilot.pause()
+            await _fill_editor(
+                pilot,
+                app,
+                path="people/alice",
+                title="Alice Smith",
+                content="Alice body has newtoken.",
+                links="bob",
+            )
+            edited = app.index.get("alice")
+            assert edited.links_to == ("bob",)
+            assert app.index.get("bob").links_from == ("alice",)
+            assert [
+                r.page_id for r in wiki_search(app.index, "newtoken")
+            ] == ["alice"]
+
+            app.query_one("#pages", OptionList).focus()
+            await pilot.press("ctrl+z")
+            await pilot.pause()
+
+            page = app.index.get("alice")
+            assert page.title == "Alice"
+            assert page.content == "Alice body has oldtoken."
+            assert page.links_to == ()
+            assert app.index.get("bob").links_from == ()
+            assert app.index.check_links().is_clean
+            assert [
+                r.page_id for r in wiki_search(app.index, "oldtoken")
+            ] == ["alice"]
+            assert wiki_search(app.index, "newtoken") == []
+            assert "已撤销编辑" in app.query_one("#statusbar", Static).content
+            assert app.current_page.id == "alice"
+
+            await _save_overwrite(pilot, app)
+
+        reloaded = load_workspace(app.workspace_path)
+        page = reloaded.get("alice")
+        assert page.title == "Alice"
+        assert page.content == "Alice body has oldtoken."
+        assert page.links_to == ()
+        assert reloaded.get("bob").links_from == ()
+        assert reloaded.check_links().is_clean
+
+    asyncio.run(scenario())
+
+
+def test_undo_after_consecutive_edits_reverts_only_last(tmp_path):
+    alice = WikiPage(
+        id="alice", path="people/alice", title="Alice", content="v1"
+    )
+    app = _app(tmp_path, [alice])
+
+    async def scenario():
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await pilot.press("e")
+            await pilot.pause()
+            await _fill_editor(
+                pilot, app, path="people/alice", title="Alice", content="v2"
+            )
+            await pilot.press("e")
+            await pilot.pause()
+            await _fill_editor(
+                pilot, app, path="people/alice", title="Alice", content="v3"
+            )
+            assert app.index.get("alice").content == "v3"
+
+            app.query_one("#pages", OptionList).focus()
+            await pilot.press("ctrl+z")
+            await pilot.pause()
+            assert app.index.get("alice").content == "v2"
+
+            await pilot.press("ctrl+z")
+            await pilot.pause()
+            assert app.index.get("alice").content == "v2"
+            assert "无法撤销" in app.query_one("#statusbar", Static).content
+
+    asyncio.run(scenario())
+
+
+def test_undo_refuses_after_page_missing_or_changed(tmp_path):
+    alice = WikiPage(
+        id="alice", path="people/alice", title="Alice", content="Alice body."
+    )
+    bob = WikiPage(
+        id="bob", path="people/bob", title="Bob", content="Bob body."
+    )
+    app = _app(tmp_path, [alice, bob])
+
+    async def scenario():
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+
+            await pilot.press("e")
+            await pilot.pause()
+            await _fill_editor(
+                pilot, app, path="people/alice", title="Alice", content="v2"
+            )
+            app.query_one("#pages", OptionList).focus()
+            await pilot.press("d")
+            await pilot.pause()
+            await pilot.press("d")
+            await pilot.pause()
+            assert app.index.get("alice") is None
+
+            await pilot.press("ctrl+z")
+            await pilot.pause()
+            assert app.index.get("alice") is None
+            assert (
+                "页面已不存在"
+                in app.query_one("#statusbar", Static).content
+            )
+
+            await pilot.press("enter")  # open bob
+            await pilot.pause()
+            await pilot.press("e")
+            await pilot.pause()
+            await _fill_editor(
+                pilot, app, path="people/bob", title="Bob", content="v2"
+            )
+            app.index.upsert(
+                replace(app.index.get("bob"), content="external change")
+            )
+            app.query_one("#pages", OptionList).focus()
+            await pilot.press("ctrl+z")
+            await pilot.pause()
+
+            assert app.index.get("bob").content == "external change"
+            status = app.query_one("#statusbar", Static).content
+            assert "页面在编辑后被修改" in status
+            assert "未覆盖当前内容" in status
+
+    asyncio.run(scenario())
+
+
+def test_undo_create_removes_page_and_search_entry(tmp_path):
+    alice = WikiPage(
+        id="alice", path="people/alice", title="Alice", content="Alice body."
+    )
+    app = _app(tmp_path, [alice])
+
+    async def scenario():
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await pilot.press("n")
+            await pilot.pause()
+            await _fill_editor(
+                pilot,
+                app,
+                page_id="carol",
+                path="people/carol",
+                title="Carol",
+                content="Carol body with caroltoken.",
+            )
+            assert app.index.get("carol") is not None
+            assert [
+                r.page_id for r in wiki_search(app.index, "caroltoken")
+            ] == ["carol"]
+
+            app.query_one("#pages", OptionList).focus()
+            await pilot.press("ctrl+z")
+            await pilot.pause()
+
+            assert app.index.get("carol") is None
+            assert app.index.count() == 1
+            assert wiki_search(app.index, "caroltoken") == []
+            assert app.index.check_links().is_clean
+            assert "已撤销新建" in app.query_one("#statusbar", Static).content
+            assert app.current_page.id == "alice"
+
+    asyncio.run(scenario())
+
+
+def test_page_edit_failure_rolls_back_and_reports(tmp_path, monkeypatch):
+    alice = WikiPage(
+        id="alice",
+        path="people/alice",
+        title="Alice",
+        content="Alice old token.",
+    )
+    app = _app(tmp_path, [alice])
+    saved_bytes = app.workspace_path.read_bytes()
+
+    def boom():
+        raise RuntimeError("sync boom")
+
+    monkeypatch.setattr(app, "_sync_links_from", boom)
+
+    async def scenario():
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await pilot.press("e")
+            await pilot.pause()
+            await _fill_editor(
+                pilot,
+                app,
+                path="people/alice",
+                title="Alice",
+                content="Alice new token.",
+            )
+
+            status = app.query_one("#statusbar", Static).content
+            assert "保存页面失败" in status
+            assert "RuntimeError: sync boom" in status
+            assert "已回滚" in status
+            page = app.index.get("alice")
+            assert page.content == "Alice old token."
+            assert [
+                r.page_id for r in wiki_search(app.index, "old")
+            ] == ["alice"]
+            assert wiki_search(app.index, "new") == []
+            assert app.index.check_links().is_clean
+
+            app.query_one("#pages", OptionList).focus()
+            await pilot.press("ctrl+z")
+            await pilot.pause()
+            assert (
+                "没有可撤销的编辑"
+                in app.query_one("#statusbar", Static).content
+            )
+
+    asyncio.run(scenario())
+    assert app.workspace_path.read_bytes() == saved_bytes
+
+
+def test_save_failure_reports_actionable_reason(tmp_path, monkeypatch):
+    missing = tmp_path / "missing-dir" / "workspace.json"
+    app = ZMWikiApp(WikiIndex(), workspace_path=missing)
+
+    async def scenario():
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await pilot.press("s")
+            await pilot.pause()
+            status = app.query_one("#statusbar", Static).content
+            assert "保存失败" in status
+            assert "目标目录不存在" in status
+            assert "workspace target directory" not in status
+            assert not missing.exists()
+
+            def boom(*args, **kwargs):
+                raise RuntimeError("disk boom")
+
+            monkeypatch.setattr("zmwiki.tui.app.save_workspace", boom)
+            await pilot.press("s")
+            await pilot.pause()
+            status = app.query_one("#statusbar", Static).content
+            assert "保存失败" in status
+            assert "RuntimeError: disk boom" in status
+            assert not missing.exists()
+
+    asyncio.run(scenario())
+
+
+def test_demo_workspace_save_is_blocked(tmp_path, monkeypatch):
+    demo = tmp_path / "demo_workspace.json"
+    demo.write_text(
+        json.dumps({
+            "version": 1,
+            "pages": [{
+                "id": "alice",
+                "path": "people/alice",
+                "title": "Alice",
+                "content": "Alice body.",
+            }],
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("zmwiki.tui.app._DEFAULT_WORKSPACE", demo)
+    app = ZMWikiApp(load_workspace(demo), workspace_path=demo)
+    original = demo.read_bytes()
+
+    async def scenario():
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await pilot.press("s")
+            await pilot.pause()
+            status = app.query_one("#statusbar", Static).content
+            assert "演示工作区只读" in status
+            assert "已保存" not in status
+
+    asyncio.run(scenario())
+    assert demo.read_bytes() == original
+
+
+def test_user_workspace_save_still_works(tmp_path, monkeypatch):
+    demo = tmp_path / "demo_workspace.json"
+    demo.write_text(
+        json.dumps({"version": 1, "pages": []}), encoding="utf-8"
+    )
+    monkeypatch.setattr("zmwiki.tui.app._DEFAULT_WORKSPACE", demo)
+
+    user_path = _workspace(tmp_path, [
+        WikiPage(
+            id="alice",
+            path="people/alice",
+            title="Alice",
+            content="Alice body.",
+        )
+    ])
+    app = ZMWikiApp(load_workspace(user_path), workspace_path=user_path)
+
+    async def scenario():
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await _save_overwrite(pilot, app)
+
+    asyncio.run(scenario())
+    assert load_workspace(user_path).get("alice") is not None

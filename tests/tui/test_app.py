@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from pathlib import Path
 
 from textual.widgets import Input, OptionList, Static
 
@@ -232,3 +233,18 @@ def test_workspace_with_conflicting_paths_reports_clear_error(tmp_path, capsys):
     captured = capsys.readouterr()
     assert "invalid page at index 1" in captured.err
     assert "Traceback" not in captured.err
+
+
+def test_readme_documents_core_tui_shortcuts():
+    """Documented shortcuts must stay wired to actual App bindings."""
+    readme = Path(__file__).resolve().parents[2] / "README.md"
+    text = readme.read_text(encoding="utf-8")
+    for shortcut in ("`L`", "`U`", "`Ctrl+Z`"):
+        assert shortcut in text
+
+    declared = {
+        part.strip().lower()
+        for binding in ZMWikiApp.BINDINGS
+        for part in binding.key.split(",")
+    }
+    assert {"l", "u", "ctrl+z"} <= declared

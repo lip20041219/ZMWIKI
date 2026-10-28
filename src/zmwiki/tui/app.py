@@ -1,13 +1,14 @@
 """Retro terminal UI for ZMWiki.
 
-The TUI talks directly to the in-memory WikiIndex. Local browsing is
-read-only; the only writes are an explicit Wikipedia import (in memory) and
-an explicit ``s`` save to the workspace file the app was started with.
+The TUI talks directly to the in-memory WikiIndex. Local document imports
+compile and persist a page (re-importing the same source updates it); other
+page edits are written to the workspace file explicitly with ``s``.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import sys
 from collections.abc import Callable
 from dataclasses import replace
@@ -22,7 +23,13 @@ from textual.widgets import Input, OptionList, Static, TextArea
 from textual.widgets.option_list import Option
 
 from zmwiki.file_ingestion import PlainTextFileIngestor
-from zmwiki.web.workspace import WorkspaceError, load_workspace, save_workspace
+from zmwiki.web.workspace import (
+    SourceRegistry,
+    WorkspaceError,
+    load_workspace_state,
+    save_workspace,
+    source_key,
+)
 from zmwiki.wiki.wikipedia import (
     WikipediaArticle,
     WikipediaConnector,
@@ -215,6 +222,32 @@ def _clip(value: object, limit: int) -> str:
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
+_WORKSPACE_ERROR_HINTS = {
+    "workspace target directory does not exist":
+        "目标目录不存在，请检查工作区路径",
+    "workspace file cannot be written":
+        "无法写入文件，请检查权限或磁盘空间",
+}
+
+
+def _workspace_error_text(exc: WorkspaceError) -> str:
+    """Short, actionable Chinese text for a WorkspaceError."""
+    message = str(exc)
+    hint = _WORKSPACE_ERROR_HINTS.get(message)
+    if hint is not None:
+        return hint
+    if message.startswith("workspace serialization failed"):
+        return "工作区序列化失败，页面数据无法写入"
+    return message
+
+
+def _exception_text(exc: Exception, limit: int = 100) -> str:
+    """Type + message without a traceback, for user-facing status lines."""
+    if isinstance(exc, WorkspaceError):
+        return _workspace_error_text(exc)
+    return f"{type(exc).__name__}: {_clip(exc, limit)}"
+
+
 def _answer_body(
     result: AgentResult, label: str, sources: list[WikiPage]
 ) -> str:
@@ -381,6 +414,11 @@ class PageEditorScreen(ModalScreen[WikiPage | None]):
         except (TypeError, ValueError) as exc:
             self.query_one("#editor-error", Static).update(f"无法保存：{exc}")
             return
+        except Exception as exc:  # keep tracebacks out of the editor
+            self.query_one("#editor-error", Static).update(
+                f"无法保存：{_exception_text(exc, 80)}"
+            )
+            return
         error = self._validate(page)
         if error is not None:
             self.query_one("#editor-error", Static).update(error)
@@ -401,10 +439,12 @@ class ZMWikiApp(App[None]):
         Binding("n,N", "new_page", "新建"),
         Binding("e,E", "edit_page", "编辑"),
         Binding("d,D", "delete_page", "删除"),
+        Binding("ctrl+z", "undo_edit", "撤销"),
         Binding("a,A", "ask", "提问"),
         Binding("w,W", "wikipedia_search", "维基"),
         Binding("i,I", "import_wikipedia", "导入"),
         Binding("l,L", "import_local_document", "本地文档"),
+        Binding("u,U", "sync_sources", "源同步"),
         Binding("s,S", "save_workspace", "保存"),
         Binding("ctrl+s", "save_workspace", "保存", show=False),
     ]
@@ -414,6 +454,7 @@ class ZMWikiApp(App[None]):
         index: WikiIndex,
         *,
         workspace_path: str | Path | None = None,
+        sources: SourceRegistry | None = None,
         wikipedia: WikipediaConnector | None = None,
         agent_factory: Callable[[WikiIndex], WikiAgent] | None = None,
         compiler_factory: Callable[[], WikiCompiler] | None = None,
@@ -423,6 +464,20 @@ class ZMWikiApp(App[None]):
         self.workspace_path = (
             Path(workspace_path) if workspace_path is not None else None
         )
+        # The bundled demo workspace is read-only: never write user edits or
+        # imports back into the repository's fixture.
+        self._is_demo_workspace = (
+            self.workspace_path is not None
+            and source_key(self.workspace_path) == source_key(_DEFAULT_WORKSPACE)
+        )
+        if sources is None and self.workspace_path is not None:
+            # Callers that only pass a WikiIndex (e.g. load_workspace) must
+            # not wipe the on-disk source registry when the app saves.
+            try:
+                sources = load_workspace_state(self.workspace_path)[1]
+            except WorkspaceError:
+                sources = {}
+        self.sources: SourceRegistry = dict(sources or {})
         self.wikipedia = wikipedia if wikipedia is not None else WikipediaConnector()
         self.agent_factory = agent_factory
         self.compiler_factory = compiler_factory
@@ -440,6 +495,8 @@ class ZMWikiApp(App[None]):
         self.preview_link_error: str | None = None
         self._overwrite_armed = False
         self._delete_armed = False
+        # (page before the edit or None for a create, page stored after it)
+        self._undo_edit: tuple[WikiPage | None, WikiPage] | None = None
 
     # ------------------------------------------------------------------
     # Layout
@@ -774,11 +831,53 @@ class ZMWikiApp(App[None]):
         if path.suffix.lower() != ".txt":
             self._set_status("本地导入失败 // 仅支持 UTF-8 .txt 文件")
             return
+        try:
+            fingerprint = hashlib.sha256(path.read_bytes()).hexdigest()
+        except OSError as exc:
+            self._set_status(
+                f"本地导入失败 // {path.name} // 无法读取文件："
+                f"{_clip(str(exc), 80)}"
+            )
+            return
+        document_id, previous_key = self._resolve_import_source(path, fingerprint)
         self._set_status(f"正在编译本地文档 // {path.name}")
-        self._import_document_worker(path)
+        self._import_document_worker(
+            path, document_id, fingerprint, previous_key
+        )
+
+    def _resolve_import_source(
+        self, path: Path, fingerprint: str
+    ) -> tuple[str, str | None]:
+        """Return (document_id, previous registry key) for this import.
+
+        A registered path keeps its document id, so a re-import always maps
+        to the same page. A file whose content uniquely matches a registered
+        page whose old path no longer exists is treated as that file renamed.
+        Anything else is a new source and gets the stem-based id.
+        """
+        key = source_key(path)
+        entry = self.sources.get(key)
+        if entry is not None:
+            return entry["document_id"], None
+        renamed = [
+            (k, e)
+            for k, e in self.sources.items()
+            if e["fingerprint"] == fingerprint
+            and self.index.get(e["page_id"]) is not None
+            and not Path(k).exists()
+        ]
+        if len(renamed) == 1:
+            return renamed[0][1]["document_id"], renamed[0][0]
+        return f"local-{path.stem}", None
 
     @work(thread=True)
-    def _import_document_worker(self, path: Path) -> None:
+    def _import_document_worker(
+        self,
+        path: Path,
+        document_id: str,
+        fingerprint: str,
+        previous_key: str | None,
+    ) -> None:
         factory = self.compiler_factory
         if factory is None:
             self.call_from_thread(
@@ -788,7 +887,7 @@ class ZMWikiApp(App[None]):
             return
         try:
             document = PlainTextFileIngestor().ingest(
-                path, document_id=f"local-{path.stem}"
+                path, document_id=document_id
             )
             compiled = factory().compile(document)
         except (WikiCompilerError, OSError, ValueError, TypeError) as exc:
@@ -799,10 +898,13 @@ class ZMWikiApp(App[None]):
         except Exception as exc:  # keep the TUI alive on unexpected failures
             self.call_from_thread(
                 self._show_document_import_error, path,
-                f"{type(exc).__name__}: {exc}",
+                _exception_text(exc),
             )
             return
-        self.call_from_thread(self._apply_compiled_document, path, compiled)
+        self.call_from_thread(
+            self._apply_compiled_document,
+            path, compiled, fingerprint, previous_key,
+        )
 
     def _show_document_import_error(self, path: Path, message: str) -> None:
         self._set_status(
@@ -816,18 +918,48 @@ class ZMWikiApp(App[None]):
         for page in before.values():
             self.index.upsert(page)
 
+    @staticmethod
+    def _same_import_source(existing: WikiPage, page: WikiPage) -> bool:
+        """True when ``existing`` was compiled from the same source document."""
+        source_id = page.metadata.get("source_document_id")
+        if not isinstance(source_id, str) or not source_id:
+            return False
+        return (
+            existing.metadata.get("source_document_id") == source_id
+            or source_id in existing.sources
+        )
+
     def _apply_compiled_document(
-        self, path: Path, compiled: CompiledPage
+        self,
+        path: Path,
+        compiled: CompiledPage,
+        fingerprint: str,
+        previous_key: str | None,
     ) -> None:
         page = compiled.page
+        key = source_key(path)
         existing = self.index.get(page.id)
-        if existing is not None:
+        # A page registered to another live source path must not be taken
+        # over (e.g. two files sharing a stem). A rename's old path is
+        # allowed because ``previous_key`` names it explicitly.
+        owned_elsewhere = any(
+            entry["page_id"] == page.id and k != previous_key
+            for k, entry in self.sources.items()
+            if k != key
+        )
+        updating = existing is not None and not owned_elsewhere and (
+            key in self.sources
+            or previous_key is not None
+            or self._same_import_source(existing, page)
+        )
+        if existing is not None and not updating:
+            detail = "由其他源文件管理，未覆盖" if owned_elsewhere else "未覆盖"
             self._show_document_import_error(
-                path, f"页面已存在：{page.id}（未覆盖）"
+                path, f"页面已存在：{page.id}（{detail}）"
             )
             return
         occupant = self.index.get_by_path(page.path)
-        if occupant is not None:
+        if occupant is not None and occupant.id != page.id:
             self._show_document_import_error(
                 path,
                 f"路径已被页面 {occupant.id} 使用：{page.path}",
@@ -835,26 +967,85 @@ class ZMWikiApp(App[None]):
             return
 
         before = {p.id: p for p in self.index.list_pages()}
+        before_sources = dict(self.sources)
         saved = False
         try:
-            resolved_pages, report = resolve_candidate_links(
-                self.index.list_pages() + [page]
+            # Replace the old version instead of appending a duplicate id.
+            pages = [p for p in self.index.list_pages() if p.id != page.id]
+            if updating:
+                # Links the user added by hand are not in "generated_links";
+                # carry them over instead of silently dropping them.
+                generated = existing.metadata.get("generated_links")
+                old_generated = (
+                    {t for t in generated if isinstance(t, str)}
+                    if isinstance(generated, list)
+                    else set()
+                )
+                manual_links = tuple(
+                    t for t in existing.links_to if t not in old_generated
+                )
+                if manual_links:
+                    page = replace(page, links_to=manual_links)
+                # Drop backlinks contributed by the old version. Otherwise the
+                # resolver's existing-link union resurrects links that the
+                # edited document no longer declares.
+                pages = [
+                    replace(
+                        p,
+                        links_from=tuple(
+                            s for s in p.links_from if s != page.id
+                        ),
+                    ) if page.id in p.links_from else p
+                    for p in pages
+                ]
+            pages.append(page)
+            resolved_pages, report = resolve_candidate_links(pages)
+            # Record which outgoing links came from candidate resolution so
+            # a later re-import can tell them from hand-added ones.
+            resolved_for_page = sorted(
+                {
+                    link.target_page_id
+                    for link in report.resolved_links
+                    if link.source_page_id == page.id
+                }
             )
             for resolved in resolved_pages:
+                if resolved.id == page.id:
+                    metadata = dict(resolved.metadata)
+                    metadata["generated_links"] = resolved_for_page
+                    resolved = replace(resolved, metadata=metadata)
                 self.index.upsert(resolved)
-            if self.workspace_path is not None:
+            document_id = page.metadata.get("source_document_id")
+            if isinstance(document_id, str) and document_id:
+                for stale_key in [
+                    k
+                    for k, entry in self.sources.items()
+                    if entry["page_id"] == page.id and k != key
+                ]:
+                    del self.sources[stale_key]
+                self.sources[key] = {
+                    "page_id": page.id,
+                    "document_id": document_id,
+                    "fingerprint": fingerprint,
+                }
+            if self.workspace_path is not None and not self._is_demo_workspace:
                 save_workspace(
-                    self.index, self.workspace_path, overwrite=True
+                    self.index, self.workspace_path,
+                    overwrite=True, sources=self.sources,
                 )
                 saved = True
         except (WorkspaceError, OSError, TypeError, ValueError) as exc:
             self._restore_index_snapshot(before)
-            self._show_document_import_error(path, str(exc))
+            self.sources = before_sources
+            self._show_document_import_error(
+                path, f"{_exception_text(exc)} // 已回滚"
+            )
             return
         except Exception as exc:  # never leave a half-applied import
             self._restore_index_snapshot(before)
+            self.sources = before_sources
             self._show_document_import_error(
-                path, f"{type(exc).__name__}: {exc}"
+                path, f"{_exception_text(exc)} // 已回滚"
             )
             return
 
@@ -866,9 +1057,10 @@ class ZMWikiApp(App[None]):
             f"链接 {report.resolved_count} 解析 / "
             f"{report.ambiguous_count} 歧义 / {report.unresolved_count} 未解析"
         )
-        saved_text = "已保存" if saved else "未持久化（未指定工作区）"
+        saved_text = self._saved_status(saved)
+        action = "已更新" if updating else "已导入"
         self._set_status(
-            f"已导入 // {page.id} // {link_text} // {saved_text}"
+            f"{action} // {page.id} // {link_text} // {saved_text}"
         )
         self.query_one("#doc-path", Input).focus()
 
@@ -1044,12 +1236,26 @@ class ZMWikiApp(App[None]):
         if page is None:
             self._set_status("已取消页面编辑")
             return
+        before = {p.id: p for p in self.index.list_pages()}
         try:
             self.index.upsert(page)
             self._sync_links_from()
         except (TypeError, ValueError) as exc:
-            self._set_status(f"保存页面失败 // {exc}")
+            self._restore_index_snapshot(before)
+            self._set_status(
+                f"保存页面失败 // {_clip(str(exc), 100)} // 已回滚"
+            )
             return
+        except Exception as exc:  # never leave a half-applied edit
+            self._restore_index_snapshot(before)
+            self._set_status(
+                f"保存页面失败 // {_exception_text(exc)} // 已回滚"
+            )
+            return
+        stored = self.index.get(page.id)
+        self._undo_edit = (
+            (original, stored) if stored is not None else None
+        )
         self.pages = self.index.list_pages()
         self.current_page = page
         self._populate_pages(page.id)
@@ -1069,6 +1275,88 @@ class ZMWikiApp(App[None]):
             desired = tuple(sorted(incoming[page.id]))
             if page.links_from != desired:
                 self.index.upsert(replace(page, links_from=desired))
+
+    def _undo_last_edit(self) -> None:
+        """Undo the most recent page-editor save (single level).
+
+        Scope: only the last create/edit made through the page editor. It
+        never undoes imports, deletes or source sync. If the page changed
+        since that save, undo refuses rather than overwriting newer content.
+        """
+        if isinstance(self.screen, PageEditorScreen):
+            return
+        if self.preview_article is not None:
+            self._set_status("请先按 ESC 取消维基百科预览")
+            return
+        if self._undo_edit is None:
+            self._set_status("无法撤销 // 没有可撤销的编辑")
+            return
+        original, edited = self._undo_edit
+        current = self.index.get(edited.id)
+        if current is None:
+            self._undo_edit = None
+            self._set_status(
+                f"无法撤销 // 页面已不存在：{edited.id} // 撤销记录已清除"
+            )
+            return
+        # links_from is derived and recomputed after restoring, so changes
+        # there (another page linked here) must not block the undo.
+        if replace(current, links_from=()) != replace(edited, links_from=()):
+            self._undo_edit = None
+            self._set_status(
+                f"无法撤销 // 页面在编辑后被修改：{edited.id} // 未覆盖当前内容"
+            )
+            return
+        if original is not None:
+            occupant = self.index.get_by_path(original.path)
+            if occupant is not None and occupant.id != original.id:
+                self._undo_edit = None
+                self._set_status(
+                    f"无法撤销 // 原路径 {original.path} 已被页面 "
+                    f"{occupant.id} 使用 // 请先移动该页面"
+                )
+                return
+            missing = [
+                target for target in original.links_to
+                if target != original.id and self.index.get(target) is None
+            ]
+            if missing:
+                self._undo_edit = None
+                self._set_status(
+                    f"无法撤销 // 链接目标已不存在：{', '.join(missing)} "
+                    "// 请先恢复目标页面"
+                )
+                return
+        before = {p.id: p for p in self.index.list_pages()}
+        try:
+            if original is None:
+                self._remove_page_from_index(current)
+            else:
+                self.index.upsert(original)
+                self._sync_links_from()
+        except (TypeError, ValueError) as exc:
+            self._restore_index_snapshot(before)
+            self._set_status(f"撤销失败 // {_clip(str(exc), 100)} // 已回滚")
+            return
+        except Exception as exc:  # never leave a half-applied undo
+            self._restore_index_snapshot(before)
+            self._set_status(
+                f"撤销失败 // {_exception_text(exc)} // 已回滚"
+            )
+            return
+        self._undo_edit = None
+        self.pages = self.index.list_pages()
+        if original is None:
+            self.current_page = None
+            if self.pages:
+                self.current_page = self.pages[0]
+            self._restore_pages()
+            self._set_status(f"已撤销新建 // {edited.id} // 按 S 保存")
+            return
+        self.current_page = self.index.get(original.id)
+        self._populate_pages(original.id)
+        self._open_page(original.id)
+        self._set_status(f"已撤销编辑 // {original.id} // 按 S 保存")
 
     def _edit_current_page(self) -> None:
         if self.preview_article is not None:
@@ -1095,12 +1383,12 @@ class ZMWikiApp(App[None]):
         self._delete_armed = False
         self._delete_current_page()
 
-    def _delete_current_page(self) -> None:
-        page = self.current_page
-        if page is None:
-            return
-        # Keep the link graph consistent without changing WikiIndex.delete()'s
-        # documented low-level behavior.
+    def _remove_page_from_index(self, page: WikiPage) -> None:
+        """Delete a page and strip it from every other page's links.
+
+        Keeps the link graph consistent without changing WikiIndex.delete()'s
+        documented low-level behavior.
+        """
         for other in self.index.list_pages():
             if other.id == page.id:
                 continue
@@ -1111,6 +1399,17 @@ class ZMWikiApp(App[None]):
                     replace(other, links_to=links_to, links_from=links_from)
                 )
         self.index.delete(page.id)
+
+    def _delete_current_page(self) -> None:
+        page = self.current_page
+        if page is None:
+            return
+        self._remove_page_from_index(page)
+        self.sources = {
+            key: entry
+            for key, entry in self.sources.items()
+            if entry["page_id"] != page.id
+        }
         self.pages = self.index.list_pages()
         self.current_page = None
         self.mode = "pages"
@@ -1125,9 +1424,115 @@ class ZMWikiApp(App[None]):
                 f"已删除 // {page.id} // 按 N 新建页面 // 按 S 保存"
             )
 
+    @staticmethod
+    def _page_is_source_managed(
+        page: WikiPage, entry: dict[str, str]
+    ) -> bool:
+        """True when the registry can confirm the page came from this source."""
+        document_id = page.metadata.get("source_document_id")
+        return (
+            isinstance(document_id, str)
+            and document_id == entry["document_id"]
+            and document_id in page.sources
+        )
+
+    def action_sync_sources(self) -> None:
+        self._reset_arming()
+        self._sync_source_lifecycle()
+
+    def _sync_source_lifecycle(self) -> None:
+        """Explicit cleanup: drop registrations and pages whose file is gone.
+
+        A page is only deleted when the registry entry and the page's own
+        provenance agree; manually created or otherwise-owned pages are kept.
+        """
+        if self.preview_article is not None:
+            self._set_status("请先按 ESC 取消维基百科预览")
+            return
+        missing = [key for key in self.sources if not Path(key).exists()]
+        if not missing:
+            if not self.sources:
+                self._set_status("源同步 // 没有已登记的源文件")
+            else:
+                self._set_status(
+                    f"源同步 // {len(self.sources)} 个登记源均存在"
+                )
+            return
+        before = {p.id: p for p in self.index.list_pages()}
+        before_sources = dict(self.sources)
+        removed = 0
+        protected = 0
+        dropped = 0
+        saved = False
+        try:
+            for key in missing:
+                entry = self.sources[key]
+                page = self.index.get(entry["page_id"])
+                if page is None:
+                    del self.sources[key]
+                    dropped += 1
+                    continue
+                if not self._page_is_source_managed(page, entry):
+                    protected += 1
+                    continue
+                self._remove_page_from_index(page)
+                del self.sources[key]
+                removed += 1
+            if self.workspace_path is not None and not self._is_demo_workspace:
+                save_workspace(
+                    self.index, self.workspace_path,
+                    overwrite=True, sources=self.sources,
+                )
+                saved = True
+        except (WorkspaceError, OSError, TypeError, ValueError) as exc:
+            self._restore_index_snapshot(before)
+            self.sources = before_sources
+            self._set_status(
+                f"源同步失败 // {_exception_text(exc)} // 已回滚"
+            )
+            return
+        except Exception as exc:  # never leave a half-applied cleanup
+            self._restore_index_snapshot(before)
+            self.sources = before_sources
+            self._set_status(
+                f"源同步失败 // {_exception_text(exc)} // 已回滚"
+            )
+            return
+        self.pages = self.index.list_pages()
+        if (
+            self.current_page is not None
+            and self.index.get(self.current_page.id) is None
+        ):
+            self.current_page = None
+        if self.current_page is None and self.pages:
+            self.current_page = self.pages[0]
+        self._restore_pages()
+        saved_text = self._saved_status(saved)
+        protected_text = (
+            f"保护 {protected} 页（来源不匹配）"
+            if protected
+            else "保护 0 页"
+        )
+        self._set_status(
+            f"源同步 // 清理 {removed} 页 // {protected_text} "
+            f"// 移除 {dropped} 条失效登记 // {saved_text}"
+        )
+
+    def _saved_status(self, saved: bool) -> str:
+        if saved:
+            return "已保存"
+        if self._is_demo_workspace:
+            return "未持久化（演示工作区只读）"
+        return "未持久化（未指定工作区）"
+
     def _save_workspace(self) -> None:
         if self.workspace_path is None:
             self._set_status("无法保存 // 未指定工作区路径")
+            return
+        if self._is_demo_workspace:
+            self._set_status(
+                "无法保存 // 演示工作区只读，请用 --workspace 新建自己的工作区"
+            )
             return
         if self.workspace_path.exists() and not self._overwrite_armed:
             self._overwrite_armed = True
@@ -1137,10 +1542,16 @@ class ZMWikiApp(App[None]):
             return
         try:
             save_workspace(
-                self.index, self.workspace_path, overwrite=self._overwrite_armed
+                self.index,
+                self.workspace_path,
+                overwrite=self._overwrite_armed,
+                sources=self.sources,
             )
         except WorkspaceError as exc:
-            self._set_status(f"保存失败 // {exc}")
+            self._set_status(f"保存失败 // {_workspace_error_text(exc)}")
+            return
+        except Exception as exc:  # keep tracebacks out of the UI
+            self._set_status(f"保存失败 // {_exception_text(exc)}")
             return
         self._overwrite_armed = False
         self._set_status(f"已保存 // {self.workspace_path}")
@@ -1372,6 +1783,10 @@ class ZMWikiApp(App[None]):
         self._reset_arming()
         self._edit_current_page()
 
+    def action_undo_edit(self) -> None:
+        self._reset_arming()
+        self._undo_last_edit()
+
     def action_delete_page(self) -> None:
         self._overwrite_armed = False
         self._request_delete_current_page()
@@ -1521,14 +1936,14 @@ class ZMWikiApp(App[None]):
 
 def _load_or_create_workspace(
     path: str | Path, *, create: bool = False
-) -> WikiIndex:
+) -> tuple[WikiIndex, SourceRegistry]:
     """Load a workspace, or create an empty one when ``--create`` is used."""
     target = Path(path)
     if create:
         if target.exists():
             raise WorkspaceError("workspace file already exists")
         save_workspace(WikiIndex(), target)
-    return load_workspace(target)
+    return load_workspace_state(target)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1558,7 +1973,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        index = _load_or_create_workspace(args.workspace, create=args.create)
+        index, sources = _load_or_create_workspace(
+            args.workspace, create=args.create
+        )
     except WorkspaceError as exc:
         message = str(exc)
         if not args.create and message == "workspace file not found":
@@ -1592,6 +2009,7 @@ def main(argv: list[str] | None = None) -> int:
     ZMWikiApp(
         index,
         workspace_path=args.workspace,
+        sources=sources,
         agent_factory=agent_factory,
         compiler_factory=compiler_factory,
     ).run()

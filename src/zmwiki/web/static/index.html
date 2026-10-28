@@ -243,7 +243,10 @@
           <article class="feature-card">
             <div class="feature-top"><span class="feature-num">06</span><span class="feature-tag">benchmark/</span></div>
             <h3>Measurable Retrieval</h3>
-            <p>Offline retrieval metrics, deterministic answer scoring and a 15-case multi-hop benchmark track evidence recall and per-step failures without an LLM judge.</p>
+            <p>Offline retrieval metrics, deterministic answer scoring and an
+            internal 26-case multi-hop benchmark track evidence recall and
+            per-step failures without an LLM judge. These are repository-local
+            diagnostics, not a general accuracy claim.</p>
           </article>
         </div>
       </div>
@@ -314,8 +317,9 @@
             <li>Wiki and benchmark tests run offline</li>
           </ul>
           <p class="fine-print">
-            This phase ships the static site only. There is no local server or
-            browser workbench command yet — both are in progress.
+            A read-only local HTTP server ships with the package
+            (<code>python -m zmwiki.web.server</code>). The browser workbench
+            is still on the roadmap.
           </p>
         </div>
 
@@ -350,13 +354,13 @@
               <li>Budgeted multi-step <code>WikiAgent</code></li>
               <li>Document-to-page <code>WikiCompiler</code></li>
               <li>RAG baseline and offline evaluation</li>
+              <li>JSON workspace persistence (<code>--workspace</code>)</li>
+              <li>Read-only local HTTP server</li>
             </ul>
           </div>
           <div class="roadmap-card">
             <div class="roadmap-head"><span class="status-dot progress" aria-hidden="true"></span><h3>In Progress</h3></div>
             <ul>
-              <li>Persistent local workspace for wiki pages</li>
-              <li>Local HTTP service over the existing core</li>
               <li>Browser workbench for search, read and ask</li>
               <li>Broader document format ingestion</li>
             </ul>
@@ -385,11 +389,20 @@
           </details>
           <details class="faq-item">
             <summary>Is there a browser workbench or local server?</summary>
-            <p>Not yet. This release ships the static product site. A localhost-only HTTP service and browser workbench are in progress and will reuse the existing index and agent APIs.</p>
+            <p>The package ships a read-only local HTTP server:
+            <code>python -m zmwiki.web.server --workspace path/to/wiki.json</code>.
+            It serves page list, page detail and search APIs over the same
+            workspace. A browser workbench (search, read, ask) is still in
+            progress.</p>
           </details>
           <details class="faq-item">
             <summary>Where is my wiki stored?</summary>
-            <p>Today the wiki index is in memory: it lives for the process that built it. Benchmark artifacts are JSON files under <code>benchmark/results/</code>. A persistent local workspace is not implemented yet.</p>
+            <p>Wiki pages live in a JSON workspace file that the TUI loads at
+            startup and saves with <code>S</code> (press twice to overwrite an
+            existing file); local document imports save automatically. Without
+            <code>--workspace</code>, the bundled demo workspace is opened
+            read-only. Benchmark artifacts are separate JSON files under
+            <code>benchmark/results/</code>.</p>
           </details>
           <details class="faq-item">
             <summary>What document formats are supported?</summary>
@@ -397,7 +410,7 @@
           </details>
           <details class="faq-item">
             <summary>What license is ZMWiki under?</summary>
-            <p>Proprietary, as declared in <code>pyproject.toml</code>. The source is publicly readable on GitHub; that is not an open-source license grant.</p>
+            <p>MIT License, as declared in <code>pyproject.toml</code>. The full text is in <a href="https://github.com/lip20041219/zmwiki/blob/master/LICENSE">LICENSE</a> at the repository root.</p>
           </details>
         </div>
       </div>
@@ -434,14 +447,14 @@
           <div>
             <h3>Project</h3>
             <a href="https://github.com/lip20041219/zmwiki">GitHub</a>
-            <a href="https://github.com/lip20041219/zmwiki/blob/master/pyproject.toml">License</a>
+            <a href="https://github.com/lip20041219/zmwiki/blob/master/LICENSE">License</a>
             <a href="#terminal">Install</a>
           </div>
         </nav>
       </div>
       <div class="footer-bottom">
         <span>© 2026 ZMWiki</span>
-        <span>Proprietary license</span>
+        <span>MIT License</span>
         <span>No accounts. No cloud dependency.</span>
       </div>
     </div>

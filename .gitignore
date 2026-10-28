@@ -18,6 +18,20 @@ my_wiki.json
 .env
 *.log
 
+# Benchmark scratch / superseded live-run artifacts (not release evidence)
+benchmark/results/m4_2_live_*
+benchmark/results/m4_3_live_*
+benchmark/results/m4_3_1_live_*.checkpoint.jsonl
+benchmark/results/phase09_full.checkpoint.jsonl
+benchmark/results/phase09_smoke.*
+benchmark/results/phase10_auth_smoke.*
+benchmark/results/phase10_auto_links_retry.checkpoint.jsonl
+benchmark/results/phase10_manual.*
+benchmark/results/phase10_manual_retry.checkpoint.jsonl
+
+# Stray local diff capture (not a script)
+/ts_frozen_evidence.py
+
 # Tooling
 .pytest_cache/
 .mypy_cache/
