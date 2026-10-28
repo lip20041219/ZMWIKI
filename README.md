@@ -55,8 +55,10 @@ and terminal UI on top.
   deduplication
 - **Retro Terminal UI** — terminal browser with ASCII banner, three-pane layout
   (search + page list / content reader / metadata + links), fluorescent-green on
-  black theme, keyboard-driven navigation, local page create/edit/delete,
-  Wikipedia import, and explicit workspace save
+  black theme, keyboard-driven navigation, local page create/edit/delete/undo,
+  local `.txt` import with a source registry and sync, Wikipedia import, explicit
+  workspace save, and agent answers with step-level diagnostics and source
+  navigation
 
 ### Retrieval & Evaluation Backbone (zmwiki)
 
@@ -106,8 +108,8 @@ WikiCompiler (LLM-assisted) ──► WikiPage (candidate_links, unverified)
 
 The zmwiki retrieval pipeline (chunking → embedding → dense/lexical/hybrid
 retrieval → fusion → reranking → context → generation → evaluation) remains
-available as the baseline retrieval backbone and is used in the controlled
-zmwiki-vs-ZMWiki comparison benchmark.
+available as the baseline retrieval backbone and is used as the offline
+baseline in the zmwiki-vs-ZMWiki comparison benchmark.
 
 ## Installation
 
@@ -257,7 +259,7 @@ python -m zmwiki.tui --workspace my_wiki.json --base-url https://api.deepseek.co
 
 - 当前演示库为 9 页 / 约 9 KB。workspace 有 10 MiB 上限；按约 120 KB/页估算，约可容纳 **80 页**。
 - 加载会随页数明显变慢，因为每次导入/加载都会重建 BM25。公开演示建议保持在几十页以内，更大规模请拆分 workspace。
-- 真实问答需要可访问的 **OpenAI 兼容接口**：启动时提供 `--base-url` 和 `--model`，密钥用环境变量 `ZMWIKI_API_KEY`（或 `--api-key`）。未配置时只影响 `A` 提问，浏览、搜索、编辑、导入和保存仍可用；仓库不内置本地模型。
+- 真实问答和本地 `.txt` 编译导入需要可访问的 **OpenAI 兼容接口**：启动时提供 `--base-url` 和 `--model`，密钥用环境变量 `ZMWIKI_API_KEY`（或 `--api-key`）。未配置时只影响 `A` 提问和 `L` 本地导入；浏览、搜索、编辑、Wikipedia 导入和保存仍可用；仓库不内置本地模型。
 
 ### 用自己的文档
 
@@ -442,7 +444,8 @@ The bundled demo workspace is read-only: `S` will not overwrite
 
 `A` requires an OpenAI-compatible endpoint (`--base-url`, `--model`), plus
 `ZMWIKI_API_KEY` or `--api-key` when the endpoint needs authentication. Without
-model configuration, browsing, page creation/editing, import and save still work. The workspace
+model configuration, browsing, page creation/editing, Wikipedia import and save
+still work; local `.txt` import (`L`) and `A` require a model. The workspace
 schema is capped at 10 MiB; at roughly 120 KB/page, that is about 80 pages.
 Loading rebuilds BM25 and slows noticeably beyond a few dozen pages, so keep
 demos small and split larger collections.
@@ -581,31 +584,86 @@ results = pipeline.retrieve(query="retrieval", top_k=3)
 
 ## zmwiki vs ZMWiki Comparison Benchmark
 
-A controlled multi-hop QA benchmark compares:
+A 26-question wiki QA benchmark with multi-hop emphasis compares two
+independently configured systems over the same corpus and dataset:
 
-- **Baseline** — zmwiki single-pass hybrid retrieval + deterministic extractive generation
-- **Experiment** — ZMWiki WikiAgent multi-step search / read / follow_links / answer
+- **Baseline** — zmwiki single-pass hybrid retrieval + `DeterministicGenerator`
+  (offline extractive generation, no LLM).
+- **Experiment** — ZMWiki `WikiAgent` multi-step search / read / follow_links /
+  answer, driven by a live OpenAI-compatible model.
 
-The benchmark includes 26 evaluation questions over 9 synthetic source
-documents: 22 answerable cases spanning single-page, two-page, three-page, and
-cross-page reasoning, plus 3 unanswerable and 1 false-premise case. It evaluates
-answer accuracy, evidence recall, page recall, source precision, multi-hop
-success, and efficiency metrics offline.
+This is **not a strictly controlled single-variable experiment**: the baseline
+uses a deterministic offline generator while the experiment uses an online
+DeepSeek model (`deepseek-chat` in the historical run).
+Answer-quality differences can come from retrieval, evidence organization, or
+the generator itself. Treat the two systems as independent results, not a
+head-to-head semantic-accuracy comparison.
+
+### Dataset and scoring
+
+The dataset (`benchmark/datasets/multihop_wiki.json`, version 1.2) has 26 cases
+over 9 synthetic Acme Corp documents: 22 answerable (5 single-hop, 17 two- or
+three-hop) and 4 unanswerable (3 unanswerable + 1 false-premise).
+
+Answer scoring is deterministic `keyword_group_match`, not semantic accuracy
+and not an LLM judge: for answerable cases every keyword group must contain at
+least one keyword in the normalized answer; unanswerable cases require a refusal
+keyword and no fabrication keyword. Matching is case-insensitive after
+punctuation stripping. A correct paraphrase can score 0 and a verbatim copy can
+score 1. The fabrication guard is a lexical heuristic, so unanswerable cases
+still need manual audit.
+
+Metrics are **answer accuracy** (keyword-scored), **verified answer accuracy**
+(answered with at least one cited source), **read evidence recall**
+(`read_evidence_recall`, required pages actually read; for the baseline this is
+its retrieved context set), legacy **access recall** (`evidence_recall`, which
+also counts search candidates), **source precision**, **multi-hop success**, and
+efficiency (steps / pages read). There is no separate "page recall" metric.
+
+### Historical result (v1.2, live run)
+
+The committed result file `benchmark/results/m4_3_1_live_20261027.json`
+(2026-10-27) records a live run with dataset v1.2, `deepseek-chat`,
+`max_steps=8`, and `link_source=auto` (the `--auto-links` path):
+
+| System | Keyword answer accuracy | Verified | Read evidence recall* | Source precision | Multi-hop success* | Mean steps |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Offline baseline | 4/26 (15.4%) | 4/26 | 0.886 | 0.378 | 2/17 (11.8%) | 1.00 |
+| Online WikiAgent | 26/26 (100%) | 26/26 | 1.000 | 0.783 | 17/17 (100%) | 3.27 |
+
+\*Read evidence recall and multi-hop success are over answerable cases; source
+precision is over all cases. The 26/26 is a **historical v1.2 keyword-scored
+result**, not a general semantic-accuracy claim, and it is not reproduced by the
+offline command below. The deterministic baseline was rerun offline for this
+documentation update and again scored 4/26 (15.4%) on dataset v1.2; offline runs
+do not execute WikiAgent and leave the experiment aggregate empty.
+
+Benchmark links are hand-authored for this corpus (`_PAGE_LINKS` /
+`_CANDIDATE_LINKS`), not produced by `WikiCompiler`; `--auto-links` runs the
+real resolver over hand-authored candidate link titles. This remains a compiler
+capability gap.
+
+### Reproduce
 
 ```bash
-# Offline baseline only (no LLM, no network)
-python benchmark/run_multihop_evaluation.py --output benchmark/results/baseline.json
+# Offline: baseline only. No API, no network; WikiAgent is NOT executed.
+# Choose a new output path: the script refuses to overwrite an existing file.
+python benchmark/run_multihop_evaluation.py \
+  --output benchmark/results/offline_baseline_local.json
 
-# Live experiment with real LLM (3-case controlled trial)
-python benchmark/run_multihop_evaluation.py --live --base-url https://api.example.com/v1 --model your-model --limit 3 --output benchmark/results/trial_3cases_local.json
+# Online: calls a real OpenAI-compatible API (network + possibly cost).
+# Requires --base-url/--model and a valid key (ZMWIKI_API_KEY or --api-key).
+# Runs BOTH the offline baseline and the online WikiAgent.
+python benchmark/run_multihop_evaluation.py --live --auto-links \
+  --base-url https://api.deepseek.com/v1 --model deepseek-chat \
+  --output benchmark/results/live_run_local.json
 ```
 
-API keys are read from `--api-key` or the `ZMWIKI_API_KEY` environment variable.
-Anonymous endpoints require `--allow-anonymous` for `--live`. Results are
-written to the requested JSON file (it must not already exist), with per-case
-records, aggregate metrics, configuration, git SHA, and source file hashes.
-For live runs, a per-case checkpoint JSONL is written beside it for incremental
-persistence.
+Add `--limit 3` for a 3-case smoke run. Anonymous endpoints (e.g. local Ollama)
+need `--allow-anonymous` for `--live`. Results are written only to a new JSON
+file, with per-case records, aggregate metrics, configuration, git SHA, and
+source file hashes. Live runs also write a per-case `*.checkpoint.jsonl` beside
+the output and refuse to append to a stale checkpoint.
 
 In this benchmark section, lowercase `zmwiki` refers to the retrieval/evaluation
 package and backbone; `ZMWiki` refers to the wiki system built on top of it.
