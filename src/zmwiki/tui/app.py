@@ -1449,7 +1449,12 @@ class ZMWikiApp(App[None]):
         if self.preview_article is not None:
             self._set_status("请先按 ESC 取消维基百科预览")
             return
-        missing = [key for key in self.sources if not Path(key).exists()]
+        # Web imports register virtual "upload:<filename>" sources, not local
+        # files; they must never be treated as missing paths.
+        missing = [
+            key for key in self.sources
+            if not key.startswith("upload:") and not Path(key).exists()
+        ]
         if not missing:
             if not self.sources:
                 self._set_status("源同步 // 没有已登记的源文件")

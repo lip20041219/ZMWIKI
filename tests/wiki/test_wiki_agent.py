@@ -171,6 +171,9 @@ class TestSinglePageQuestion:
             _json_response(_completion(json.dumps({
                 "action": "answer", "text": "answer without sources", "sources": [],
             }))),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "answer without sources", "sources": [],
+            }))),
         ]
         agent = _agent(idx, responses)
         result = agent.answer("test")
@@ -178,6 +181,9 @@ class TestSinglePageQuestion:
         assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
         assert result.pages_read == 1
         assert result.sources == ()
+        assert [s.action for s in result.steps] == ["read", "answer", "answer"]
+        assert result.steps[1].error == "answer cited no read pages as sources"
+        assert result.steps[2].error == "answer cited no read pages as sources"
 
 
 # ---------------------------------------------------------------------------
@@ -497,6 +503,104 @@ class TestModelFailures:
 
 
 # ---------------------------------------------------------------------------
+# Final-step answering
+# ---------------------------------------------------------------------------
+
+
+class TestFinalStepAnswer:
+    def test_unanswerable_case_is_prompted_to_answer_at_budget(self):
+        idx = WikiIndex()
+        idx.upsert(_page(
+            "eve", "people/eve", "Eve",
+            "Eve reports directly to the CEO.",
+        ))
+        responses = [
+            _json_response(_completion(json.dumps({
+                "action": "read", "paths": ["people/eve"],
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "search", "query": "CEO name",
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "answer",
+                "text": "The CEO is not stated in the pages.",
+                "sources": ["eve"],
+            }))),
+        ]
+        agent = _agent(idx, responses, max_steps=3)
+        result = agent.answer("Who is the CEO?")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert result.pages_read == 1
+        assert result.sources == ("people/eve",)
+        assert "not stated" in result.answer.lower()
+        assert [s.action for s in result.steps] == ["read", "search", "answer"]
+        assert len(agent.transport.requests) == 3
+
+        messages = json.loads(agent.transport.requests[-1].body)["messages"]
+        assert any(
+            m["role"] == "user"
+            and "FINAL STEP" in m["content"]
+            and '["eve"]' in m["content"]
+            for m in messages
+        )
+
+    def test_answerable_case_is_not_forced_to_refuse_at_budget(self):
+        idx = WikiIndex()
+        idx.upsert(_page(
+            "alice", "people/alice", "Alice",
+            "Alice manages the platform engineering group.",
+        ))
+        responses = [
+            _json_response(_completion(json.dumps({
+                "action": "read", "paths": ["people/alice"],
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "search", "query": "platform engineering",
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "answer",
+                "text": "Alice manages the platform engineering group.",
+                "sources": ["alice"],
+            }))),
+        ]
+        agent = _agent(idx, responses, max_steps=3)
+        result = agent.answer("Who manages platform engineering?")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert result.answer == "Alice manages the platform engineering group."
+        assert result.sources == ("people/alice",)
+        assert len(agent.transport.requests) == 3
+
+    def test_final_step_still_rejects_unread_sources(self):
+        idx = WikiIndex()
+        idx.upsert(_page(
+            "eve", "people/eve", "Eve",
+            "Eve reports directly to the CEO.",
+        ))
+        responses = [
+            _json_response(_completion(json.dumps({
+                "action": "read", "paths": ["people/eve"],
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "search", "query": "CEO name",
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "answer",
+                "text": "The CEO is not stated in the pages.",
+                "sources": ["unknown"],
+            }))),
+        ]
+        agent = _agent(idx, responses, max_steps=3)
+        result = agent.answer("Who is the CEO?")
+
+        assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
+        assert result.sources == ()
+        assert result.read_page_ids == ("eve",)
+        assert len(agent.transport.requests) == 3
+
+
+# ---------------------------------------------------------------------------
 # Source tracking
 # ---------------------------------------------------------------------------
 
@@ -518,6 +622,84 @@ class TestSourceTracking:
 
         # Only p1 was read, so only p1's path appears in sources.
         assert result.sources == ("a/p1",)
+
+    @pytest.mark.parametrize("bad_source", [
+        "Page",        # title
+        "a/p1",        # path
+        "p1.txt",      # filename
+        "missing",     # unknown page ID
+    ])
+    def test_invalid_source_forms_are_not_accepted(self, bad_source):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "content"))
+        responses = [
+            _json_response(_completion(json.dumps({"action": "read", "paths": ["a/p1"]}))),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "ok", "sources": [bad_source],
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "still ok", "sources": [bad_source],
+            }))),
+        ]
+        agent = _agent(idx, responses)
+        result = agent.answer("test")
+
+        assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
+        assert result.pages_read == 1
+        assert result.sources == ()
+        assert result.answer == "still ok"
+        assert [s.action for s in result.steps] == ["read", "answer", "answer"]
+        assert result.steps[1].error == "answer cited no read pages as sources"
+        assert result.steps[2].error == "answer cited no read pages as sources"
+        # Exactly read + rejected answer + final answer: no endless retry.
+        assert len(agent.transport.requests) == 3
+
+    def test_invalid_source_gets_one_correction_then_succeeds(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "content"))
+        responses = [
+            _json_response(_completion(json.dumps({"action": "read", "paths": ["a/p1"]}))),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "ok", "sources": ["Page"],
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "ok", "sources": ["p1"],
+            }))),
+        ]
+        agent = _agent(idx, responses)
+        result = agent.answer("test")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert result.pages_read == 1
+        assert result.sources == ("a/p1",)
+        assert [s.action for s in result.steps] == ["read", "answer", "answer"]
+        assert result.steps[1].error == "answer cited no read pages as sources"
+        assert result.steps[2].error is None
+        assert result.steps[2].params["sources"] == ["p1"]
+
+        messages = json.loads(agent.transport.requests[-1].body)["messages"]
+        user_text = [m["content"] for m in messages if m["role"] == "user"]
+        assert any(
+            '["p1"]' in text and "exact page IDs" in text
+            for text in user_text
+        )
+
+    def test_last_step_invalid_answer_is_insufficient_without_retry(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "content"))
+        responses = [
+            _json_response(_completion(json.dumps({"action": "read", "paths": ["a/p1"]}))),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "ok", "sources": ["Page"],
+            }))),
+        ]
+        agent = _agent(idx, responses, max_steps=2)
+        result = agent.answer("test")
+
+        assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
+        assert result.sources == ()
+        assert [s.action for s in result.steps] == ["read", "answer"]
+        assert len(agent.transport.requests) == 2
 
     def test_steps_record_full_action_history(self):
         idx = WikiIndex()

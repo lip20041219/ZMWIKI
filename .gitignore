@@ -45,3 +45,8 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/
+
+# Local workspace data and temporary outputs
+/$out
+/data/
+/my_wiki.stage2-backup-*.json

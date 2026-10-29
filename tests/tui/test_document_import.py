@@ -749,6 +749,112 @@ def test_source_sync_keeps_page_not_owned_by_source(tmp_path):
     _run(scenario)
 
 
+def _web_imported_page():
+    document_id = "local-apple_10k"
+    return WikiPage(
+        id="page-local-apple_10k",
+        path="sources/apple_10k",
+        title="Apple 10-K",
+        content="Apple 10-K body.",
+        sources=(document_id,),
+        metadata={"source_document_id": document_id},
+    )
+
+
+def test_source_sync_keeps_web_upload_source(tmp_path):
+    page = _web_imported_page()
+    registry = {
+        "upload:apple_10k.txt": {
+            "page_id": page.id,
+            "document_id": "local-apple_10k",
+            "fingerprint": "web-fingerprint",
+        }
+    }
+    workspace = _workspace(tmp_path, [page], registry)
+    app = _app(tmp_path, None, workspace_path=workspace)
+
+    async def scenario():
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            app.query_one("#pages", OptionList).focus()
+            await pilot.press("u")
+            await pilot.pause()
+
+            kept = app.index.get(page.id)
+            assert kept is not None
+            assert kept.sources == page.sources
+            assert kept.metadata["source_document_id"] == "local-apple_10k"
+            assert app.sources == registry
+            status = app.query_one("#statusbar", Static).content
+            assert "源同步" in status
+            assert "清理" not in status
+
+    _run(scenario)
+
+    reloaded, sources = load_workspace_state(workspace)
+    kept = reloaded.get(page.id)
+    assert kept is not None
+    assert kept.sources == page.sources
+    assert kept.metadata["source_document_id"] == "local-apple_10k"
+    assert sources == registry
+
+
+def test_source_sync_still_removes_missing_local_source_with_web_source(tmp_path):
+    web_page = _web_imported_page()
+    gone = tmp_path / "gone.txt"
+    local_page = WikiPage(
+        id="page-local-gone",
+        path="sources/gone",
+        title="Gone",
+        content="Gone body.",
+        sources=("local-gone",),
+        metadata={"source_document_id": "local-gone"},
+    )
+    registry = {
+        "upload:apple_10k.txt": {
+            "page_id": web_page.id,
+            "document_id": "local-apple_10k",
+            "fingerprint": "web-fingerprint",
+        },
+        source_key(gone): {
+            "page_id": local_page.id,
+            "document_id": "local-gone",
+            "fingerprint": "deadbeef",
+        },
+    }
+    workspace = _workspace(tmp_path, [web_page, local_page], registry)
+    app = _app(tmp_path, None, workspace_path=workspace)
+
+    async def scenario():
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            app.query_one("#pages", OptionList).focus()
+            await pilot.press("u")
+            await pilot.pause()
+
+            assert app.index.get(local_page.id) is None
+            assert source_key(gone) not in app.sources
+            kept = app.index.get(web_page.id)
+            assert kept is not None
+            assert kept.sources == web_page.sources
+            assert kept.metadata["source_document_id"] == "local-apple_10k"
+            assert app.sources == {
+                "upload:apple_10k.txt": registry["upload:apple_10k.txt"]
+            }
+            status = app.query_one("#statusbar", Static).content
+            assert "清理 1 页" in status
+            assert "已保存" in status
+
+    _run(scenario)
+
+    reloaded, sources = load_workspace_state(workspace)
+    assert reloaded.get(local_page.id) is None
+    kept = reloaded.get(web_page.id)
+    assert kept is not None
+    assert kept.metadata["source_document_id"] == "local-apple_10k"
+    assert sources == {"upload:apple_10k.txt": registry["upload:apple_10k.txt"]}
+
+
 def test_reimport_preserves_manual_links_and_drops_generated_ones(tmp_path):
     alice = WikiPage(
         id="alice", path="people/alice", title="Alice", content="Alice body."

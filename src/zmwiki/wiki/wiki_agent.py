@@ -71,19 +71,23 @@ _SYSTEM_PROMPT = (
     '3. {"action": "follow_links", "from_page": "page_id"} — Follow links from '
     "a page you already read. Reads all linked pages.\n"
     '4. {"action": "answer", "text": "...", "sources": ["page_id1", "page_id2"]} '
-    "— Final answer. Sources must be page IDs of pages you actually read.\n\n"
+    "— Final answer. Sources must be the exact page IDs shown in [square "
+    "brackets] in the search/read results. Never use titles, paths, filenames, "
+    "or source document IDs.\n\n"
     "Rules:\n"
     "- You MUST read at least one page before answering.\n"
     "- Base your answer ONLY on content from pages you have read.\n"
     "- If a page result is truncated, use its continuation offset before "
     "answering if the missing part may contain the evidence.\n"
     "- If evidence is insufficient, answer with text explaining what you could "
-    "not confirm, and list the pages you did read as sources.\n"
+    "not confirm, and list the page IDs of the pages you did read as sources.\n"
     "- Do not repeat the exact same search or read.\n"
     "- Output only the JSON action object — no markdown fencing, no extra text."
 )
 
 _VALID_ACTIONS = frozenset({"search", "read", "follow_links", "answer"})
+
+_ANSWER_SOURCES_ERROR = "answer cited no read pages as sources"
 
 #: Protocol-error diagnostics keep at most this many characters of model output.
 _MAX_RAW_OUTPUT_CHARS = 2000
@@ -239,8 +243,22 @@ class WikiAgent:
         seen_page_ids: set[str] = set()
         seen_actions: set[str] = set()
         consecutive_errors = 0
+        answer_correction_used = False
 
         for step_num in range(self.max_steps):
+            # At the last step, stop tool exploration and ask for a final
+            # answer from pages already read. The model still decides whether
+            # the evidence answers the question or is insufficient.
+            if step_num == self.max_steps - 1 and read_pages:
+                reminder = _final_answer_msg(read_pages)
+                if messages[-1]["role"] == "user":
+                    messages[-1] = {
+                        "role": "user",
+                        "content": messages[-1]["content"] + "\n\n" + reminder,
+                    }
+                else:
+                    messages.append({"role": "user", "content": reminder})
+
             # --- Model call ---
             try:
                 raw = self._call_model(messages)
@@ -316,6 +334,30 @@ class WikiAgent:
                     read_pages[p.id] = p
                     seen_page_ids.add(p.id)
             elif action == "answer":
+                valid_ids = _valid_source_ids(
+                    action_data.get("sources", []), read_pages
+                )
+                if (
+                    read_pages
+                    and not valid_ids
+                    and not answer_correction_used
+                    and step_num + 1 < self.max_steps
+                ):
+                    answer_correction_used = True
+                    steps.append(AgentStep(
+                        step=step_num, action="answer",
+                        params={"text": action_data["text"][:200], "sources": []},
+                        result_summary=(
+                            "answer rejected: no valid read-page source ID"
+                        ),
+                        error=_ANSWER_SOURCES_ERROR,
+                    ))
+                    messages.append({"role": "assistant", "content": raw})
+                    messages.append({
+                        "role": "user",
+                        "content": _source_correction_msg(read_pages),
+                    })
+                    continue
                 return self._do_answer(step_num, action_data, read_pages, steps)
             else:
                 # Should be unreachable due to _parse_action validation.
@@ -477,13 +519,12 @@ class WikiAgent:
         steps: list[AgentStep],
     ) -> AgentResult:
         text = action_data.get("text", "")
-        source_ids = action_data.get("sources", [])
         if not isinstance(text, str) or not text.strip():
             text = ""
-        if not isinstance(source_ids, list):
-            source_ids = []
-        # Only count sources that were actually read.
-        valid_ids = [sid for sid in source_ids if isinstance(sid, str) and sid in read_pages]
+        # Only count cited IDs that were actually read.
+        valid_ids = _valid_source_ids(
+            action_data.get("sources", []), read_pages
+        )
         source_paths = tuple(read_pages[sid].path for sid in valid_ids)
 
         if not read_pages:
@@ -491,7 +532,7 @@ class WikiAgent:
             error = "answered without reading any pages"
         elif not valid_ids:
             status = AgentStatus.INSUFFICIENT_EVIDENCE
-            error = "answer cited no read pages as sources"
+            error = _ANSWER_SOURCES_ERROR
         else:
             status = AgentStatus.ANSWERED
             error = None
@@ -583,6 +624,41 @@ def _parse_action(raw: str) -> dict[str, Any]:
         data["sources"] = sources
 
     return data
+
+
+def _valid_source_ids(
+    source_ids: object, read_pages: dict[str, WikiPage]
+) -> list[str]:
+    """Return cited strings that are IDs of pages actually read."""
+    if not isinstance(source_ids, list):
+        return []
+    return [
+        sid for sid in source_ids
+        if isinstance(sid, str) and sid in read_pages
+    ]
+
+
+def _source_correction_msg(read_pages: dict[str, WikiPage]) -> str:
+    """Ask the model to re-answer with exact IDs of pages it read."""
+    ids = json.dumps(sorted(read_pages))
+    return (
+        "Your answer did not cite any valid read-page ID. Re-submit the answer "
+        f"action with sources set to the exact page IDs you read: {ids}. "
+        "Use the IDs shown in [square brackets] in the search/read results; "
+        "do not use titles, paths, filenames, or source document IDs."
+    )
+
+
+def _final_answer_msg(read_pages: dict[str, WikiPage]) -> str:
+    """Require a final answer from already-read pages at the step budget."""
+    ids = json.dumps(sorted(read_pages))
+    return (
+        "FINAL STEP: Do not search or read again. Submit an answer now using "
+        f"only the pages you have already read ({ids}). If those pages do not "
+        "contain the answer, say explicitly that it is not stated or not found, "
+        "and cite the page IDs you read as sources. Do not invent an answer or "
+        "cite pages you did not read."
+    )
 
 
 def _action_key(action: str, data: dict[str, Any]) -> str:

@@ -164,6 +164,11 @@ def test_ask_reports_insufficient_evidence():
             "text": "I am not sure.",
             "sources": [],
         }),
+        _completion({
+            "action": "answer",
+            "text": "I am not sure.",
+            "sources": [],
+        }),
     ]
     with _serving(
         _index(), agent_factory=_factory(responses)
