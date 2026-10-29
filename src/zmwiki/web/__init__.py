@@ -1,1 +1,1 @@
-"""Local, read-only web layer for ZMWiki."""
+"""Local HTTP API and browser workbench for ZMWiki."""

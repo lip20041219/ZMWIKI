@@ -59,6 +59,10 @@ and terminal UI on top.
   local `.txt` import with a source registry and sync, Wikipedia import, explicit
   workspace save, and agent answers with step-level diagnostics and source
   navigation
+- **Browser Workbench** — `/app` provides page list/search, create/edit/delete,
+  outgoing links, backlinks, sources, `.txt` document import, explicit
+  workspace save, and step-by-step agent Q&A using only native
+  HTML/CSS/JavaScript
 
 ### Retrieval & Evaluation Backbone (zmwiki)
 
@@ -140,6 +144,11 @@ pip install -e ".[semantic]"
 ```
 
 If `pip` points at a different interpreter, use `python -m pip` instead.
+
+**Windows, no terminal install:** double-click `start_web.bat` in the repository
+root. It checks for Python 3.10+, creates `my_wiki.json` on first run, and
+starts the browser workbench on `http://127.0.0.1:8000/app`. The web server is
+standard-library only, so no `pip install` is needed for this path.
 
 ## 快速上手
 
@@ -242,6 +251,27 @@ python -m zmwiki.tui --workspace my_wiki.json --base-url https://api.deepseek.co
 
 若当前打开的是仓库演示工作区（只读），导入的页面只留在内存、不会写回演示文件；请先用 `--create` 创建自己的工作区。
 
+### 浏览器工作台（/app）
+
+Windows 用户可以直接双击仓库根目录的 **`start_web.bat`**：脚本检查 Python 3.10+，在需要时创建 `my_wiki.json`，然后启动本地服务。Web 服务只用标准库，这条路径不需要先 `pip install`。
+
+手动启动：
+
+```bash
+python -m zmwiki.web.server --workspace my_wiki.json --create --port 8000
+```
+
+`--create` 只在文件不存在时创建空工作区；已有工作区时去掉它。
+
+打开 `http://127.0.0.1:8000/app` 后：
+
+1. 首次打开会自动弹出 **Model setup**（顶栏 **Model** 可随时重新打开）。填写 Base URL、模型名和 API Key，点 **Test connection** 验证连接，再点 **Save**。
+2. 配置保存在本机 `~/.zmwiki/settings.json`（可用 `--settings` 改路径），文件仅当前用户可读，**不要提交到 Git**。浏览器始终拿不到 Key，页面只显示"已配置"。
+3. 侧栏 **Import .txt** 上传 UTF-8 `.txt`（≤2 MiB），服务端用同一套编译器生成页面、解析链接并立即保存；再次上传同名文件会原地更新该页面，不会覆盖手工创建的页面。页面编辑仍只改内存，需点 **Save** 落盘。
+4. 右侧 Ask 面板提问，答案下方显示执行步骤和引用页面。
+
+服务只监听 `127.0.0.1`。演示工作区和 `--read-only` 模式下，页面写入、文档导入和模型配置都会被拒绝（模型可以通过启动参数或环境变量提供）。每次 Web 保存/导入会在工作区旁边保留一份 `<工作区>.bak`；需要回滚时先停止服务，再用它覆盖原文件。
+
 ### 从 Wikipedia 导入并提问
 
 1. 按 `W`，输入主题（例如 `Alan Turing`），回车列出搜索结果。
@@ -259,7 +289,7 @@ python -m zmwiki.tui --workspace my_wiki.json --base-url https://api.deepseek.co
 
 - 当前演示库为 9 页 / 约 9 KB。workspace 有 10 MiB 上限；按约 120 KB/页估算，约可容纳 **80 页**。
 - 加载会随页数明显变慢，因为每次导入/加载都会重建 BM25。公开演示建议保持在几十页以内，更大规模请拆分 workspace。
-- 真实问答和本地 `.txt` 编译导入需要可访问的 **OpenAI 兼容接口**：启动时提供 `--base-url` 和 `--model`，密钥用环境变量 `ZMWIKI_API_KEY`（或 `--api-key`）。未配置时只影响 `A` 提问和 `L` 本地导入；浏览、搜索、编辑、Wikipedia 导入和保存仍可用；仓库不内置本地模型。
+- 真实问答和本地 `.txt` 编译导入需要可访问的 **OpenAI 兼容接口**：TUI 启动时提供 `--base-url` 和 `--model`，密钥用环境变量 `ZMWIKI_API_KEY`（或 `--api-key`）；浏览器工作台可以在 **Model setup** 里填写并测试连接，配置保存在 `~/.zmwiki/settings.json`。未配置时只影响 `A` 提问和 `L` 本地导入；浏览、搜索、编辑、Wikipedia 导入和保存仍可用；仓库不内置本地模型。
 
 ### 用自己的文档
 
@@ -474,15 +504,105 @@ that local import is unavailable; browsing, search, editing and saving still
 work. On the read-only demo workspace, imports stay in memory and are not
 written back.
 
-### HTTP Server
+### HTTP Server / Browser Workbench
+
+First run (creates an empty workspace; drop `--create` afterwards):
 
 ```bash
-python -m zmwiki.web.server --workspace path/to/wiki.json --port 8000
+python -m zmwiki.web.server --workspace my_wiki.json --create --port 8000
 ```
 
-Then open `http://127.0.0.1:8000` in a browser. The server is read-only, uses
-only the Python standard library (`http.server`), and serves the same workspace
-JSON as the TUI. No extra dependencies required.
+On Windows, double-clicking `start_web.bat` does the same without any install
+step. Open `http://127.0.0.1:8000/app` for the workbench: browse and search
+pages, create/edit/delete them, inspect outgoing links, backlinks and sources,
+import `.txt` documents, and press **Save** to persist the workspace. The server
+uses only the Python standard library (`http.server`); no extra dependencies,
+frontend framework, or CDN is required. Page edits are held in memory until you
+save.
+
+**Model setup (browser).** When no model is configured, `/app` opens a setup
+dialog automatically (the top-bar **Model** button reopens it). Enter the Base
+URL, model name and API key, press **Test connection**, then **Save**. The test
+distinguishes authentication failures, a wrong endpoint, rate limiting and
+network errors with actionable messages. The key is stored only on the server,
+in `~/.zmwiki/settings.json` (override with `--settings`; user-only permissions
+on POSIX), and is never returned by any API response, log line or error message
+— the page only learns whether a key exists. The same configuration can still
+come from the CLI or environment, which take precedence at startup:
+
+```bash
+python -m zmwiki.web.server --workspace my_wiki.json --port 8000 \
+  --base-url https://api.deepseek.com/v1 --model deepseek-chat
+# API key: --api-key or ZMWIKI_API_KEY (never sent to the browser)
+```
+
+Without `--base-url/--model`, the saved settings file is used; a configuration
+saved from the browser applies to the running server and persists for the next
+start. A `ZMWIKI_API_KEY` environment variable is used when no stored key is
+present. Read-only mode rejects model-configuration writes (the connection test
+still works) while Agent Q&A remains available.
+
+The bundled demo workspace is read-only automatically. Pass `--read-only` to
+force read-only mode for any workspace; all page, import, model-configuration
+and workspace write requests are rejected by the server. The marketing page
+remains at `http://127.0.0.1:8000/`.
+
+**Backups.** Every web save and import keeps the previous workspace file as
+`<workspace>.bak` (atomically). To roll back, stop the server and copy the
+backup over the workspace file.
+
+**Troubleshooting.**
+
+| Symptom | Action |
+| --- | --- |
+| Ask/Import controls disabled | Open **Model** and save a Base URL and model |
+| Test connection: authentication failed | Check the API key and model permissions |
+| Test connection: endpoint not found | Check the Base URL (usually ends with `/v1`) |
+| Test connection: could not reach the endpoint | Check network/proxy; verify the host is reachable |
+| Import: page already exists | Rename the file or delete the conflicting page |
+| Import: only UTF-8 `.txt` / too large | Save as UTF-8 plain text, at most 2 MiB |
+| Save failed | Check free disk space and write permission for the workspace |
+| Agent: insufficient evidence | Import a document that covers the question |
+
+The **Import .txt** control in the sidebar uploads a UTF-8 `.txt` file, compiles
+it into a wiki page with the same `PlainTextFileIngestor` + `WikiCompiler` +
+link resolver used by the TUI, and saves the workspace immediately. Re-uploading
+the same filename updates the page registered to it; a page that already exists
+for any other reason is never overwritten. Uploads are capped at 2 MiB and are
+never written under a client-supplied path. Import needs the server-side model
+configuration above; without it the control stays disabled.
+
+Model API: `GET /api/config` reports `configured`, `base_url`, `model`,
+`has_api_key` (boolean only), `source` and `settings_file_present`;
+`POST /api/config` accepts `{"base_url": "...", "model": "...", "api_key": "..."}`
+(blank/omitted `api_key` keeps the stored key, `clear_api_key: true` removes it);
+`POST /api/config/test` runs the same validation plus a live connection test and
+returns `{ok, code, message}`. No response ever contains the key.
+
+Write API: `POST /api/pages`, `PUT /api/page?id=...`, `DELETE /api/page?id=...`,
+and `POST /api/workspace/save`. `POST /api/import?filename=notes.txt` takes the
+raw file bytes with `Content-Type: text/plain` and returns `status`,
+`imported_pages`, `updated_pages`, `source`, `links`, `saved` and `errors`.
+For example:
+
+```bash
+curl --data-binary @notes.txt -H "Content-Type: text/plain" \
+  -H "X-ZMWiki-Import: 1" \
+  "http://127.0.0.1:8000/api/import?filename=notes.txt"
+```
+
+The `X-ZMWiki-Import: 1` header is required: without it a cross-origin form
+or `fetch` could trigger an import, because a raw `text/plain` body is a
+"simple request" that browsers send without a CORS preflight. The workbench
+sends the header automatically.
+
+`POST /api/ask` accepts `{"question": "..."}` and returns the answer, agent
+steps, cited pages, read page ids, status and a safe error message. Request
+bodies are JSON except for `/api/import`, and every JSON endpoint requires
+`Content-Type: application/json` (this makes cross-origin calls preflighted and
+therefore blocked); page IDs and filenames in query strings must be URL-encoded.
+Existing read endpoints (`/api/pages`, `/api/page`, `/api/search`) are
+unchanged.
 
 ### Workspace JSON Format
 
@@ -714,10 +834,13 @@ python -m pytest -q
 The full suite includes TUI tests; install with
 `pip install -e ".[dev,tui]"` (pytest + Textual) before running it.
 
-Last verified locally: `1762 passed, 4 skipped` with Python 3.11.9 on Windows.
-The current code commit also passes GitHub Actions (Ubuntu/Python 3.11). The
-four skips are semantic integration tests gated behind environment variables,
-not failures.
+Last verified locally: `1865 passed, 6 skipped` with Python 3.11.9 on Windows.
+The last committed revision also passed GitHub Actions (Ubuntu/Python 3.11).
+The suite is fully offline: agent, compiler and TUI tests inject fake model
+transports, so no API key or network is used. The six skips are optional
+semantic-profile / real-model integration tests gated behind environment
+variables, not failures. Real online model behavior is only exercised by the
+benchmark `--live` commands above and is not covered by this offline suite.
 
 ## Project Scope
 

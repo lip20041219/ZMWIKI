@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d0f">
+  <meta name="description" content="ZMWiki local knowledge workbench: browse, search, edit and save a linked wiki.">
+  <title>ZMWiki — Workbench</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="ZMWiki home">
+      <span class="brand-mark" aria-hidden="true">Z</span>
+      <span>ZMWiki</span>
+    </a>
+    <span class="badge">Workbench</span>
+    <span id="access-badge" class="badge readonly" hidden></span>
+    <p id="status" class="status" role="status" aria-live="polite">Loading…</p>
+    <div class="topbar-actions">
+      <button id="setup-open" class="btn" type="button">Model</button>
+      <button id="new-page" class="btn primary" type="button">New page</button>
+      <button id="save-workspace" class="btn" type="button">Save</button>
+    </div>
+  </header>
+
+  <main id="main" class="workspace">
+    <aside class="sidebar" aria-label="Pages">
+      <label class="field-label" for="search">Search</label>
+      <input id="search" class="search" type="search" placeholder="Search pages…" autocomplete="off">
+      <details id="import-panel" class="import-panel">
+        <summary>Import .txt</summary>
+        <div class="import-body">
+          <input id="import-file" type="file" accept=".txt,text/plain" aria-label="Plain text file to import">
+          <button id="import-submit" class="btn" type="button">Import</button>
+          <p id="import-hint" class="hint">Compiles a UTF-8 .txt file into a wiki page.</p>
+          <p id="import-status" class="import-status" role="status" aria-live="polite"></p>
+        </div>
+      </details>
+      <div class="list-head">
+        <span id="list-title">Pages</span>
+        <span id="list-count" class="muted"></span>
+      </div>
+      <div id="page-list" class="page-list" role="listbox" aria-label="Wiki pages"></div>
+    </aside>
+
+    <section class="content" aria-label="Page content">
+      <div id="empty" class="empty">
+        <p class="eyebrow">Local wiki</p>
+        <h1>No page selected</h1>
+        <p>Select a page from the list or create a new one.</p>
+      </div>
+
+      <article id="reader" class="reader" hidden>
+        <header class="reader-head">
+          <div>
+            <p id="page-path" class="path"></p>
+            <h1 id="page-title"></h1>
+          </div>
+          <div id="page-tags" class="tags"></div>
+        </header>
+        <p id="page-description" class="description"></p>
+        <pre id="page-content" class="page-content"></pre>
+      </article>
+
+      <form id="editor" class="editor" hidden novalidate>
+        <div class="editor-head">
+          <div>
+            <p class="eyebrow">Edit page</p>
+            <h1 id="editor-title">New page</h1>
+          </div>
+          <p id="editor-hint" class="muted">Fields marked * are required.</p>
+        </div>
+
+        <div class="form-grid two">
+          <label class="field">ID *
+            <input id="edit-id" name="id" autocomplete="off" required>
+          </label>
+          <label class="field">Path *
+            <input id="edit-path" name="path" autocomplete="off" required>
+          </label>
+        </div>
+
+        <label class="field">Title *
+          <input id="edit-title" name="title" autocomplete="off" required>
+        </label>
+
+        <div class="form-grid two">
+          <label class="field">Aliases
+            <input id="edit-aliases" name="aliases" placeholder="comma separated" autocomplete="off">
+          </label>
+          <label class="field">Tags
+            <input id="edit-tags" name="tags" placeholder="comma separated" autocomplete="off">
+          </label>
+        </div>
+
+        <label class="field">Description
+          <input id="edit-description" name="description" autocomplete="off">
+        </label>
+
+        <label class="field">Outgoing links
+          <input id="edit-links" name="links" placeholder="page-id, other-page-id" autocomplete="off">
+          <span class="hint">Comma separated page IDs. Targets must already exist.</span>
+        </label>
+
+        <label class="field">Content *
+          <textarea id="edit-content" name="content" rows="16" required></textarea>
+        </label>
+
+        <div class="editor-actions">
+          <button id="editor-submit" class="btn primary" type="submit">Apply</button>
+          <button id="editor-cancel" class="btn" type="button">Cancel</button>
+          <span class="hint">Apply changes the in-memory wiki; press Save to write the workspace.</span>
+        </div>
+      </form>
+    </section>
+
+    <aside id="details" class="details" aria-label="Ask and page details">
+      <section class="panel ask-panel">
+        <h2>Ask the wiki</h2>
+        <form id="ask-form">
+          <label class="field" for="ask-question">Question
+            <textarea id="ask-question" rows="3" placeholder="Ask a question about this wiki…"></textarea>
+          </label>
+          <div class="ask-actions">
+            <button id="ask-submit" class="btn primary" type="submit">Ask</button>
+            <span id="ask-hint" class="hint">Multi-step search, read and link traversal.</span>
+          </div>
+        </form>
+        <p id="ask-status" class="ask-status" role="status" aria-live="polite"></p>
+        <div id="ask-result" hidden>
+          <h3>Answer</h3>
+          <div id="ask-answer" class="ask-answer"></div>
+          <h3>Steps</h3>
+          <ol id="ask-steps" class="step-list"></ol>
+          <h3>Cited pages</h3>
+          <div id="ask-evidence" class="link-list"></div>
+        </div>
+      </section>
+
+      <div id="page-details" class="detail-stack" hidden>
+        <section class="panel">
+          <h2>Page</h2>
+          <dl id="page-meta" class="meta"></dl>
+          <div class="detail-actions">
+            <button id="edit-page" class="btn" type="button">Edit</button>
+            <button id="delete-page" class="btn danger" type="button">Delete</button>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Outgoing links</h2>
+          <div id="outbound" class="link-list"></div>
+        </section>
+        <section class="panel">
+          <h2>Backlinks</h2>
+          <div id="inbound" class="link-list"></div>
+        </section>
+        <section class="panel">
+          <h2>Sources</h2>
+          <div id="sources" class="link-list"></div>
+        </section>
+      </div>
+    </aside>
+  </main>
+
+  <dialog id="setup" class="setup-dialog" aria-labelledby="setup-title">
+    <form id="setup-form" class="setup-form" novalidate>
+      <div>
+        <p class="eyebrow">First-time setup</p>
+        <h2 id="setup-title">Model setup</h2>
+        <p id="setup-server-status" class="hint"></p>
+      </div>
+      <label class="field">Base URL
+        <input id="setup-base-url" autocomplete="off" placeholder="https://api.deepseek.com/v1">
+        <span class="hint">The OpenAI-compatible API root, usually ending in /v1.</span>
+      </label>
+      <label class="field">Model
+        <input id="setup-model" autocomplete="off" placeholder="deepseek-chat">
+      </label>
+      <label class="field">API key
+        <input id="setup-api-key" type="password" autocomplete="off" spellcheck="false">
+        <span id="setup-key-hint" class="hint"></span>
+      </label>
+      <label id="setup-clear-wrap" class="check" hidden>
+        <input id="setup-clear-key" type="checkbox"> Remove the stored key
+      </label>
+      <p id="setup-status" class="setup-status" role="status" aria-live="polite"></p>
+      <div class="setup-actions">
+        <button id="setup-test" class="btn" type="button">Test connection</button>
+        <button id="setup-save" class="btn primary" type="submit">Save</button>
+        <button id="setup-close" class="btn" type="button">Later</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="footer">
+    <span>ZMWiki local workbench</span>
+    <a href="/">Home</a>
+  </footer>
+
+  <noscript>This workbench needs JavaScript. The read-only API is still available.</noscript>
+  <script src="app.js" defer></script>
+</body>
+</html>

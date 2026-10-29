@@ -30,6 +30,7 @@
       </nav>
 
       <div class="header-actions">
+        <a class="ghost-link" href="/app">Workbench</a>
         <a class="ghost-link" href="https://github.com/lip20041219/zmwiki">GitHub</a>
         <a class="btn btn-small" href="#terminal">Get started</a>
       </div>
@@ -42,6 +43,7 @@
           <a href="#roadmap">Roadmap</a>
           <a href="#faq">FAQ</a>
           <a href="#terminal">Get started</a>
+          <a href="/app">Workbench</a>
           <a href="https://github.com/lip20041219/zmwiki">GitHub</a>
         </nav>
       </details>
@@ -205,7 +207,7 @@
           <h2>Six modules. One local loop.</h2>
           <p class="section-lede">
             These are shipped modules in the repository today. The browser
-            workbench is not one of them — it is on the roadmap.
+            workbench is available at <a href="/app">/app</a>.
           </p>
         </div>
 
@@ -317,9 +319,10 @@
             <li>Wiki and benchmark tests run offline</li>
           </ul>
           <p class="fine-print">
-            A read-only local HTTP server ships with the package
+            A local HTTP server ships with the package
             (<code>python -m zmwiki.web.server</code>). The browser workbench
-            is still on the roadmap.
+            at <code>/app</code> supports browsing, search, editing, saving, <code>.txt</code> document
+            import and step-by-step agent Q&amp;A.
           </p>
         </div>
 
@@ -355,13 +358,13 @@
               <li>Document-to-page <code>WikiCompiler</code></li>
               <li>RAG baseline and offline evaluation</li>
               <li>JSON workspace persistence (<code>--workspace</code>)</li>
-              <li>Read-only local HTTP server</li>
+              <li>Local HTTP server and browser workbench</li>
+              <li>Browser agent Q&amp;A with steps and cited pages</li>
             </ul>
           </div>
           <div class="roadmap-card">
             <div class="roadmap-head"><span class="status-dot progress" aria-hidden="true"></span><h3>In Progress</h3></div>
             <ul>
-              <li>Browser workbench for search, read and ask</li>
               <li>Broader document format ingestion</li>
             </ul>
             <p class="roadmap-note">Not shipped yet. Do not expect these capabilities in the current release.</p>
@@ -389,11 +392,11 @@
           </details>
           <details class="faq-item">
             <summary>Is there a browser workbench or local server?</summary>
-            <p>The package ships a read-only local HTTP server:
+            <p>The package ships a local HTTP server:
             <code>python -m zmwiki.web.server --workspace path/to/wiki.json</code>.
-            It serves page list, page detail and search APIs over the same
-            workspace. A browser workbench (search, read, ask) is still in
-            progress.</p>
+            Open <code>/app</code> for the workbench: page list, search, page
+            detail, create/edit/delete, links and sources, workspace save, <code>.txt</code>
+            document import, and multi-step agent Q&amp;A with cited pages.</p>
           </details>
           <details class="faq-item">
             <summary>Where is my wiki stored?</summary>

@@ -13,7 +13,8 @@ resolve to the same page. It is omitted when empty.
 ``load_workspace_state`` additionally returns the registry.
 ``save_workspace`` writes a WikiIndex back to disk using an atomic
 temp-file-and-replace strategy, so a crash mid-write never leaves a
-half-written JSON file in place of the original.
+half-written JSON file in place of the original. With ``backup=True`` it also
+keeps the previous version as ``<name>.bak``.
 """
 
 from __future__ import annotations
@@ -150,12 +151,36 @@ def load_workspace_state(
     return index, _parse_sources(payload)
 
 
+def _write_backup(target: Path) -> None:
+    """Copy ``target`` to ``<name>.bak`` using a temp file + atomic replace."""
+    backup = target.with_name(target.name + ".bak")
+    tmp_path: Path | None = None
+    try:
+        fd, tmp_name = tempfile.mkstemp(
+            dir=target.parent, prefix=".workspace-backup-", suffix=".tmp",
+        )
+        tmp_path = Path(tmp_name)
+        with os.fdopen(fd, "wb") as dst, target.open("rb") as src:
+            while chunk := src.read(1024 * 1024):
+                dst.write(chunk)
+        os.replace(tmp_path, backup)
+        tmp_path = None
+    except OSError:
+        if tmp_path is not None:
+            try:
+                tmp_path.unlink()
+            except OSError:
+                pass
+        raise WorkspaceError("workspace backup cannot be written") from None
+
+
 def save_workspace(
     index: WikiIndex,
     path: str | Path,
     *,
     overwrite: bool = False,
     sources: SourceRegistry | None = None,
+    backup: bool = False,
 ) -> None:
     """Persist every page in ``index`` to a workspace JSON file.
 
@@ -173,9 +198,13 @@ def save_workspace(
       * If serialization or the temp-file write fails, the temp file is removed and
         the original target (if any) is left untouched.
       * The in-memory ``index`` and its pages are never modified.
+      * With ``backup=True``, the previous file content is copied to
+        ``<name>.bak`` (atomically) before the new content replaces it, so a
+        bad save or import can be rolled back by copying the backup back.
 
     Raises :class:`WorkspaceError` for missing directory, existing-file collision
-    (when ``overwrite`` is false), serialization failure, or write failure.
+    (when ``overwrite`` is false), backup failure, serialization failure, or
+    write failure.
     """
     target = Path(path)
     target_dir = target.parent
@@ -189,6 +218,10 @@ def save_workspace(
         raise WorkspaceError(
             "workspace file already exists; pass overwrite=True to replace it"
         )
+
+    # Keep the previous version recoverable before replacing it.
+    if backup and target.is_file():
+        _write_backup(target)
 
     # Serialize before touching the filesystem — if this fails, no file is created.
     pages = index.list_pages()

@@ -381,3 +381,23 @@ class TestSaveWorkspace:
         payload = json.loads(path.read_text(encoding="utf-8"))
         ids = [p["id"] for p in payload["pages"]]
         assert ids == ["alice", "bob", "charlie"]
+
+    def test_backup_keeps_the_previous_version(self, tmp_path):
+        path = tmp_path / "ws.json"
+        save_workspace(_build_index("alice"), path)
+        save_workspace(_build_index("bob"), path, overwrite=True, backup=True)
+        backup = tmp_path / "ws.json.bak"
+
+        assert load_workspace(backup).count() == 1
+        assert load_workspace(backup).get("alice") is not None
+
+        # A second backed-up save rotates the backup to the newest old state.
+        save_workspace(_build_index("carol"), path, overwrite=True, backup=True)
+        assert load_workspace(backup).get("bob") is not None
+        assert load_workspace(path).get("carol") is not None
+
+    def test_no_backup_by_default(self, tmp_path):
+        path = tmp_path / "ws.json"
+        save_workspace(_build_index("alice"), path)
+        save_workspace(_build_index("bob"), path, overwrite=True)
+        assert not (tmp_path / "ws.json.bak").exists()
