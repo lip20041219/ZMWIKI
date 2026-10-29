@@ -288,9 +288,9 @@ python -m zmwiki.web.server --workspace my_wiki.json --create --port 8000
 
 打开 `http://127.0.0.1:8000/app` 后：
 
-1. 首次打开会自动弹出 **Model setup**（顶栏 **Model** 可随时重新打开）。填写 Base URL、模型名和 API Key，点 **Test connection** 验证连接，再点 **Save**。
+1. 首次打开会自动弹出 **模型设置**（顶栏 **配置模型 / 模型设置** 可随时重新打开）。填写 API 地址、模型名和 API Key，点 **测试连接** 验证连接，再点 **保存配置**。
 2. 配置保存在本机 `~/.zmwiki/settings.json`（可用 `--settings` 改路径），文件仅当前用户可读，**不要提交到 Git**。浏览器始终拿不到 Key，页面只显示"已配置"。
-3. 侧栏 **Import .txt** 上传 UTF-8 `.txt`（≤2 MiB），服务端用同一套编译器生成页面、解析链接并立即保存；再次上传同名文件会原地更新该页面，不会覆盖手工创建的页面。页面编辑仍只改内存，需点 **Save** 落盘。
+3. 左侧导航 **文档导入** 上传 UTF-8 `.txt`（≤2 MiB），服务端用同一套编译器生成页面、解析链接并立即保存；再次上传同名文件会原地更新该页面，不会覆盖手工创建的页面。页面编辑仍只改内存，需点 **保存** 落盘。
 4. 右侧 Ask 面板提问，答案下方显示执行步骤和引用页面。
 
 服务只监听 `127.0.0.1`。演示工作区和 `--read-only` 模式下，页面写入、文档导入和模型配置都会被拒绝（模型可以通过启动参数或环境变量提供）。每次 Web 保存/导入会在工作区旁边保留一份 `<工作区>.bak`；需要回滚时先停止服务，再用它覆盖原文件。
@@ -312,7 +312,7 @@ python -m zmwiki.tui --workspace my_wiki.json --base-url https://api.deepseek.co
 
 - 当前演示库为 9 页 / 约 9 KB。workspace 有 10 MiB 上限；按约 120 KB/页估算，约可容纳 **80 页**。
 - 加载会随页数明显变慢，因为每次导入/加载都会重建 BM25。公开演示建议保持在几十页以内，更大规模请拆分 workspace。
-- 真实问答和本地 `.txt` 编译导入需要可访问的 **OpenAI 兼容接口**：TUI 启动时提供 `--base-url` 和 `--model`，密钥用环境变量 `ZMWIKI_API_KEY`（或 `--api-key`）；浏览器工作台可以在 **Model setup** 里填写并测试连接，配置保存在 `~/.zmwiki/settings.json`。未配置时只影响 `A` 提问和 `L` 本地导入；浏览、搜索、编辑、Wikipedia 导入和保存仍可用；仓库不内置本地模型。
+- 真实问答和本地 `.txt` 编译导入需要可访问的 **OpenAI 兼容接口**：TUI 启动时提供 `--base-url` 和 `--model`，密钥用环境变量 `ZMWIKI_API_KEY`（或 `--api-key`）；浏览器工作台可以在 **模型设置** 里填写并测试连接，配置保存在 `~/.zmwiki/settings.json`。未配置时只影响 `A` 提问和 `L` 本地导入；浏览、搜索、编辑、Wikipedia 导入和保存仍可用；仓库不内置本地模型。
 
 ### 用自己的文档
 
@@ -544,8 +544,9 @@ frontend framework, or CDN is required. Page edits are held in memory until you
 save.
 
 **Model setup (browser).** When no model is configured, `/app` opens a setup
-dialog automatically (the top-bar **Model** button reopens it). Enter the Base
-URL, model name and API key, press **Test connection**, then **Save**. The test
+dialog automatically (the top-bar **配置模型 / 模型设置** button reopens it). The
+dialog is in Chinese: enter the Base URL, model name and API key, press
+**测试连接** (test connection), then **保存配置** (save). The test
 distinguishes authentication failures, a wrong endpoint, rate limiting and
 network errors with actionable messages. The key is stored only on the server,
 in `~/.zmwiki/settings.json` (override with `--settings`; user-only permissions
@@ -591,7 +592,7 @@ backup over the workspace file.
 | Save failed | Check free disk space and write permission for the workspace |
 | Agent: insufficient evidence | Import a document that covers the question |
 
-The **Import .txt** control in the sidebar uploads a UTF-8 `.txt` file, compiles
+The **文档导入** (document import) view in the left navigation uploads a UTF-8 `.txt` file, compiles
 it into a wiki page with the same `PlainTextFileIngestor` + `WikiCompiler` +
 link resolver used by the TUI, and saves the workspace immediately. Re-uploading
 the same filename updates the page registered to it; a page that already exists

@@ -68,13 +68,16 @@ def test_workbench_static_assets():
         response, body = _request(server, "/app")
         assert response.status == 200
         assert response.getheader("Content-Type") == "text/html; charset=utf-8"
-        assert b"Workbench" in body
+        assert "本地知识工作台".encode("utf-8") in body
         assert b"app.css" in body
         assert b"app.js" in body
+        for nav in ("概览", "知识库", "页面", "链接", "搜索", "文档导入", "工作区", "模型设置"):
+            assert nav.encode("utf-8") in body
         assert b'id="ask-question"' in body
         assert b'id="ask-result"' in body
         assert b'id="ask-steps"' in body
         assert b'id="ask-evidence"' in body
+        assert b'id="ask-read"' in body
 
         response, body = _request(server, "/app.html")
         assert response.status == 200

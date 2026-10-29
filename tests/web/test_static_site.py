@@ -15,12 +15,12 @@ CSS_PATH = STATIC_DIR / "styles.css"
 REPO_URL = "https://github.com/lip20041219/zmwiki"
 
 FEATURE_TITLES = (
-    "Structured Wiki Pages",
-    "Metadata-First Search",
-    "Evidence-Aware Reading",
-    "Budgeted Multi-Step Agent",
-    "Source-Aware Compilation",
-    "Measurable Retrieval",
+    "结构化 Wiki 页面",
+    "元数据优先搜索",
+    "证据感知阅读",
+    "有预算的多步 Agent",
+    "来源可追溯的编译",
+    "可度量的检索",
 )
 
 REQUIRED_SECTION_IDS = {
@@ -73,7 +73,7 @@ def test_document_structure_and_viewport():
     assert parser.doctype == "doctype html"
 
     html = _tags(parser, "html")[0]
-    assert html["lang"] == "en"
+    assert html["lang"] == "zh-CN"
 
     metas = _tags(parser, "meta")
     assert any(meta.get("charset", "").lower() == "utf-8" for meta in metas)
@@ -112,10 +112,10 @@ def test_feature_sections_present():
 def test_workflow_and_roadmap_content():
     parser = _parse()
     text = _text(parser)
-    for step in ("Ingest", "Compile & Index", "Search", "Read", "Answer"):
+    for step in ("导入", "编译与索引", "搜索", "阅读", "回答"):
         assert step in text, f"missing workflow step: {step}"
-    assert "Available" in text
-    assert "In Progress" in text
+    assert "已可用" in text
+    assert "开发中" in text
     assert "workflow" in parser.ids
     assert "roadmap" in parser.ids
 
@@ -180,7 +180,7 @@ def test_no_fictional_commands_or_wrong_license():
     assert "pip install -e ." in text
     assert "python -m zmwiki.web.server" in text
     assert f"git clone {REPO_URL}" in text
-    assert "MIT License" in text
+    assert "MIT 许可证" in text
     assert "Proprietary" not in text
     assert not re.search(r"\bApache\b", text)
     license_links = [attrs.get("href", "") for attrs in _tags(parser, "a")]

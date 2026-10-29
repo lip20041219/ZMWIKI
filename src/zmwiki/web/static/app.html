@@ -1,206 +1,375 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b0d0f">
-  <meta name="description" content="ZMWiki local knowledge workbench: browse, search, edit and save a linked wiki.">
-  <title>ZMWiki — Workbench</title>
+  <meta name="theme-color" content="#070b09">
+  <meta name="description" content="ZMWiki 本地知识工作台：导入文档，编译成相互链接的 Wiki 页面，用带证据的 Agent 问答。">
+  <title>ZMWiki — 本地知识工作台</title>
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">跳到主要内容</a>
 
   <header class="topbar">
-    <a class="brand" href="/" aria-label="ZMWiki home">
+    <a class="brand" href="/" aria-label="ZMWiki 首页">
       <span class="brand-mark" aria-hidden="true">Z</span>
-      <span>ZMWiki</span>
+      <span class="brand-text">
+        <strong>ZMWiki</strong>
+        <small>本地知识工作台</small>
+      </span>
     </a>
-    <span class="badge">Workbench</span>
     <span id="access-badge" class="badge readonly" hidden></span>
-    <p id="status" class="status" role="status" aria-live="polite">Loading…</p>
+    <p id="status" class="status" role="status" aria-live="polite">正在加载…</p>
     <div class="topbar-actions">
-      <button id="setup-open" class="btn" type="button">Model</button>
-      <button id="new-page" class="btn primary" type="button">New page</button>
-      <button id="save-workspace" class="btn" type="button">Save</button>
+      <button id="setup-open" class="btn" type="button">配置模型</button>
+      <button id="new-page" class="btn primary" type="button">新建页面</button>
+      <button id="save-workspace" class="btn" type="button">保存</button>
     </div>
   </header>
 
-  <main id="main" class="workspace">
-    <aside class="sidebar" aria-label="Pages">
-      <label class="field-label" for="search">Search</label>
-      <input id="search" class="search" type="search" placeholder="Search pages…" autocomplete="off">
-      <details id="import-panel" class="import-panel">
-        <summary>Import .txt</summary>
-        <div class="import-body">
-          <input id="import-file" type="file" accept=".txt,text/plain" aria-label="Plain text file to import">
-          <button id="import-submit" class="btn" type="button">Import</button>
-          <p id="import-hint" class="hint">Compiles a UTF-8 .txt file into a wiki page.</p>
-          <p id="import-status" class="import-status" role="status" aria-live="polite"></p>
+  <main id="main" class="shell">
+    <aside class="sidebar" aria-label="导航与页面列表">
+      <nav class="nav" aria-label="主导航">
+        <button type="button" class="nav-item active" data-view="overview">概览</button>
+        <button type="button" class="nav-item" data-view="library">知识库</button>
+        <button type="button" class="nav-item" data-view="pages">页面</button>
+        <button type="button" class="nav-item" data-view="links">链接</button>
+        <button type="button" class="nav-item" data-view="search">搜索</button>
+        <button type="button" class="nav-item" data-view="import">文档导入</button>
+        <button type="button" class="nav-item" data-view="workspace">工作区</button>
+        <button type="button" class="nav-item" id="setup-nav" data-action="open-setup">模型设置</button>
+      </nav>
+
+      <div class="sidebar-list">
+        <div class="list-head">
+          <span id="list-title">全部页面</span>
+          <span id="list-count" class="muted">0</span>
         </div>
-      </details>
-      <div class="list-head">
-        <span id="list-title">Pages</span>
-        <span id="list-count" class="muted"></span>
+        <div id="page-list" class="page-list" role="listbox" aria-label="页面列表"></div>
       </div>
-      <div id="page-list" class="page-list" role="listbox" aria-label="Wiki pages"></div>
+
+      <p class="sidebar-foot">本地运行 · 数据不离开本机</p>
     </aside>
 
-    <section class="content" aria-label="Page content">
-      <div id="empty" class="empty">
-        <p class="eyebrow">Local wiki</p>
-        <h1>No page selected</h1>
-        <p>Select a page from the list or create a new one.</p>
-      </div>
+    <section class="main-column" aria-label="主工作区">
 
-      <article id="reader" class="reader" hidden>
-        <header class="reader-head">
-          <div>
-            <p id="page-path" class="path"></p>
-            <h1 id="page-title"></h1>
-          </div>
-          <div id="page-tags" class="tags"></div>
+      <!-- 概览 / AI 问答 -->
+      <section class="view overview-view" data-view-panel="overview">
+        <header class="view-head">
+          <p class="eyebrow">本地 AI 知识库</p>
+          <h1>问你的知识库</h1>
+          <p class="lede">导入文档，编译成相互链接的 Wiki 页面，再让 Agent 逐步检索，并给出来源可核对的回答。</p>
         </header>
-        <p id="page-description" class="description"></p>
-        <pre id="page-content" class="page-content"></pre>
-      </article>
 
-      <form id="editor" class="editor" hidden novalidate>
-        <div class="editor-head">
-          <div>
-            <p class="eyebrow">Edit page</p>
-            <h1 id="editor-title">New page</h1>
+        <div class="stat-row">
+          <div class="stat">
+            <span id="overview-pages" class="stat-value">0</span>
+            <span class="stat-label">个 Wiki 页面</span>
           </div>
-          <p id="editor-hint" class="muted">Fields marked * are required.</p>
-        </div>
-
-        <div class="form-grid two">
-          <label class="field">ID *
-            <input id="edit-id" name="id" autocomplete="off" required>
-          </label>
-          <label class="field">Path *
-            <input id="edit-path" name="path" autocomplete="off" required>
-          </label>
-        </div>
-
-        <label class="field">Title *
-          <input id="edit-title" name="title" autocomplete="off" required>
-        </label>
-
-        <div class="form-grid two">
-          <label class="field">Aliases
-            <input id="edit-aliases" name="aliases" placeholder="comma separated" autocomplete="off">
-          </label>
-          <label class="field">Tags
-            <input id="edit-tags" name="tags" placeholder="comma separated" autocomplete="off">
-          </label>
-        </div>
-
-        <label class="field">Description
-          <input id="edit-description" name="description" autocomplete="off">
-        </label>
-
-        <label class="field">Outgoing links
-          <input id="edit-links" name="links" placeholder="page-id, other-page-id" autocomplete="off">
-          <span class="hint">Comma separated page IDs. Targets must already exist.</span>
-        </label>
-
-        <label class="field">Content *
-          <textarea id="edit-content" name="content" rows="16" required></textarea>
-        </label>
-
-        <div class="editor-actions">
-          <button id="editor-submit" class="btn primary" type="submit">Apply</button>
-          <button id="editor-cancel" class="btn" type="button">Cancel</button>
-          <span class="hint">Apply changes the in-memory wiki; press Save to write the workspace.</span>
-        </div>
-      </form>
-    </section>
-
-    <aside id="details" class="details" aria-label="Ask and page details">
-      <section class="panel ask-panel">
-        <h2>Ask the wiki</h2>
-        <form id="ask-form">
-          <label class="field" for="ask-question">Question
-            <textarea id="ask-question" rows="3" placeholder="Ask a question about this wiki…"></textarea>
-          </label>
-          <div class="ask-actions">
-            <button id="ask-submit" class="btn primary" type="submit">Ask</button>
-            <span id="ask-hint" class="hint">Multi-step search, read and link traversal.</span>
+          <div class="stat">
+            <span id="overview-model" class="stat-value small">未配置</span>
+            <span class="stat-label">模型状态</span>
           </div>
-        </form>
-        <p id="ask-status" class="ask-status" role="status" aria-live="polite"></p>
-        <div id="ask-result" hidden>
-          <h3>Answer</h3>
-          <div id="ask-answer" class="ask-answer"></div>
-          <h3>Steps</h3>
-          <ol id="ask-steps" class="step-list"></ol>
-          <h3>Cited pages</h3>
-          <div id="ask-evidence" class="link-list"></div>
+          <div class="stat">
+            <span id="overview-save" class="stat-value small">尚未保存</span>
+            <span class="stat-label">最近保存</span>
+          </div>
+        </div>
+
+        <div class="panel ask-panel">
+          <div class="panel-head">
+            <h2>AI 问答</h2>
+            <span id="ask-hint" class="hint">多步检索、阅读与链接跟踪。</span>
+          </div>
+          <form id="ask-form">
+            <label class="field" for="ask-question">你的问题
+              <textarea id="ask-question" rows="3" placeholder="例如：Alice 负责哪个项目？她的上级是谁？"></textarea>
+            </label>
+            <div class="ask-actions">
+              <button id="ask-submit" class="btn primary" type="submit">提问</button>
+              <span class="hint">回答只会引用 Agent 实际读过的页面。</span>
+            </div>
+          </form>
+
+          <div class="examples" aria-label="示例问题">
+            <span class="examples-label">试试：</span>
+            <button type="button" class="chip" data-question="Alice 负责哪个项目？">Alice 负责哪个项目？</button>
+            <button type="button" class="chip" data-question="Bob 的职位是什么？">Bob 的职位是什么？</button>
+            <button type="button" class="chip" data-question="项目 Phoenix 的预算是多少？">项目 Phoenix 的预算是多少？</button>
+          </div>
+
+          <p id="ask-status" class="ask-status" role="status" aria-live="polite"></p>
+
+          <div id="ask-result" hidden>
+            <h3>回答</h3>
+            <div id="ask-answer" class="ask-answer"></div>
+            <h3>引用证据</h3>
+            <div id="ask-evidence" class="link-list"></div>
+            <h3>已查阅页面</h3>
+            <p id="ask-read" class="ask-read">—</p>
+            <h3>探索步骤</h3>
+            <ol id="ask-steps" class="step-list"></ol>
+          </div>
         </div>
       </section>
 
-      <div id="page-details" class="detail-stack" hidden>
-        <section class="panel">
-          <h2>Page</h2>
-          <dl id="page-meta" class="meta"></dl>
-          <div class="detail-actions">
-            <button id="edit-page" class="btn" type="button">Edit</button>
-            <button id="delete-page" class="btn danger" type="button">Delete</button>
+      <!-- 知识库 -->
+      <section class="view" data-view-panel="library" hidden>
+        <header class="view-head">
+          <p class="eyebrow">知识库</p>
+          <h1>全部页面</h1>
+          <p class="lede">每个页面都有稳定 ID、路径、标签和双向链接。点击卡片打开页面。</p>
+        </header>
+        <div id="library-grid" class="library-grid" aria-live="polite"></div>
+      </section>
+
+      <!-- 页面阅读 / 编辑 -->
+      <section class="view" data-view-panel="pages" hidden>
+        <div id="empty" class="empty">
+          <p class="eyebrow">本地 Wiki</p>
+          <h1>还没有打开页面</h1>
+          <p>从左侧列表选择页面，或新建一个。需要先导入文档？去「文档导入」上传 TXT。</p>
+          <div class="empty-actions">
+            <button type="button" class="btn primary" data-action="create">新建页面</button>
+            <button type="button" class="btn" data-view="import">导入 TXT</button>
           </div>
-        </section>
-        <section class="panel">
-          <h2>Outgoing links</h2>
-          <div id="outbound" class="link-list"></div>
-        </section>
-        <section class="panel">
-          <h2>Backlinks</h2>
-          <div id="inbound" class="link-list"></div>
-        </section>
-        <section class="panel">
-          <h2>Sources</h2>
-          <div id="sources" class="link-list"></div>
-        </section>
-      </div>
+        </div>
+
+        <article id="reader" class="reader" hidden>
+          <header class="reader-head">
+            <div class="reader-title">
+              <p id="page-path" class="path"></p>
+              <h1 id="page-title"></h1>
+            </div>
+            <div class="reader-side">
+              <div id="page-tags" class="tags"></div>
+              <div class="reader-actions">
+                <button id="edit-page" class="btn" type="button">编辑</button>
+                <button id="delete-page" class="btn danger" type="button">删除</button>
+              </div>
+            </div>
+          </header>
+          <p id="page-description" class="description"></p>
+          <pre id="page-content" class="page-content"></pre>
+          <footer class="reader-foot">
+            <button type="button" class="link-inline" data-view="links">查看出站链接与反向链接 →</button>
+          </footer>
+        </article>
+
+        <form id="editor" class="editor" hidden novalidate>
+          <div class="editor-head">
+            <div>
+              <p class="eyebrow">编辑页面</p>
+              <h1 id="editor-title">新建页面</h1>
+            </div>
+            <p id="editor-hint" class="muted">带 * 的字段为必填。</p>
+          </div>
+
+          <div class="form-grid two">
+            <label class="field">页面 ID *
+              <input id="edit-id" name="id" autocomplete="off" required>
+            </label>
+            <label class="field">路径 *
+              <input id="edit-path" name="path" autocomplete="off" required>
+            </label>
+          </div>
+
+          <label class="field">标题 *
+            <input id="edit-title" name="title" autocomplete="off" required>
+          </label>
+
+          <div class="form-grid two">
+            <label class="field">别名
+              <input id="edit-aliases" name="aliases" placeholder="用逗号分隔" autocomplete="off">
+            </label>
+            <label class="field">标签
+              <input id="edit-tags" name="tags" placeholder="用逗号分隔" autocomplete="off">
+            </label>
+          </div>
+
+          <label class="field">描述
+            <input id="edit-description" name="description" autocomplete="off">
+          </label>
+
+          <label class="field">出站链接
+            <input id="edit-links" name="links" placeholder="页面 ID，用逗号分隔" autocomplete="off">
+            <span class="hint">填写已存在的页面 ID。</span>
+          </label>
+
+          <label class="field">正文 *
+            <textarea id="edit-content" name="content" rows="16" required></textarea>
+          </label>
+
+          <div class="editor-actions">
+            <button id="editor-submit" class="btn primary" type="submit">应用修改</button>
+            <button id="editor-cancel" class="btn" type="button">取消</button>
+            <span class="hint">修改先写入内存；点击「保存」才会写入工作区文件。</span>
+          </div>
+        </form>
+      </section>
+
+      <!-- 链接 -->
+      <section class="view" data-view-panel="links" hidden>
+        <header class="view-head">
+          <p class="eyebrow">链接</p>
+          <h1>页面关系</h1>
+          <p class="lede">出站链接、反向链接与来源都来自当前页面，点击可跳转。</p>
+        </header>
+        <p id="links-empty" class="empty-note">还没有打开页面。先在左侧选择一个页面。</p>
+        <div id="page-details" class="detail-stack" hidden>
+          <section class="panel">
+            <h2>页面信息</h2>
+            <dl id="page-meta" class="meta"></dl>
+          </section>
+          <section class="panel">
+            <h2>出站链接</h2>
+            <div id="outbound" class="link-list"></div>
+          </section>
+          <section class="panel">
+            <h2>反向链接</h2>
+            <div id="inbound" class="link-list"></div>
+          </section>
+          <section class="panel">
+            <h2>来源</h2>
+            <div id="sources" class="link-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- 搜索 -->
+      <section class="view" data-view-panel="search" hidden>
+        <header class="view-head">
+          <p class="eyebrow">搜索</p>
+          <h1>搜索知识库</h1>
+          <p class="lede">元数据优先检索：标题、别名、标签和描述命中排在前面，再融合正文 BM25。</p>
+        </header>
+        <label class="field" for="search">关键词
+          <input id="search" class="search" type="search" placeholder="输入标题、别名、标签或正文关键词…" autocomplete="off">
+        </label>
+        <p id="search-summary" class="search-summary">输入关键词开始搜索。</p>
+        <div id="search-results" class="library-grid" aria-live="polite"></div>
+      </section>
+
+      <!-- 文档导入 -->
+      <section class="view" data-view-panel="import" hidden>
+        <header class="view-head">
+          <p class="eyebrow">文档导入</p>
+          <h1>导入 TXT 文档</h1>
+          <p class="lede">支持 UTF-8 纯文本，单文件不超过 2 MiB。服务端编译成 Wiki 页面、解析链接并立即保存。</p>
+        </header>
+        <div class="panel import-panel">
+          <label class="field" for="import-file">选择文件
+            <input id="import-file" type="file" accept=".txt,text/plain">
+          </label>
+          <div class="import-actions">
+            <button id="import-submit" class="btn primary" type="button">开始导入</button>
+            <span id="import-hint" class="hint">选择 UTF-8 .txt 文件后点击开始导入。</span>
+          </div>
+          <p id="import-status" class="import-status" role="status" aria-live="polite"></p>
+          <ol class="hint-list">
+            <li>同名文件再次导入会原地更新页面，不会覆盖手工创建的页面。</li>
+            <li>导入需要已配置的模型；未配置时按钮不可用。</li>
+            <li>失败会回滚，不会留下半成品页面或不一致的链接。</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- 工作区 -->
+      <section class="view" data-view-panel="workspace" hidden>
+        <header class="view-head">
+          <p class="eyebrow">工作区</p>
+          <h1>保存与备份</h1>
+          <p class="lede">页面编辑先保存在内存中，点击保存后写入 JSON 工作区文件。</p>
+        </header>
+        <div class="panel workspace-panel">
+          <dl class="meta">
+            <dt>工作区状态</dt>
+            <dd id="workspace-state">—</dd>
+            <dt>页面数量</dt>
+            <dd id="workspace-pages">0</dd>
+            <dt>最近保存</dt>
+            <dd id="workspace-saved">尚未保存</dd>
+            <dt>备份</dt>
+            <dd>每次 Web 保存或导入会在原文件旁保留一份 <code>.bak</code>，可手动覆盖恢复。</dd>
+          </dl>
+          <div class="detail-actions">
+            <button id="workspace-save" class="btn primary" type="button">保存工作区</button>
+          </div>
+        </div>
+      </section>
+
+    </section>
+
+    <aside id="details" class="inspector" aria-label="状态信息">
+      <section class="panel status-card">
+        <h2>模型连接</h2>
+        <p id="inspector-model" class="inspector-value">未配置</p>
+        <p id="inspector-model-hint" class="hint">配置模型后才能导入文档和提问。</p>
+        <button class="btn" type="button" data-action="open-setup">配置模型</button>
+      </section>
+
+      <section class="panel status-card">
+        <h2>知识库</h2>
+        <p class="inspector-value"><span id="inspector-pages">0</span> 个页面</p>
+        <button class="btn" type="button" data-view="library">浏览知识库</button>
+      </section>
+
+      <section class="panel status-card">
+        <h2>最近保存</h2>
+        <p id="inspector-save" class="inspector-value">尚未保存</p>
+        <button id="inspector-save-btn" class="btn" type="button">保存工作区</button>
+      </section>
+
+      <section class="panel status-card quick-start">
+        <h2>快速开始</h2>
+        <ol>
+          <li id="quick-model">配置模型 <button type="button" class="link-inline" data-action="open-setup">去配置</button></li>
+          <li id="quick-import">导入 TXT <button type="button" class="link-inline" data-view="import">去导入</button></li>
+          <li id="quick-ask">提问并核对引用 <button type="button" class="link-inline" data-view="overview">去提问</button></li>
+        </ol>
+      </section>
     </aside>
   </main>
 
   <dialog id="setup" class="setup-dialog" aria-labelledby="setup-title">
     <form id="setup-form" class="setup-form" novalidate>
       <div>
-        <p class="eyebrow">First-time setup</p>
-        <h2 id="setup-title">Model setup</h2>
+        <p class="eyebrow">首次使用</p>
+        <h2 id="setup-title">配置模型</h2>
         <p id="setup-server-status" class="hint"></p>
+        <p class="hint">导入文档和 AI 问答需要一个 OpenAI 兼容接口。API Key 只保存在本机服务端，不会回传到浏览器。</p>
       </div>
-      <label class="field">Base URL
+      <label class="field">服务商 / API 地址
         <input id="setup-base-url" autocomplete="off" placeholder="https://api.deepseek.com/v1">
-        <span class="hint">The OpenAI-compatible API root, usually ending in /v1.</span>
+        <span class="hint">OpenAI 兼容接口根地址，通常以 /v1 结尾。</span>
       </label>
-      <label class="field">Model
+      <label class="field">模型名称
         <input id="setup-model" autocomplete="off" placeholder="deepseek-chat">
       </label>
-      <label class="field">API key
+      <label class="field">API Key
         <input id="setup-api-key" type="password" autocomplete="off" spellcheck="false">
         <span id="setup-key-hint" class="hint"></span>
       </label>
       <label id="setup-clear-wrap" class="check" hidden>
-        <input id="setup-clear-key" type="checkbox"> Remove the stored key
+        <input id="setup-clear-key" type="checkbox"> 删除已保存的 Key
       </label>
       <p id="setup-status" class="setup-status" role="status" aria-live="polite"></p>
       <div class="setup-actions">
-        <button id="setup-test" class="btn" type="button">Test connection</button>
-        <button id="setup-save" class="btn primary" type="submit">Save</button>
-        <button id="setup-close" class="btn" type="button">Later</button>
+        <button id="setup-test" class="btn" type="button">测试连接</button>
+        <button id="setup-save" class="btn primary" type="submit">保存配置</button>
+        <button id="setup-close" class="btn" type="button">稍后再说</button>
       </div>
     </form>
   </dialog>
 
   <footer class="footer">
-    <span>ZMWiki local workbench</span>
-    <a href="/">Home</a>
+    <span>ZMWiki 本地知识工作台</span>
+    <a href="/">返回首页</a>
+    <span>无账号 · 不依赖云服务</span>
   </footer>
 
-  <noscript>This workbench needs JavaScript. The read-only API is still available.</noscript>
+  <noscript>此工作台需要 JavaScript；只读 API 仍可使用。</noscript>
   <script src="app.js" defer></script>
 </body>
 </html>

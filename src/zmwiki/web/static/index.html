@@ -1,19 +1,19 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b0b0c">
-  <meta name="description" content="ZMWiki turns plain documents into linked wiki pages, then retrieves them locally with a budgeted multi-step agent. A Python library, deterministic by default.">
-  <title>ZMWiki — Local-first, wiki-native retrieval</title>
+  <meta name="theme-color" content="#070b09">
+  <meta name="description" content="ZMWiki 把普通文档编译成相互链接的 Wiki 页面，并用有预算的多步 Agent 在本地检索与回答。默认确定性的 Python 库。">
+  <title>ZMWiki — 本地优先的 Wiki 原生检索</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">跳到主要内容</a>
 
   <header class="site-header">
     <div class="wrap header-inner">
-      <a class="brand" href="#top" aria-label="ZMWiki home">
+      <a class="brand" href="#top" aria-label="ZMWiki 首页">
         <svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true">
           <rect x="3.5" y="3.5" width="14" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
           <rect x="10.5" y="7.5" width="14" height="18" rx="2.5" fill="var(--bg)" stroke="currentColor" stroke-width="1.5"/>
@@ -22,28 +22,28 @@
         <span>ZMWiki</span>
       </a>
 
-      <nav class="desktop-nav" aria-label="Primary">
-        <a href="#features">Features</a>
-        <a href="#workflow">Workflow</a>
-        <a href="#roadmap">Roadmap</a>
-        <a href="#faq">FAQ</a>
+      <nav class="desktop-nav" aria-label="主导航">
+        <a href="#features">特性</a>
+        <a href="#workflow">工作流</a>
+        <a href="#roadmap">路线图</a>
+        <a href="#faq">常见问题</a>
       </nav>
 
       <div class="header-actions">
-        <a class="ghost-link" href="/app">Workbench</a>
+        <a class="ghost-link" href="/app">工作台</a>
         <a class="ghost-link" href="https://github.com/lip20041219/zmwiki">GitHub</a>
-        <a class="btn btn-small" href="#terminal">Get started</a>
+        <a class="btn btn-small" href="#terminal">开始使用</a>
       </div>
 
       <details class="mobile-nav">
-        <summary aria-label="Open menu">Menu</summary>
-        <nav class="mobile-panel" aria-label="Mobile">
-          <a href="#features">Features</a>
-          <a href="#workflow">Workflow</a>
-          <a href="#roadmap">Roadmap</a>
-          <a href="#faq">FAQ</a>
-          <a href="#terminal">Get started</a>
-          <a href="/app">Workbench</a>
+        <summary aria-label="打开菜单">菜单</summary>
+        <nav class="mobile-panel" aria-label="移动端导航">
+          <a href="#features">特性</a>
+          <a href="#workflow">工作流</a>
+          <a href="#roadmap">路线图</a>
+          <a href="#faq">常见问题</a>
+          <a href="#terminal">开始使用</a>
+          <a href="/app">工作台</a>
           <a href="https://github.com/lip20041219/zmwiki">GitHub</a>
         </nav>
       </details>
@@ -55,49 +55,48 @@
     <section class="hero" id="top">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>Local-first · Wiki-native retrieval</p>
+          <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>本地优先 · Wiki 原生检索</p>
           <h1>
-            Your knowledge.<br>
-            Structured.<br>
-            <span class="accent-serif">Retrieved locally.</span>
+            你的知识。<br>
+            结构化。<br>
+            <span class="accent-serif">在本地检索。</span>
           </h1>
           <p class="lede">
-            ZMWiki turns plain documents into linked wiki pages, then lets an agent
-            search, read, and follow those links on your machine. The core is a
-            Python library — deterministic by default, model-agnostic when you
-            connect a live endpoint.
+            ZMWiki 把普通文档编译成相互链接的 Wiki 页面，再让 Agent 在你自己的
+            机器上搜索、阅读并跟踪这些链接。核心是一个 Python 库：默认确定性
+            运行，接入在线模型时保持模型无关。
           </p>
           <div class="cta-row">
             <a class="btn" href="#terminal">
-              Get started
+              开始使用
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
-            <a class="btn btn-ghost" href="#workflow">See how it works</a>
+            <a class="btn btn-ghost" href="#workflow">看看它如何工作</a>
           </div>
-          <ul class="hero-meta" aria-label="Project facts">
+          <ul class="hero-meta" aria-label="项目信息">
             <li>Python 3.10+</li>
-            <li>Zero runtime dependencies</li>
-            <li>Offline by default</li>
+            <li>零运行时依赖</li>
+            <li>默认离线</li>
           </ul>
         </div>
 
         <figure class="hero-art">
           <svg role="img" aria-labelledby="graph-title graph-desc" viewBox="0 0 560 480">
-            <title id="graph-title">A linked wiki page graph</title>
-            <desc id="graph-desc">Five wiki pages — Alice Smith, Project Phoenix, Bob Jones, Carol Chen and Project Budget — connected by links, with a search query highlighted along a read path.</desc>
+            <title id="graph-title">相互链接的 Wiki 页面图</title>
+            <desc id="graph-desc">五个 Wiki 页面——Alice Smith、Project Phoenix、Bob Jones、Carol Chen 和 Project Budget——通过链接相连，一条搜索路径被高亮显示。</desc>
             <defs>
               <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
-                <path d="M0 0 8 4 0 8z" fill="#4a4a51"/>
+                <path d="M0 0 8 4 0 8z" fill="#3a4a41"/>
               </marker>
               <marker id="arrow-accent" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
                 <path d="M0 0 8 4 0 8z" fill="var(--accent)"/>
               </marker>
             </defs>
 
-            <rect x="0.5" y="0.5" width="559" height="479" rx="20" fill="#101012" stroke="#26262a"/>
+            <rect x="0.5" y="0.5" width="559" height="479" rx="20" fill="#0b120e" stroke="#1d2a23"/>
             <text class="graph-label" x="24" y="36">wiki / demo</text>
             <circle cx="470" cy="32" r="3" fill="var(--accent)"/>
-            <text class="graph-label accent" x="536" y="36" text-anchor="end">index ready</text>
+            <text class="graph-label accent" x="536" y="36" text-anchor="end">索引就绪</text>
 
             <path class="link" d="M186 103 C 230 100, 260 94, 300 94" marker-end="url(#arrow)"/>
             <path class="link" d="M106 136 C 106 165, 106 185, 108 210" marker-end="url(#arrow)"/>
@@ -111,7 +110,7 @@
               <circle class="node-pulse" cx="42" cy="86" r="3"/>
               <text class="node-path" x="42" y="91">alice</text>
               <text class="node-title" x="42" y="110">Alice Smith</text>
-              <text class="node-meta" x="42" y="126">person · 2 links</text>
+              <text class="node-meta" x="42" y="126">人物 · 2 条链接</text>
             </g>
 
             <g class="node node-active">
@@ -119,46 +118,46 @@
               <circle class="node-pulse" cx="316" cy="74" r="3"/>
               <text class="node-path" x="316" y="79">project_phoenix</text>
               <text class="node-title" x="316" y="99">Project Phoenix</text>
-              <text class="node-meta" x="316" y="116">project · 2 links</text>
+              <text class="node-meta" x="316" y="116">项目 · 2 条链接</text>
             </g>
 
             <g class="node">
               <rect x="330" y="200" width="160" height="66" rx="12"/>
               <text class="node-path" x="346" y="221">bob</text>
               <text class="node-title" x="346" y="240">Bob Jones</text>
-              <text class="node-meta" x="346" y="256">person · 3 links</text>
+              <text class="node-meta" x="346" y="256">人物 · 3 条链接</text>
             </g>
 
             <g class="node">
               <rect x="30" y="210" width="160" height="62" rx="12"/>
               <text class="node-path" x="46" y="230">carol</text>
               <text class="node-title" x="46" y="249">Carol Chen</text>
-              <text class="node-meta" x="46" y="265">person · 3 links</text>
+              <text class="node-meta" x="46" y="265">人物 · 3 条链接</text>
             </g>
 
             <g class="node">
               <rect x="250" y="340" width="200" height="72" rx="12"/>
               <text class="node-path" x="266" y="361">project_budget</text>
               <text class="node-title" x="266" y="381">Project Budget</text>
-              <text class="node-meta" x="266" y="398">concept · 1 link</text>
+              <text class="node-meta" x="266" y="398">概念 · 1 条链接</text>
             </g>
 
-            <rect x="24" y="426" width="512" height="34" rx="9" fill="#151518" stroke="#2a2a2f"/>
+            <rect x="24" y="426" width="512" height="34" rx="9" fill="#101a14" stroke="#22312a"/>
             <text class="graph-query" x="40" y="447">search("phoenix budget")</text>
-            <text class="graph-result" x="520" y="447" text-anchor="end">3 pages read</text>
+            <text class="graph-result" x="520" y="447" text-anchor="end">已读 3 页</text>
           </svg>
-          <figcaption>Wiki pages, explicit links, and an agent that reads before it answers.</figcaption>
+          <figcaption>Wiki 页面、显式链接，以及先阅读再回答的 Agent。</figcaption>
         </figure>
       </div>
     </section>
 
     <!-- Fact strip -->
-    <section class="fact-strip" aria-label="Project facts">
+    <section class="fact-strip" aria-label="项目信息">
       <div class="wrap fact-grid">
-        <div><strong>0</strong><span>runtime dependencies</span></div>
-        <div><strong>2×</strong><span>BM25 signals: metadata + content</span></div>
-        <div><strong>15</strong><span>multi-hop benchmark cases</span></div>
-        <div><strong>Local</strong><span>default execution model</span></div>
+        <div><strong>0</strong><span>运行时依赖</span></div>
+        <div><strong>2×</strong><span>BM25 信号：元数据 + 正文</span></div>
+        <div><strong>26</strong><span>内部多跳评测样例</span></div>
+        <div><strong>本地</strong><span>默认执行方式</span></div>
       </div>
     </section>
 
@@ -166,34 +165,33 @@
     <section class="section capabilities" id="capabilities">
       <div class="wrap">
         <div class="section-head">
-          <p class="eyebrow">The core</p>
-          <h2>A retrieval loop you can inspect.</h2>
+          <p class="eyebrow">核心</p>
+          <h2>一条可以检查的检索链路。</h2>
           <p class="section-lede">
-            No opaque pipeline. Each stage is a small, testable module with a
-            defined contract, and every answer points back to pages the agent
-            actually read.
+            没有黑盒管线。每个阶段都是小而可测试的模块，契约明确；每个回答都能
+            追溯到 Agent 真正读过的页面。
           </p>
         </div>
         <ul class="capability-grid">
           <li class="capability">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14.5 14.5 9.5M7.8 17.2l-1.3 1.3a3.5 3.5 0 0 1-5-5l3-3a3.5 3.5 0 0 1 5 0M16.2 6.8l1.3-1.3a3.5 3.5 0 0 1 5 5l-3 3a3.5 3.5 0 0 1-5 0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <h3>Linked pages</h3>
-            <p>Stable ids, paths, aliases, tags and bidirectional links — not anonymous text chunks.</p>
+            <h3>链接页面</h3>
+            <p>稳定的 ID、路径、别名、标签和双向链接——不是匿名的文本块。</p>
           </li>
           <li class="capability">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <h3>Two-signal search</h3>
-            <p>Metadata BM25 and content BM25 fused deterministically. Results carry metadata, not page bodies.</p>
+            <h3>双信号搜索</h3>
+            <p>元数据 BM25 与正文 BM25 确定性融合。结果只带元数据，不返回整页正文。</p>
           </li>
           <li class="capability">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-            <h3>Evidence-aware agent</h3>
-            <p>Search candidates never count as evidence. Only pages opened through <code>wiki_read</code> do.</p>
+            <h3>证据感知的 Agent</h3>
+            <p>搜索结果不算证据，只有通过 <code>wiki_read</code> 真正打开的页面才算。</p>
           </li>
           <li class="capability">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <h3>Measured, not asserted</h3>
-            <p>Offline retrieval metrics and a multi-hop benchmark with per-step diagnostics.</p>
+            <h3>度量而非断言</h3>
+            <p>离线检索指标，以及带逐步诊断的多跳评测。</p>
           </li>
         </ul>
       </div>
@@ -203,52 +201,48 @@
     <section class="section features" id="features">
       <div class="wrap">
         <div class="section-head">
-          <p class="eyebrow">Features</p>
-          <h2>Six modules. One local loop.</h2>
+          <p class="eyebrow">功能</p>
+          <h2>六个模块，一条本地闭环。</h2>
           <p class="section-lede">
-            These are shipped modules in the repository today. The browser
-            workbench is available at <a href="/app">/app</a>.
+            这些模块当前都已随仓库发布。浏览器工作台在 <a href="/app">/app</a>。
           </p>
         </div>
 
         <div class="feature-grid">
           <article class="feature-card">
             <div class="feature-top"><span class="feature-num">01</span><span class="feature-tag">wiki_schema.py</span></div>
-            <h3>Structured Wiki Pages</h3>
-            <p>Every page carries a stable id, path, title, aliases, tags, source ids and bidirectional links. Pages serialize to JSON-ready dicts and validate on construction.</p>
+            <h3>结构化 Wiki 页面</h3>
+            <p>每个页面都有稳定 ID、路径、标题、别名、标签、来源 ID 和双向链接。页面可序列化为 JSON，并在构造时校验。</p>
           </article>
 
           <article class="feature-card">
             <div class="feature-top"><span class="feature-num">02</span><span class="feature-tag">wiki_retriever.py</span></div>
-            <h3>Metadata-First Search</h3>
-            <p><code>wiki_search</code> ranks title, alias, tag and description matches first, fuses content BM25, then returns candidate metadata — never full page bodies.</p>
+            <h3>元数据优先搜索</h3>
+            <p><code>wiki_search</code> 先按标题、别名、标签和描述匹配排序，再融合正文 BM25，只返回候选元数据，不返回整页正文。</p>
           </article>
 
           <article class="feature-card">
             <div class="feature-top"><span class="feature-num">03</span><span class="feature-tag">wiki_retriever.py</span></div>
-            <h3>Evidence-Aware Reading</h3>
-            <p><code>wiki_read</code> fetches pages by path in input order and fails loudly on missing paths. Only pages actually read enter the agent&rsquo;s evidence set.</p>
+            <h3>证据感知阅读</h3>
+            <p><code>wiki_read</code> 按输入顺序按路径取页，路径缺失会明确报错。只有真正读过的页面才进入 Agent 的证据集合。</p>
           </article>
 
           <article class="feature-card">
             <div class="feature-top"><span class="feature-num">04</span><span class="feature-tag">wiki_agent.py</span></div>
-            <h3>Budgeted Multi-Step Agent</h3>
-            <p>Search, read, follow links, answer. Step limits, duplicate-action suppression and consecutive protocol-error caps are enforced in code, not by prompt alone.</p>
+            <h3>有预算的多步 Agent</h3>
+            <p>搜索、阅读、跟踪链接、回答。步数上限、重复动作抑制和连续协议错误上限由代码强制执行，不只靠提示词。</p>
           </article>
 
           <article class="feature-card">
             <div class="feature-top"><span class="feature-num">05</span><span class="feature-tag">wiki_compiler.py</span></div>
-            <h3>Source-Aware Compilation</h3>
-            <p><code>WikiCompiler</code> turns one document into one structured page through an OpenAI-compatible endpoint and keeps the source document id on the page.</p>
+            <h3>来源可追溯的编译</h3>
+            <p><code>WikiCompiler</code> 通过 OpenAI 兼容接口把一份文档编译成一个结构化页面，并在页面上保留来源文档 ID。</p>
           </article>
 
           <article class="feature-card">
             <div class="feature-top"><span class="feature-num">06</span><span class="feature-tag">benchmark/</span></div>
-            <h3>Measurable Retrieval</h3>
-            <p>Offline retrieval metrics, deterministic answer scoring and an
-            internal 26-case multi-hop benchmark track evidence recall and
-            per-step failures without an LLM judge. These are repository-local
-            diagnostics, not a general accuracy claim.</p>
+            <h3>可度量的检索</h3>
+            <p>离线检索指标、确定性答案评分和一个内部 26 例多跳评测，跟踪证据召回与逐步失败，不使用 LLM 裁判。这些是仓库内的诊断，不是通用准确率承诺。</p>
           </article>
         </div>
       </div>
@@ -258,47 +252,47 @@
     <section class="section workflow" id="workflow">
       <div class="wrap">
         <div class="section-head">
-          <p class="eyebrow">Workflow</p>
-          <h2>From raw text to a traceable answer.</h2>
+          <p class="eyebrow">工作流</p>
+          <h2>从原始文本到可追溯的回答。</h2>
         </div>
 
         <ol class="flow">
           <li>
             <span class="flow-num">01</span>
-            <h3>Ingest</h3>
-            <p>Plain text documents or a directory, loaded through the existing ingestion contracts.</p>
+            <h3>导入</h3>
+            <p>纯文本文档或目录，通过现有摄取契约加载。</p>
           </li>
           <li>
             <span class="flow-num">02</span>
-            <h3>Compile &amp; Index</h3>
-            <p>Pages are compiled with sources retained. The index builds metadata and content BM25.</p>
+            <h3>编译与索引</h3>
+            <p>页面编译时保留来源；索引构建元数据与正文 BM25。</p>
           </li>
           <li>
             <span class="flow-num">03</span>
-            <h3>Search</h3>
-            <p>Metadata-first ranking returns candidate pages with scores and no page bodies.</p>
+            <h3>搜索</h3>
+            <p>元数据优先排序，返回候选页面及分数，不返回正文。</p>
           </li>
           <li>
             <span class="flow-num">04</span>
-            <h3>Read</h3>
-            <p>Full pages are fetched by path. Their links become the next set of traversal options.</p>
+            <h3>阅读</h3>
+            <p>按路径读取完整页面，页面链接成为下一步可跟踪的路径。</p>
           </li>
           <li>
             <span class="flow-num">05</span>
-            <h3>Answer</h3>
-            <p>The agent answers from pages it actually read, with sources kept separate from model text.</p>
+            <h3>回答</h3>
+            <p>Agent 只根据真正读过的页面回答，并把来源与模型文本分开。</p>
           </li>
         </ol>
 
         <div class="loop-note">
-          <span class="loop-label">Agent loop</span>
+          <span class="loop-label">Agent 循环</span>
           <div class="loop-chips">
             <span>search</span><span aria-hidden="true">→</span>
             <span>read</span><span aria-hidden="true">→</span>
             <span>follow_links</span><span aria-hidden="true">→</span>
             <span>answer</span>
           </div>
-          <p>Bounded by <code>max_steps</code>, duplicate suppression and a consecutive protocol-error limit.</p>
+          <p>由 <code>max_steps</code>、重复动作抑制和连续协议错误上限约束。</p>
         </div>
       </div>
     </section>
@@ -307,26 +301,25 @@
     <section class="section terminal-section" id="terminal">
       <div class="wrap terminal-grid">
         <div class="terminal-copy">
-          <p class="eyebrow">Install</p>
-          <h2>The library, not a platform.</h2>
+          <p class="eyebrow">安装</p>
+          <h2>是一个库，不是一个平台。</h2>
           <p class="section-lede">
-            Clone the repository and install it in editable mode. The default
-            install is dependency-free and runs without a model or network.
+            克隆仓库并以可编辑模式安装。默认安装零依赖，不需要模型或网络即可运行。
           </p>
           <ul class="check-list">
-            <li>Python 3.10 or newer</li>
-            <li>No runtime dependencies</li>
-            <li>Wiki and benchmark tests run offline</li>
+            <li>Python 3.10 或更新版本</li>
+            <li>无运行时依赖</li>
+            <li>Wiki 与评测测试均离线运行</li>
           </ul>
           <p class="fine-print">
-            A local HTTP server ships with the package
-            (<code>python -m zmwiki.web.server</code>). The browser workbench
-            at <code>/app</code> supports browsing, search, editing, saving, <code>.txt</code> document
-            import and step-by-step agent Q&amp;A.
+            包内附带本地 HTTP 服务
+            （<code>python -m zmwiki.web.server</code>）。浏览器工作台在
+            <code>/app</code>，支持浏览、搜索、编辑、保存、导入 <code>.txt</code>
+            文档，以及带证据的多步 Agent 问答。
           </p>
         </div>
 
-        <div class="terminal-window" aria-label="Terminal commands">
+        <div class="terminal-window" aria-label="终端命令">
           <div class="terminal-bar">
             <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
             <span class="terminal-title">~/zmwiki</span>
@@ -343,31 +336,31 @@
     <section class="section roadmap" id="roadmap">
       <div class="wrap">
         <div class="section-head">
-          <p class="eyebrow">Roadmap</p>
-          <h2>What exists, and what does not.</h2>
-          <p class="section-lede">No dates promised. Status is part of the product.</p>
+          <p class="eyebrow">路线图</p>
+          <h2>哪些已存在，哪些还没有。</h2>
+          <p class="section-lede">不承诺日期。状态本身就是产品的一部分。</p>
         </div>
         <div class="roadmap-grid">
           <div class="roadmap-card">
-            <div class="roadmap-head"><span class="status-dot available" aria-hidden="true"></span><h3>Available</h3></div>
+            <div class="roadmap-head"><span class="status-dot available" aria-hidden="true"></span><h3>已可用</h3></div>
             <ul>
-              <li>WikiPage model, links and JSON-ready serialization</li>
-              <li>WikiIndex with metadata and content BM25</li>
-              <li><code>wiki_search</code> and <code>wiki_read</code></li>
-              <li>Budgeted multi-step <code>WikiAgent</code></li>
-              <li>Document-to-page <code>WikiCompiler</code></li>
-              <li>RAG baseline and offline evaluation</li>
-              <li>JSON workspace persistence (<code>--workspace</code>)</li>
-              <li>Local HTTP server and browser workbench</li>
-              <li>Browser agent Q&amp;A with steps and cited pages</li>
+              <li>WikiPage 模型、链接与 JSON 序列化</li>
+              <li>带元数据与正文 BM25 的 WikiIndex</li>
+              <li><code>wiki_search</code> 与 <code>wiki_read</code></li>
+              <li>有预算的多步 <code>WikiAgent</code></li>
+              <li>文档转页面的 <code>WikiCompiler</code></li>
+              <li>RAG 基线与离线评测</li>
+              <li>JSON 工作区持久化（<code>--workspace</code>）</li>
+              <li>本地 HTTP 服务与浏览器工作台</li>
+              <li>带步骤和引用页面的浏览器 Agent 问答</li>
             </ul>
           </div>
           <div class="roadmap-card">
-            <div class="roadmap-head"><span class="status-dot progress" aria-hidden="true"></span><h3>In Progress</h3></div>
+            <div class="roadmap-head"><span class="status-dot progress" aria-hidden="true"></span><h3>开发中</h3></div>
             <ul>
-              <li>Broader document format ingestion</li>
+              <li>更广的文档格式摄取</li>
             </ul>
-            <p class="roadmap-note">Not shipped yet. Do not expect these capabilities in the current release.</p>
+            <p class="roadmap-note">尚未发布。当前版本请不要期待这些能力。</p>
           </div>
         </div>
       </div>
@@ -377,43 +370,41 @@
     <section class="section faq" id="faq">
       <div class="wrap faq-grid">
         <div class="faq-intro">
-          <p class="eyebrow">FAQ</p>
-          <h2>Questions worth asking.</h2>
-          <p class="section-lede">Short answers, no cloud marketing.</p>
+          <p class="eyebrow">常见问题</p>
+          <h2>值得问的问题。</h2>
+          <p class="section-lede">简短回答，不做云端营销。</p>
         </div>
         <div class="faq-list">
           <details class="faq-item">
-            <summary>Is my knowledge sent to a cloud?</summary>
-            <p>No by default. Indexing, search, reading and the deterministic evaluation paths run locally. Only model calls you configure — compilation, agent reasoning or generation — leave the machine, and they go to the endpoint you choose.</p>
+            <summary>我的知识会被上传到云端吗？</summary>
+            <p>默认不会。索引、搜索、阅读和确定性评测都在本地运行。只有你主动配置的模型调用——编译、Agent 推理或生成——会离开本机，并发送到你指定的端点。</p>
           </details>
           <details class="faq-item">
-            <summary>Do I need an API key?</summary>
-            <p>Not for the deterministic RAG pipeline or the offline benchmarks. Compilation and the live agent need an OpenAI-compatible endpoint. The TUI and library read the key from your environment or code; the browser workbench takes it in <strong>Model setup</strong>, where the server stores it locally and never sends it back to the page. It is never part of the static site.</p>
+            <summary>需要 API Key 吗？</summary>
+            <p>确定性 RAG 管线和离线评测不需要。编译和在线 Agent 需要 OpenAI 兼容接口。TUI 和库从环境变量或代码读取 Key；浏览器工作台在<strong>模型设置</strong>中输入，由服务端保存在本机，且不会回传到页面。静态官网永远不包含 Key。</p>
           </details>
           <details class="faq-item">
-            <summary>Is there a browser workbench or local server?</summary>
-            <p>The package ships a local HTTP server:
-            <code>python -m zmwiki.web.server --workspace path/to/wiki.json</code>.
-            Open <code>/app</code> for the workbench: page list, search, page
-            detail, create/edit/delete, links and sources, workspace save, <code>.txt</code>
-            document import, and multi-step agent Q&amp;A with cited pages.</p>
+            <summary>有浏览器工作台或本地服务吗？</summary>
+            <p>包内附带本地 HTTP 服务：
+            <code>python -m zmwiki.web.server --workspace path/to/wiki.json</code>。
+            打开 <code>/app</code> 即可使用：页面列表、搜索、详情、创建/编辑/删除、
+            链接与来源、工作区保存、<code>.txt</code> 导入，以及带引用页面的多步
+            Agent 问答。</p>
           </details>
           <details class="faq-item">
-            <summary>Where is my wiki stored?</summary>
-            <p>Wiki pages live in a JSON workspace file that the TUI loads at
-            startup and saves with <code>S</code> (press twice to overwrite an
-            existing file); local document imports save automatically. Without
-            <code>--workspace</code>, the bundled demo workspace is opened
-            read-only. Benchmark artifacts are separate JSON files under
-            <code>benchmark/results/</code>.</p>
+            <summary>Wiki 存在哪里？</summary>
+            <p>Wiki 页面保存在一个 JSON 工作区文件中。TUI 启动时加载，按
+            <code>S</code> 保存（覆盖已有文件需按两次）；文档导入会自动保存。
+            未提供 <code>--workspace</code> 时打开仓库自带的演示工作区（只读）。
+            评测产物是 <code>benchmark/results/</code> 下的独立 JSON 文件。</p>
           </details>
           <details class="faq-item">
-            <summary>What document formats are supported?</summary>
-            <p>Plain text and directories of <code>.txt</code> files, through the existing ingestion modules. PDF and Markdown parsing are not implemented.</p>
+            <summary>支持哪些文档格式？</summary>
+            <p>纯文本和 <code>.txt</code> 文件目录，通过现有摄取模块加载。PDF 与 Markdown 解析尚未实现。</p>
           </details>
           <details class="faq-item">
-            <summary>What license is ZMWiki under?</summary>
-            <p>MIT License, as declared in <code>pyproject.toml</code>. The full text is in <a href="https://github.com/lip20041219/zmwiki/blob/master/LICENSE">LICENSE</a> at the repository root.</p>
+            <summary>ZMWiki 使用什么许可证？</summary>
+            <p>MIT 许可证，声明于 <code>pyproject.toml</code>，完整文本见仓库根目录的 <a href="https://github.com/lip20041219/zmwiki/blob/master/LICENSE">LICENSE</a>。</p>
           </details>
         </div>
       </div>
@@ -424,7 +415,7 @@
     <div class="wrap">
       <div class="footer-top">
         <div class="footer-brand">
-          <a class="brand" href="#top" aria-label="ZMWiki home">
+          <a class="brand" href="#top" aria-label="ZMWiki 首页">
             <svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true">
               <rect x="3.5" y="3.5" width="14" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
               <rect x="10.5" y="7.5" width="14" height="18" rx="2.5" fill="var(--bg)" stroke="currentColor" stroke-width="1.5"/>
@@ -432,33 +423,33 @@
             </svg>
             <span>ZMWiki</span>
           </a>
-          <p>Local-first knowledge, structured for agents.</p>
+          <p>本地优先的知识，为 Agent 而结构化。</p>
         </div>
-        <nav class="footer-links" aria-label="Footer">
+        <nav class="footer-links" aria-label="页脚">
           <div>
-            <h3>Product</h3>
-            <a href="#features">Features</a>
-            <a href="#workflow">Workflow</a>
-            <a href="#roadmap">Roadmap</a>
+            <h3>产品</h3>
+            <a href="#features">特性</a>
+            <a href="#workflow">工作流</a>
+            <a href="#roadmap">路线图</a>
           </div>
           <div>
-            <h3>Docs</h3>
+            <h3>文档</h3>
             <a href="https://github.com/lip20041219/zmwiki/blob/master/README.md">README</a>
-            <a href="https://github.com/lip20041219/zmwiki/blob/master/docs/architecture.md">Architecture</a>
-            <a href="#faq">FAQ</a>
+            <a href="https://github.com/lip20041219/zmwiki/blob/master/docs/architecture.md">架构</a>
+            <a href="#faq">常见问题</a>
           </div>
           <div>
-            <h3>Project</h3>
+            <h3>项目</h3>
             <a href="https://github.com/lip20041219/zmwiki">GitHub</a>
-            <a href="https://github.com/lip20041219/zmwiki/blob/master/LICENSE">License</a>
-            <a href="#terminal">Install</a>
+            <a href="https://github.com/lip20041219/zmwiki/blob/master/LICENSE">许可证</a>
+            <a href="#terminal">安装</a>
           </div>
         </nav>
       </div>
       <div class="footer-bottom">
         <span>© 2026 ZMWiki</span>
-        <span>MIT License</span>
-        <span>No accounts. No cloud dependency.</span>
+        <span>MIT 许可证</span>
+        <span>无账号体系 · 不依赖云服务</span>
       </div>
     </div>
   </footer>

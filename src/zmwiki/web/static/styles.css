@@ -4,17 +4,17 @@
 ------------------------------------------------------------------- */
 
 :root {
-  --bg: #0b0b0c;
-  --surface: #101012;
-  --surface-2: #151518;
-  --surface-3: #19191d;
-  --line: #26262a;
-  --line-strong: #35353b;
-  --text: #f3efe6;
-  --muted: #a8a399;
-  --faint: #8a857b;
-  --accent: #e8b25c;
-  --accent-soft: rgba(232, 178, 92, 0.12);
+  --bg: #070b09;
+  --surface: #0d1511;
+  --surface-2: #101a14;
+  --surface-3: #142019;
+  --line: #1d2a23;
+  --line-strong: #2a3a31;
+  --text: #e6f0ea;
+  --muted: #a3b5ab;
+  --faint: #7e9187;
+  --accent: #4ade80;
+  --accent-soft: rgba(74, 222, 128, 0.12);
   --radius: 16px;
   --radius-sm: 10px;
   --max: 1200px;
@@ -44,8 +44,8 @@ html {
 body {
   margin: 0;
   background:
-    radial-gradient(900px 520px at 78% -8%, rgba(232, 178, 92, 0.11), transparent 62%),
-    radial-gradient(680px 420px at 6% 18%, rgba(255, 255, 255, 0.035), transparent 60%),
+    radial-gradient(900px 520px at 78% -8%, rgba(74, 222, 128, 0.09), transparent 62%),
+    radial-gradient(680px 420px at 6% 18%, rgba(74, 222, 128, 0.03), transparent 60%),
     var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
@@ -447,7 +447,7 @@ code {
   content: "";
   position: absolute;
   inset: -12%;
-  background: radial-gradient(closest-side, rgba(232, 178, 92, 0.14), transparent 70%);
+  background: radial-gradient(closest-side, rgba(74, 222, 128, 0.12), transparent 70%);
   pointer-events: none;
 }
 
@@ -501,8 +501,8 @@ code {
 }
 
 .node-active rect {
-  fill: #171512;
-  stroke: rgba(232, 178, 92, 0.55);
+  fill: #0f1a14;
+  stroke: rgba(74, 222, 128, 0.55);
 }
 
 .node-path {
@@ -785,7 +785,7 @@ code {
 .terminal-section {
   border-block: 1px solid var(--line);
   background:
-    radial-gradient(700px 320px at 82% 50%, rgba(232, 178, 92, 0.07), transparent 70%),
+    radial-gradient(700px 320px at 82% 50%, rgba(74, 222, 128, 0.06), transparent 70%),
     rgba(255, 255, 255, 0.012);
 }
 
