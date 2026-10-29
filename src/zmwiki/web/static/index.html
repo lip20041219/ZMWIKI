@@ -388,7 +388,7 @@
           </details>
           <details class="faq-item">
             <summary>Do I need an API key?</summary>
-            <p>Not for the deterministic RAG pipeline or the offline benchmarks. Compilation and the live agent need an OpenAI-compatible endpoint; the key is read from your environment or passed in code. It is never part of the static site.</p>
+            <p>Not for the deterministic RAG pipeline or the offline benchmarks. Compilation and the live agent need an OpenAI-compatible endpoint. The TUI and library read the key from your environment or code; the browser workbench takes it in <strong>Model setup</strong>, where the server stores it locally and never sends it back to the page. It is never part of the static site.</p>
           </details>
           <details class="faq-item">
             <summary>Is there a browser workbench or local server?</summary>

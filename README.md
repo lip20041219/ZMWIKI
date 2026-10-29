@@ -27,6 +27,8 @@ and terminal UI on top.
 
 ![ZMWiki Retro Terminal UI](docs/images/zmwiki_tui.png)
 
+![ZMWiki Browser Workbench](docs/images/zmwiki_web.png)
+
 ## Features
 
 ### Wiki Knowledge Layer
@@ -106,14 +108,35 @@ WikiCompiler (LLM-assisted) ──► WikiPage (candidate_links, unverified)
               │                        │                        │
               └────────────────────────┼────────────────────────┘
                                        ↓
-                              Retro Terminal UI
-                              (browse · edit · import · save)
+                     Retro Terminal UI · Browser Workbench
+                     (browse · edit · import · ask · save)
 ```
 
 The zmwiki retrieval pipeline (chunking → embedding → dense/lexical/hybrid
 retrieval → fusion → reranking → context → generation → evaluation) remains
 available as the baseline retrieval backbone and is used as the offline
 baseline in the zmwiki-vs-ZMWiki comparison benchmark.
+
+## Workflow
+
+```mermaid
+flowchart TD
+    A["Install<br/>pip install -e .[tui]"] --> B["Start<br/>start_web.bat or python -m zmwiki.web.server"]
+    B --> C{"Model configured?"}
+    C -->|"no"| D["Web Model setup<br/>Base URL · model · API key<br/>Test connection"]
+    C -->|"yes: CLI / env / settings"| E["Import a UTF-8 .txt"]
+    D --> E
+    E --> F["WikiCompiler + Link Resolver<br/>one page with verified links"]
+    F --> G["Search · browse · follow links"]
+    G --> H["WikiAgent<br/>search → read → follow_links → answer"]
+    H --> I["Answer with cited pages<br/>(only pages actually read)"]
+    I --> J["Save<br/>(web import saves immediately; .bak kept)"]
+    J --> K["Restart<br/>reload workspace + model settings"]
+```
+
+The diagrams show the shipped path only. Model compilation and agent reasoning
+require an OpenAI-compatible endpoint; browsing, search, editing, save and the
+offline evaluation paths do not.
 
 ## Installation
 
@@ -527,8 +550,12 @@ distinguishes authentication failures, a wrong endpoint, rate limiting and
 network errors with actionable messages. The key is stored only on the server,
 in `~/.zmwiki/settings.json` (override with `--settings`; user-only permissions
 on POSIX), and is never returned by any API response, log line or error message
-— the page only learns whether a key exists. The same configuration can still
-come from the CLI or environment, which take precedence at startup:
+— the page only learns whether a key exists.
+
+![ZMWiki first-use model setup](docs/images/zmwiki_web_setup.png)
+
+The same configuration can still come from the CLI or environment, which take
+precedence at startup:
 
 ```bash
 python -m zmwiki.web.server --workspace my_wiki.json --port 8000 \
