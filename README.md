@@ -52,15 +52,19 @@ and terminal UI on top.
   link consistency is enforced
 - **WikiAgent** — multi-step retrieval agent with `search` / `read` /
   `follow_links` / `answer` action protocol. Evidence is strictly separated:
-  answers can only cite pages that have actually been read. Budget control via
+  answers can only cite exact page IDs of pages that have actually been read
+  (`AgentResult.sources` exposes their paths); a first answer that cites no
+  valid read-page ID gets one corrective re-answer if budget remains, and on
+  the last budgeted step the agent is prompted to answer from pages already
+  read or explicitly state that the answer is not stated. Budget control via
   `max_steps`, `search_top_k`, `max_consecutive_errors`, and duplicate-action
   deduplication
 - **Retro Terminal UI** — terminal browser with ASCII banner, three-pane layout
   (search + page list / content reader / metadata + links), fluorescent-green on
   black theme, keyboard-driven navigation, local page create/edit/delete/undo,
-  local `.txt` import with a source registry and sync, Wikipedia import, explicit
-  workspace save, and agent answers with step-level diagnostics and source
-  navigation
+  local `.txt` import with a source registry and sync (Web `upload:` virtual
+  sources are preserved), Wikipedia import, explicit workspace save, and agent
+  answers with step-level diagnostics and source navigation
 - **Browser Workbench** — `/app` provides page list/search, create/edit/delete,
   outgoing links, backlinks, sources, `.txt` document import, explicit
   workspace save, and step-by-step agent Q&A using only native
@@ -219,6 +223,8 @@ python -m zmwiki.tui --workspace my_wiki.json --create
 >
 > 默认工作区就是仓库里的演示文件，**只读保护**：按 `S` 不会写回。要保存自己的编辑，请先创建自己的工作区：`python -m zmwiki.tui --workspace my_wiki.json --create`。
 
+TUI 和 Web 工作台可以加载同一份 workspace，但各自持有内存索引，保存时会覆盖整份 JSON；不要同时编辑同一文件，切换前先关闭一端。
+
 启动后你会看到：顶部 ZMWiki 绿色 ASCII 标题，左侧搜索框和页面列表，中间正文，右侧元数据和双向链接，底部状态栏和快捷键提示。
 
 ### 操作说明
@@ -238,7 +244,7 @@ python -m zmwiki.tui --workspace my_wiki.json --create
 | `W` | 搜索 Wikipedia（回车列出结果，再回车阅读条目） |
 | `I` | 导入当前预览的 Wikipedia 条目到内存 |
 | `L` | 导入本地 `.txt` 文档（需 `--base-url` 和 `--model`；编译后自动保存） |
-| `U` | 源同步：清理源文件已删除的受管页面（手工页面不会删除） |
+| `U` | 源同步：清理源文件已删除的受管页面（手工页面和 Web `upload:` 来源不会删除） |
 | `S` | 保存 workspace（文件已存在时需按两次确认覆盖；演示工作区只读） |
 | `Ctrl+S` | 主界面保存 workspace；页面编辑器中保存当前页面 |
 | `A` | 向本地 Wiki 提问（启动时需带 `--base-url` 和 `--model`） |
@@ -268,7 +274,7 @@ python -m zmwiki.tui --workspace my_wiki.json --base-url https://api.deepseek.co
 
 2. 按 `L`，输入 UTF-8 `.txt` 文件路径并回车。编译完成后页面立即加入列表并**自动保存**到当前 workspace（这一步不需要再按 `S`）。
 3. 再次导入同一文件会原地更新该页面。文件重命名但内容未变、且原路径已不存在时，也会复用原页面，不会新建重复页。
-4. 源文件被移动或删除后，按 `U` 执行源同步：只清理由该源文件生成、且来源可确认的页面；手工新建的页面和源文件仍存在的页面不受影响。
+4. 源文件被移动或删除后，按 `U` 执行源同步：只清理由该源文件生成、且来源可确认的页面；手工新建的页面和源文件仍存在的页面不受影响。Web 工作台导入使用 `upload:` 虚拟来源，TUI 的 `U` 不会把它们当作丢失的本地文件。
 
 仅支持 UTF-8 `.txt`。启动时未提供 `--base-url` / `--model` 时，按 `L` 会提示“本地导入不可用”；浏览、搜索、手工编辑和保存不需要模型。
 
@@ -486,14 +492,17 @@ page, `E` edit the current page, `Ctrl+Z` undo the last page edit (in memory;
 press `S` to persist), `D` delete it (press twice; links are cleaned up), `W`
 search Wikipedia, `A` ask, `I` import the previewed article, `L` import a local
 `.txt` document (needs `--base-url`/`--model`; saves immediately), `U` sync
-registered source files (removes only pages whose source file is gone), `S` save
+registered source files (removes only pages whose local source file is gone;
+Web `upload:` sources are left untouched), `S` save
 the workspace (press twice to overwrite), `Ctrl+S` save the workspace from the
 main view or the current page inside the editor, `Esc` clear search, `Tab`
 switch pane, `Q` quit. Use `--create` to start a new empty workspace file.
 
 The bundled demo workspace is read-only: `S` will not overwrite
 `benchmark/corpus/wiki_workspace.json`. Create your own workspace with
-`--create` to persist changes.
+`--create` to persist changes. The TUI and browser workbench can load the same
+workspace, but each keeps an in-memory copy and saves the whole JSON; do not
+edit the same file from both at once. Stop one before starting the other.
 
 `A` requires an OpenAI-compatible endpoint (`--base-url`, `--model`), plus
 `ZMWIKI_API_KEY` or `--api-key` when the endpoint needs authentication. Without
@@ -520,7 +529,8 @@ python -m zmwiki.tui --workspace my_wiki.json \
    with unchanged content and a missing old path reuses the same page.
 4. After deleting or moving a source file, press `U` to sync: only pages whose
    source is gone and whose provenance matches are removed. Manually created
-   pages and pages whose source file still exists are kept.
+   pages and pages whose source file still exists are kept. Web imports use
+   virtual `upload:` source keys; TUI source sync leaves those entries untouched.
 
 Only UTF-8 `.txt` is supported. Without `--base-url` / `--model`, `L` reports
 that local import is unavailable; browsing, search, editing and saving still
@@ -732,20 +742,23 @@ results = pipeline.retrieve(query="retrieval", top_k=3)
 
 ## zmwiki vs ZMWiki Comparison Benchmark
 
-A 26-question wiki QA benchmark with multi-hop emphasis compares two
-independently configured systems over the same corpus and dataset:
+A 26-case wiki QA dataset with multi-hop emphasis is used to compare two
+independently configured systems over the same corpus and questions. The
+published result below uses the first 15 cases (`--limit 15`, matching the
+existing `trial_15cases` scope): 14 answerable and 1 unanswerable, including
+9 multi-hop cases.
 
 - **Baseline** — zmwiki single-pass hybrid retrieval + `DeterministicGenerator`
   (offline extractive generation, no LLM).
 - **Experiment** — ZMWiki `WikiAgent` multi-step search / read / follow_links /
-  answer, driven by a live OpenAI-compatible model.
+  answer, driven by a live OpenAI-compatible model (`deepseek-flash`).
 
 This is **not a strictly controlled single-variable experiment**: the baseline
 uses a deterministic offline generator while the experiment uses an online
-DeepSeek model (`deepseek-chat` in the historical run).
-Answer-quality differences can come from retrieval, evidence organization, or
-the generator itself. Treat the two systems as independent results, not a
-head-to-head semantic-accuracy comparison.
+model. Answer-quality differences can come from retrieval, evidence
+organization, or the generator itself. Treat the two systems as independent
+results, not a head-to-head semantic-accuracy comparison. Retrieval/evidence
+metrics are comparable; answer-quality metrics are not.
 
 ### Dataset and scoring
 
@@ -761,30 +774,75 @@ punctuation stripping. A correct paraphrase can score 0 and a verbatim copy can
 score 1. The fabrication guard is a lexical heuristic, so unanswerable cases
 still need manual audit.
 
+The published 15-case subset is the first 15 cases of this dataset: 14
+answerable, 1 unanswerable, and 9 answerable multi-hop cases.
+
 Metrics are **answer accuracy** (keyword-scored), **verified answer accuracy**
-(answered with at least one cited source), **read evidence recall**
-(`read_evidence_recall`, required pages actually read; for the baseline this is
-its retrieved context set), legacy **access recall** (`evidence_recall`, which
-also counts search candidates), **source precision**, **multi-hop success**, and
-efficiency (steps / pages read). There is no separate "page recall" metric.
+(keyword-correct, `status=answered`, and at least one cited source), **read
+evidence recall** (`|read_page_ids ∩ required| / |required|` over answerable
+cases; for the baseline this is its retrieved context set), legacy **access
+recall** (`evidence_recall`, which also counts search candidates), **source
+precision** (cited sources intersecting required/alternative evidence pages,
+divided by all cited sources and averaged per case; unanswerable cases have 0 by
+definition), **multi-hop success** (correct keyword answer and full access recall
+over answerable multi-hop cases), and efficiency (steps / pages read). There is
+no separate "page recall" metric.
 
-### Historical result (v1.2, live run)
+### Published result (Stage 7, 15 cases, one run)
 
-The committed result file `benchmark/results/m4_3_1_live_20261027.json`
-(2026-10-27) records a live run with dataset v1.2, `deepseek-chat`,
-`max_steps=8`, and `link_source=auto` (the `--auto-links` path):
+`benchmark/results/stage7_multihop_15_20261029.json` records the published
+15-case run: dataset v1.2, `deepseek-flash`, `max_steps=8`, manual links,
+`--limit 15`, one run on 2026-10-29. It used 66 model requests and took
+82.09 seconds in that run; token usage and API cost were not recorded.
 
 | System | Keyword answer accuracy | Verified | Read evidence recall* | Source precision | Multi-hop success* | Mean steps |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Offline baseline | 4/26 (15.4%) | 4/26 | 0.886 | 0.378 | 2/17 (11.8%) | 1.00 |
-| Online WikiAgent | 26/26 (100%) | 26/26 | 1.000 | 0.783 | 17/17 (100%) | 3.27 |
+| Offline baseline | 3/15 (20.0%) | 3/15 | 0.881 (22/26) | 0.338 | 2/9 (22.2%) | 1.00 |
+| Online WikiAgent | 15/15 (100%) | 15/15 | 1.000 (26/26) | 0.873 | 9/9 (100%) | 4.40 |
 
-\*Read evidence recall and multi-hop success are over answerable cases; source
-precision is over all cases. The 26/26 is a **historical v1.2 keyword-scored
-result**, not a general semantic-accuracy claim, and it is not reproduced by the
-offline command below. The deterministic baseline was rerun offline for this
-documentation update and again scored 4/26 (15.4%) on dataset v1.2; offline runs
-do not execute WikiAgent and leave the experiment aggregate empty.
+\*Read evidence recall and multi-hop success are over the 14 answerable cases
+and 9 answerable multi-hop cases respectively; the read-evidence parenthetical
+counts are pooled page counts, while multi-hop fractions are case counts. Source
+precision is averaged over all 15 cases; the one
+unanswerable case contributes 0 by definition, while on answerable cases the
+means are 0.362 for the baseline and 0.936 for the agent. The agent answered the
+unanswerable case with an explicit refusal; the baseline did not.
+
+This is a **single run**, not a variance study. The 15/15 is keyword-scored on a
+15-case subset, not a general semantic-accuracy claim, and the baseline uses a
+deterministic extractive generator while the agent uses a live LLM. Do not treat
+the answer-accuracy gap as a pure retrieval or Agent effect. The last-step
+answer prompt is advisory: a model that ignores it can still exhaust the step
+budget. Older 26-case artifacts remain in `benchmark/results/` for history and
+are not the published result above.
+
+### Real Q&A examples
+
+From the same Stage 7 run on the synthetic Acme corpus (page IDs are the cited
+`sources`):
+
+```text
+Q: What is the budget of the project led by Alice Smith?
+status: answered
+A: Alice Smith leads Project Phoenix, Acme Corp's internal platform migration
+   initiative. The allocated budget for Project Phoenix is five hundred
+   thousand dollars ($500,000).
+sources: alice, project_phoenix
+```
+
+```text
+Q: Who is the CEO of Acme Corp?
+status: answered (refusal)
+A: The name of the CEO of Acme Corp is not stated in the pages I read.
+   Building B's fifth floor is described as the executive level containing the
+   CEO's office, and Eve Martinez is noted as reporting directly to the CEO,
+   but neither page identifies who holds the CEO position.
+sources: bob, building_a, building_b, david, eve
+```
+
+The second example is a refusal, not a fabricated name; answering "not stated"
+with cited read pages is part of the benchmark's unanswerable handling. Model
+output is not deterministic.
 
 Benchmark links are hand-authored for this corpus (`_PAGE_LINKS` /
 `_CANDIDATE_LINKS`), not produced by `WikiCompiler`; `--auto-links` runs the
@@ -794,19 +852,22 @@ capability gap.
 ### Reproduce
 
 ```bash
-# Offline: baseline only. No API, no network; WikiAgent is NOT executed.
-# Choose a new output path: the script refuses to overwrite an existing file.
-python benchmark/run_multihop_evaluation.py \
+# Offline: baseline only on the same 15-case subset. No API, no network;
+# WikiAgent is NOT executed. Choose a new output path: the script refuses
+# to overwrite an existing file.
+python benchmark/run_multihop_evaluation.py --limit 15 \
   --output benchmark/results/offline_baseline_local.json
 
 # Online: calls a real OpenAI-compatible API (network + possibly cost).
 # Requires --base-url/--model and a valid key (ZMWIKI_API_KEY or --api-key).
 # Runs BOTH the offline baseline and the online WikiAgent.
-python benchmark/run_multihop_evaluation.py --live --auto-links \
-  --base-url https://api.deepseek.com/v1 --model deepseek-chat \
-  --output benchmark/results/live_run_local.json
+python benchmark/run_multihop_evaluation.py --live --limit 15 \
+  --base-url https://api.deepseek.com --model deepseek-flash \
+  --output benchmark/results/live_15_local.json
 ```
 
+The published result used manual links (the default) and `link_source=manual`;
+`--auto-links` is an alternative resolver path, not the Stage 7 configuration.
 Add `--limit 3` for a 3-case smoke run. Anonymous endpoints (e.g. local Ollama)
 need `--allow-anonymous` for `--live`. Results are written only to a new JSON
 file, with per-case records, aggregate metrics, configuration, git SHA, and
@@ -862,13 +923,16 @@ python -m pytest -q
 The full suite includes TUI tests; install with
 `pip install -e ".[dev,tui]"` (pytest + Textual) before running it.
 
-Last verified locally: `1865 passed, 6 skipped` with Python 3.11.9 on Windows.
-The last committed revision also passed GitHub Actions (Ubuntu/Python 3.11).
-The suite is fully offline: agent, compiler and TUI tests inject fake model
-transports, so no API key or network is used. The six skips are optional
-semantic-profile / real-model integration tests gated behind environment
-variables, not failures. Real online model behavior is only exercised by the
-benchmark `--live` commands above and is not covered by this offline suite.
+The last full-suite run before the final Agent regression tests was `1867
+passed, 6 skipped` (Python 3.11.9, Windows). After the final changes, targeted
+local runs were: `tests/wiki` **391 passed**; `tests/web/test_ask.py` plus
+`tests/tui/test_agent_flow.py` **23 passed**. Run the full command above for the
+current total. The suite is fully offline: agent, compiler, TUI and Web tests
+inject fake model transports, so no API key or network is used. The skips are
+optional semantic-profile / real-model integration tests gated behind
+environment variables, not failures. Real online model behavior is only
+exercised by the benchmark `--live` commands above and is not covered by this
+offline suite.
 
 ## Project Scope
 
