@@ -1,0 +1,1450 @@
+{
+  "full_50_r3": {
+    "records": 100,
+    "unique_cases": 50,
+    "answerable": {
+      "records": 86,
+      "claims": 240,
+      "supported": 146,
+      "contradicted": 0,
+      "unverifiable": 94,
+      "claim_support_rate": 0.6083333333333333,
+      "claim_contradiction_rate": 0.0,
+      "citation_claim_precision": 1.0,
+      "case_coverage": 0.7093023255813954,
+      "claim_coverage": 0.6083333333333333
+    },
+    "unanswerable": {
+      "records": 14,
+      "claims": 17,
+      "supported": 7,
+      "contradicted": 0,
+      "unverifiable": 10,
+      "claim_support_rate": 0.4117647058823529,
+      "claim_contradiction_rate": 0.0,
+      "citation_claim_precision": 1.0,
+      "case_coverage": 0.2857142857142857,
+      "claim_coverage": 0.4117647058823529
+    },
+    "all": {
+      "records": 100,
+      "claims": 257,
+      "supported": 153,
+      "contradicted": 0,
+      "unverifiable": 104,
+      "claim_support_rate": 0.5953307392996109,
+      "claim_contradiction_rate": 0.0,
+      "citation_claim_precision": 1.0,
+      "case_coverage": 0.65,
+      "claim_coverage": 0.5953307392996109
+    },
+    "per_case": [
+      {
+        "id": "mh01_manager_title",
+        "answerable": true,
+        "records": 2,
+        "claims": 4,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "claim_coverage": 1.0
+      },
+      {
+        "id": "mh02_project_budget",
+        "answerable": true,
+        "records": 2,
+        "claims": 2,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.5
+      },
+      {
+        "id": "mh03_orion_lead_chain",
+        "answerable": true,
+        "records": 2,
+        "claims": 7,
+        "supported": 7,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "claim_coverage": 1.0
+      },
+      {
+        "id": "mh04_cafeteria_floor",
+        "answerable": true,
+        "records": 2,
+        "claims": 3,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 3,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh05_total_budget_aggregation",
+        "answerable": true,
+        "records": 2,
+        "claims": 4,
+        "supported": 3,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.75
+      },
+      {
+        "id": "mh06_shared_engineer",
+        "answerable": true,
+        "records": 2,
+        "claims": 5,
+        "supported": 2,
+        "contradicted": 0,
+        "unverifiable": 3,
+        "claim_coverage": 0.4
+      },
+      {
+        "id": "mh07_deadline_by_budget",
+        "answerable": true,
+        "records": 2,
+        "claims": 3,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 3,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh08_ceo_unanswerable",
+        "answerable": false,
+        "records": 2,
+        "claims": 4,
+        "supported": 3,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.75
+      },
+      {
+        "id": "mh09_negative_membership",
+        "answerable": true,
+        "records": 2,
+        "claims": 7,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 3,
+        "claim_coverage": 0.5714285714285714
+      },
+      {
+        "id": "mh10_direct_reports",
+        "answerable": true,
+        "records": 2,
+        "claims": 7,
+        "supported": 5,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.7142857142857143
+      },
+      {
+        "id": "mh11_vp_office_floor",
+        "answerable": true,
+        "records": 2,
+        "claims": 2,
+        "supported": 2,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "claim_coverage": 1.0
+      },
+      {
+        "id": "mh12_connected_building",
+        "answerable": true,
+        "records": 2,
+        "claims": 2,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh13_engineering_budget",
+        "answerable": true,
+        "records": 2,
+        "claims": 5,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.8
+      },
+      {
+        "id": "mh14_orion_lead_degree",
+        "answerable": true,
+        "records": 2,
+        "claims": 3,
+        "supported": 3,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "claim_coverage": 1.0
+      },
+      {
+        "id": "mh15_gym_location",
+        "answerable": true,
+        "records": 2,
+        "claims": 2,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh17_carol_two_project_leads",
+        "answerable": true,
+        "records": 2,
+        "claims": 8,
+        "supported": 7,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.875
+      },
+      {
+        "id": "mh18_orion_contributor_manager_office",
+        "answerable": true,
+        "records": 2,
+        "claims": 8,
+        "supported": 6,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.75
+      },
+      {
+        "id": "mh20_phoenix_deadline_office",
+        "answerable": true,
+        "records": 2,
+        "claims": 5,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 5,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh21_team_intersection",
+        "answerable": true,
+        "records": 2,
+        "claims": 5,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.8
+      },
+      {
+        "id": "mh23_building_floor_difference",
+        "answerable": true,
+        "records": 2,
+        "claims": 5,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 5,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh24_engineering_budget_vs_projects",
+        "answerable": true,
+        "records": 2,
+        "claims": 3,
+        "supported": 3,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "claim_coverage": 1.0
+      },
+      {
+        "id": "mh25_project_launch_order",
+        "answerable": true,
+        "records": 2,
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh26_alice_david_same_building",
+        "answerable": true,
+        "records": 2,
+        "claims": 4,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "claim_coverage": 1.0
+      },
+      {
+        "id": "mh28_first_floor_office_premise",
+        "answerable": false,
+        "records": 2,
+        "claims": 3,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.3333333333333333
+      },
+      {
+        "id": "mh29_alice_salary",
+        "answerable": false,
+        "records": 2,
+        "claims": 4,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 4,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh30_david_university",
+        "answerable": false,
+        "records": 2,
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh31_carol_manager_chain_tenure",
+        "answerable": true,
+        "records": 2,
+        "claims": 6,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.6666666666666666
+      },
+      {
+        "id": "mh32_director_report_kubernetes",
+        "answerable": true,
+        "records": 2,
+        "claims": 6,
+        "supported": 5,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.8333333333333334
+      },
+      {
+        "id": "mh33_gym_data_team_lead",
+        "answerable": true,
+        "records": 2,
+        "claims": 8,
+        "supported": 2,
+        "contradicted": 0,
+        "unverifiable": 6,
+        "claim_coverage": 0.25
+      },
+      {
+        "id": "mh34_vp_office_bob_team_size",
+        "answerable": true,
+        "records": 2,
+        "claims": 6,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.6666666666666666
+      },
+      {
+        "id": "mh35_phoenix_carol_bob_eve_groups",
+        "answerable": true,
+        "records": 2,
+        "claims": 5,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.8
+      },
+      {
+        "id": "mh36_phoenix_carol_bob_responsibilities",
+        "answerable": true,
+        "records": 2,
+        "claims": 4,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 3,
+        "claim_coverage": 0.25
+      },
+      {
+        "id": "mh37_budget_ratio_synthesis",
+        "answerable": true,
+        "records": 2,
+        "claims": 4,
+        "supported": 3,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.75
+      },
+      {
+        "id": "mh38_responsibility_synthesis",
+        "answerable": true,
+        "records": 2,
+        "claims": 12,
+        "supported": 12,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "claim_coverage": 1.0
+      },
+      {
+        "id": "mh39_project_purpose_synthesis",
+        "answerable": true,
+        "records": 2,
+        "claims": 8,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 7,
+        "claim_coverage": 0.125
+      },
+      {
+        "id": "mh40_walkway_data_team_synthesis",
+        "answerable": true,
+        "records": 2,
+        "claims": 1,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh41_orion_tech_match",
+        "answerable": true,
+        "records": 2,
+        "claims": 2,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.5
+      },
+      {
+        "id": "mh42_bob_eve_tenure_office",
+        "answerable": true,
+        "records": 2,
+        "claims": 7,
+        "supported": 6,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.8571428571428571
+      },
+      {
+        "id": "mh43_alice_david_join_degree_building",
+        "answerable": true,
+        "records": 2,
+        "claims": 6,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.6666666666666666
+      },
+      {
+        "id": "mh44_project_budget_timing_comparison",
+        "answerable": true,
+        "records": 2,
+        "claims": 5,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 5,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh45_carol_david_role_office_project",
+        "answerable": true,
+        "records": 2,
+        "claims": 13,
+        "supported": 8,
+        "contradicted": 0,
+        "unverifiable": 5,
+        "claim_coverage": 0.6153846153846154
+      },
+      {
+        "id": "mh46_phoenix_reporting_chain",
+        "answerable": true,
+        "records": 2,
+        "claims": 12,
+        "supported": 9,
+        "contradicted": 0,
+        "unverifiable": 3,
+        "claim_coverage": 0.75
+      },
+      {
+        "id": "mh47_exec_level_to_phoenix_chain",
+        "answerable": true,
+        "records": 2,
+        "claims": 17,
+        "supported": 8,
+        "contradicted": 0,
+        "unverifiable": 9,
+        "claim_coverage": 0.47058823529411764
+      },
+      {
+        "id": "mh48_building_a_carol_manager_chain",
+        "answerable": true,
+        "records": 2,
+        "claims": 8,
+        "supported": 6,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.75
+      },
+      {
+        "id": "mh49_orion_upward_chain_ceo",
+        "answerable": true,
+        "records": 2,
+        "claims": 7,
+        "supported": 5,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.7142857142857143
+      },
+      {
+        "id": "mh50_orion_exact_completion_date",
+        "answerable": false,
+        "records": 2,
+        "claims": 1,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh51_total_employee_count",
+        "answerable": false,
+        "records": 2,
+        "claims": 3,
+        "supported": 3,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "claim_coverage": 1.0
+      },
+      {
+        "id": "mh52_alice_previous_startup_name",
+        "answerable": false,
+        "records": 2,
+        "claims": 2,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh53_bob_david_office_disambiguation",
+        "answerable": true,
+        "records": 2,
+        "claims": 3,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 3,
+        "claim_coverage": 0.0
+      },
+      {
+        "id": "mh54_alice_carol_role_office_disambiguation",
+        "answerable": true,
+        "records": 2,
+        "claims": 6,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "claim_coverage": 0.6666666666666666
+      }
+    ]
+  },
+  "all_rounds": {
+    "records": 300,
+    "unique_cases": 50,
+    "answerable": {
+      "records": 258,
+      "claims": 702,
+      "supported": 413,
+      "contradicted": 0,
+      "unverifiable": 289,
+      "claim_support_rate": 0.5883190883190883,
+      "claim_contradiction_rate": 0.0,
+      "citation_claim_precision": 1.0,
+      "case_coverage": 0.686046511627907,
+      "claim_coverage": 0.5883190883190883
+    },
+    "unanswerable": {
+      "records": 42,
+      "claims": 44,
+      "supported": 22,
+      "contradicted": 0,
+      "unverifiable": 22,
+      "claim_support_rate": 0.5,
+      "claim_contradiction_rate": 0.0,
+      "citation_claim_precision": 1.0,
+      "case_coverage": 0.2619047619047619,
+      "claim_coverage": 0.5
+    },
+    "all": {
+      "records": 300,
+      "claims": 746,
+      "supported": 435,
+      "contradicted": 0,
+      "unverifiable": 311,
+      "claim_support_rate": 0.5831099195710456,
+      "claim_contradiction_rate": 0.0,
+      "citation_claim_precision": 1.0,
+      "case_coverage": 0.6266666666666667,
+      "claim_coverage": 0.5831099195710456
+    }
+  },
+  "known_correct": {
+    "records": 35,
+    "unique_review_ids": 35,
+    "unique_cases": 17,
+    "summary": {
+      "records": 35,
+      "claims": 85,
+      "supported": 52,
+      "contradicted": 0,
+      "unverifiable": 33,
+      "claim_support_rate": 0.611764705882353,
+      "claim_contradiction_rate": 0.0,
+      "citation_claim_precision": 1.0,
+      "case_coverage": 0.5428571428571428,
+      "claim_coverage": 0.611764705882353
+    },
+    "per_case": [
+      {
+        "id": "s13_auto_correct_sample_r1_traditional_rag_mh21_team_intersection",
+        "case_id": "mh21_team_intersection",
+        "verdict": "supported",
+        "claims": 1,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 1.0
+      },
+      {
+        "id": "s13_auto_correct_sample_r3_traditional_rag_mh24_engineering_budget_vs_projects",
+        "case_id": "mh24_engineering_budget_vs_projects",
+        "verdict": "supported",
+        "claims": 1,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 1.0
+      },
+      {
+        "id": "s13_auto_correct_sample_r2_traditional_rag_mh41_orion_tech_match",
+        "case_id": "mh41_orion_tech_match",
+        "verdict": "partially_supported",
+        "claims": 2,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "coverage": 0.5
+      },
+      {
+        "id": "s13_auto_correct_sample_r2_traditional_rag_mh54_alice_carol_role_office_disambiguation",
+        "case_id": "mh54_alice_carol_role_office_disambiguation",
+        "verdict": "partially_supported",
+        "claims": 3,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "coverage": 0.3333333333333333
+      },
+      {
+        "id": "s13_auto_correct_sample_r2_wiki_agent_mh02_project_budget",
+        "case_id": "mh02_project_budget",
+        "verdict": "supported",
+        "claims": 1,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 1.0
+      },
+      {
+        "id": "s13_auto_correct_sample_r2_wiki_agent_mh17_carol_two_project_leads",
+        "case_id": "mh17_carol_two_project_leads",
+        "verdict": "supported",
+        "claims": 5,
+        "supported": 5,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 1.0
+      },
+      {
+        "id": "s13_risk_r2_traditional_rag_mh02_project_budget",
+        "case_id": "mh02_project_budget",
+        "verdict": "supported",
+        "claims": 1,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 1.0
+      },
+      {
+        "id": "s13_risk_r1_traditional_rag_mh18_orion_contributor_manager_office",
+        "case_id": "mh18_orion_contributor_manager_office",
+        "verdict": "partially_supported",
+        "claims": 3,
+        "supported": 2,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "coverage": 0.6666666666666666
+      },
+      {
+        "id": "s13_risk_r2_traditional_rag_mh20_phoenix_deadline_office",
+        "case_id": "mh20_phoenix_deadline_office",
+        "verdict": "unverifiable",
+        "claims": 3,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 3,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r3_traditional_rag_mh25_project_launch_order",
+        "case_id": "mh25_project_launch_order",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r1_traditional_rag_mh40_walkway_data_team_synthesis",
+        "case_id": "mh40_walkway_data_team_synthesis",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r2_traditional_rag_mh40_walkway_data_team_synthesis",
+        "case_id": "mh40_walkway_data_team_synthesis",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r3_traditional_rag_mh40_walkway_data_team_synthesis",
+        "case_id": "mh40_walkway_data_team_synthesis",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r3_traditional_rag_mh54_alice_carol_role_office_disambiguation",
+        "case_id": "mh54_alice_carol_role_office_disambiguation",
+        "verdict": "partially_supported",
+        "claims": 3,
+        "supported": 2,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "coverage": 0.6666666666666666
+      },
+      {
+        "id": "s13_risk_r1_traditional_rag_mh24_engineering_budget_vs_projects",
+        "case_id": "mh24_engineering_budget_vs_projects",
+        "verdict": "supported",
+        "claims": 1,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 1.0
+      },
+      {
+        "id": "s13_risk_r2_traditional_rag_mh24_engineering_budget_vs_projects",
+        "case_id": "mh24_engineering_budget_vs_projects",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r3_wiki_agent_mh24_engineering_budget_vs_projects",
+        "case_id": "mh24_engineering_budget_vs_projects",
+        "verdict": "supported",
+        "claims": 2,
+        "supported": 2,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 1.0
+      },
+      {
+        "id": "s13_risk_r1_traditional_rag_mh08_ceo_unanswerable",
+        "case_id": "mh08_ceo_unanswerable",
+        "verdict": "unverifiable",
+        "claims": 1,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r3_wiki_agent_mh08_ceo_unanswerable",
+        "case_id": "mh08_ceo_unanswerable",
+        "verdict": "supported",
+        "claims": 2,
+        "supported": 2,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 1.0
+      },
+      {
+        "id": "s13_risk_r2_traditional_rag_mh29_alice_salary",
+        "case_id": "mh29_alice_salary",
+        "verdict": "unverifiable",
+        "claims": 1,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r1_traditional_rag_mh30_david_university",
+        "case_id": "mh30_david_university",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r2_traditional_rag_mh30_david_university",
+        "case_id": "mh30_david_university",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r1_traditional_rag_mh50_orion_exact_completion_date",
+        "case_id": "mh50_orion_exact_completion_date",
+        "verdict": "unverifiable",
+        "claims": 1,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r2_traditional_rag_mh50_orion_exact_completion_date",
+        "case_id": "mh50_orion_exact_completion_date",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r3_traditional_rag_mh50_orion_exact_completion_date",
+        "case_id": "mh50_orion_exact_completion_date",
+        "verdict": "unverifiable",
+        "claims": 1,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r1_traditional_rag_mh51_total_employee_count",
+        "case_id": "mh51_total_employee_count",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r2_traditional_rag_mh51_total_employee_count",
+        "case_id": "mh51_total_employee_count",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r3_traditional_rag_mh51_total_employee_count",
+        "case_id": "mh51_total_employee_count",
+        "verdict": "unverifiable",
+        "claims": 0,
+        "supported": 0,
+        "contradicted": 0,
+        "unverifiable": 0,
+        "coverage": 0.0
+      },
+      {
+        "id": "s13_risk_r1_wiki_agent_mh46_phoenix_reporting_chain",
+        "case_id": "mh46_phoenix_reporting_chain",
+        "verdict": "partially_supported",
+        "claims": 10,
+        "supported": 9,
+        "contradicted": 0,
+        "unverifiable": 1,
+        "coverage": 0.9
+      },
+      {
+        "id": "s13_risk_r2_wiki_agent_mh46_phoenix_reporting_chain",
+        "case_id": "mh46_phoenix_reporting_chain",
+        "verdict": "partially_supported",
+        "claims": 11,
+        "supported": 8,
+        "contradicted": 0,
+        "unverifiable": 3,
+        "coverage": 0.7272727272727273
+      },
+      {
+        "id": "s13_risk_r1_traditional_rag_mh47_exec_level_to_phoenix_chain",
+        "case_id": "mh47_exec_level_to_phoenix_chain",
+        "verdict": "partially_supported",
+        "claims": 5,
+        "supported": 1,
+        "contradicted": 0,
+        "unverifiable": 4,
+        "coverage": 0.2
+      },
+      {
+        "id": "s13_risk_r1_wiki_agent_mh47_exec_level_to_phoenix_chain",
+        "case_id": "mh47_exec_level_to_phoenix_chain",
+        "verdict": "partially_supported",
+        "claims": 10,
+        "supported": 6,
+        "contradicted": 0,
+        "unverifiable": 4,
+        "coverage": 0.6
+      },
+      {
+        "id": "s13_risk_r2_traditional_rag_mh47_exec_level_to_phoenix_chain",
+        "case_id": "mh47_exec_level_to_phoenix_chain",
+        "verdict": "partially_supported",
+        "claims": 4,
+        "supported": 2,
+        "contradicted": 0,
+        "unverifiable": 2,
+        "coverage": 0.5
+      },
+      {
+        "id": "s13_risk_r2_wiki_agent_mh47_exec_level_to_phoenix_chain",
+        "case_id": "mh47_exec_level_to_phoenix_chain",
+        "verdict": "partially_supported",
+        "claims": 8,
+        "supported": 4,
+        "contradicted": 0,
+        "unverifiable": 4,
+        "coverage": 0.5
+      },
+      {
+        "id": "s13_risk_r3_traditional_rag_mh47_exec_level_to_phoenix_chain",
+        "case_id": "mh47_exec_level_to_phoenix_chain",
+        "verdict": "partially_supported",
+        "claims": 5,
+        "supported": 2,
+        "contradicted": 0,
+        "unverifiable": 3,
+        "coverage": 0.4
+      }
+    ]
+  },
+  "historical": {
+    "mh38_responsibility_synthesis": {
+      "verdict": "contradicted",
+      "claims": 4,
+      "supported": 2,
+      "contradicted": 2,
+      "unverifiable": 0,
+      "coverage": 1.0,
+      "claims_detail": [
+        {
+          "claim_id": "C0",
+          "text": "Technical roadmap planning is owned by Eve Martinez, the VP of Engineering.",
+          "subject": "eve",
+          "relation": "responsible_for",
+          "object": "roadmap",
+          "value": "roadmap",
+          "verdict": "contradicted",
+          "negated": false,
+          "supporting_page_ids": [],
+          "contradicting_page_ids": [
+            "bob"
+          ],
+          "reason": "source assigns this responsibility to another subject"
+        },
+        {
+          "claim_id": "C1",
+          "text": "Technical roadmap planning is owned by Eve Martinez, the VP of Engineering.",
+          "subject": "eve",
+          "relation": "role",
+          "object": "vp_of_engineering",
+          "value": null,
+          "verdict": "supported",
+          "negated": false,
+          "supporting_page_ids": [
+            "bob",
+            "eve"
+          ],
+          "contradicting_page_ids": [],
+          "reason": "source states the same role/membership"
+        },
+        {
+          "claim_id": "C2",
+          "text": "Quarterly performance reviews are run by Bob Jones.",
+          "subject": "bob",
+          "relation": "responsible_for",
+          "object": "quarterly_reviews",
+          "value": "quarterly_reviews",
+          "verdict": "supported",
+          "negated": false,
+          "supporting_page_ids": [
+            "bob"
+          ],
+          "contradicting_page_ids": [],
+          "reason": "source fact assigns the same responsibility"
+        },
+        {
+          "claim_id": "C3",
+          "text": "The annual engineering budget is also owned by Bob Jones.",
+          "subject": "bob",
+          "relation": "responsible_for",
+          "object": "budget",
+          "value": "budget",
+          "verdict": "contradicted",
+          "negated": false,
+          "supporting_page_ids": [],
+          "contradicting_page_ids": [
+            "eve"
+          ],
+          "reason": "source assigns this responsibility to another subject"
+        }
+      ]
+    },
+    "mh10_direct_reports": {
+      "verdict": "contradicted",
+      "claims": 4,
+      "supported": 2,
+      "contradicted": 1,
+      "unverifiable": 1,
+      "coverage": 0.75,
+      "claims_detail": [
+        {
+          "claim_id": "C0",
+          "text": "Bob Jones has five direct reports: Alice Smith, Carol Chen, David Kim, Frank Osei, and Grace Liu.",
+          "subject": "bob",
+          "relation": "direct_report_count",
+          "object": null,
+          "value": "5",
+          "verdict": "unverifiable",
+          "negated": false,
+          "supporting_page_ids": [],
+          "contradicting_page_ids": [],
+          "reason": "no matching source fact"
+        },
+        {
+          "claim_id": "C1",
+          "text": "Bob Jones has five direct reports: Alice Smith, Carol Chen, David Kim, Frank Osei, and Grace Liu.",
+          "subject": "bob",
+          "relation": "direct_report",
+          "object": "alice",
+          "value": null,
+          "verdict": "supported",
+          "negated": false,
+          "supporting_page_ids": [
+            "bob"
+          ],
+          "contradicting_page_ids": [],
+          "reason": "source states this management pair"
+        },
+        {
+          "claim_id": "C2",
+          "text": "Bob Jones has five direct reports: Alice Smith, Carol Chen, David Kim, Frank Osei, and Grace Liu.",
+          "subject": "bob",
+          "relation": "direct_report",
+          "object": "carol",
+          "value": null,
+          "verdict": "supported",
+          "negated": false,
+          "supporting_page_ids": [
+            "bob"
+          ],
+          "contradicting_page_ids": [],
+          "reason": "source states this management pair"
+        },
+        {
+          "claim_id": "C3",
+          "text": "Bob Jones has five direct reports: Alice Smith, Carol Chen, David Kim, Frank Osei, and Grace Liu.",
+          "subject": "bob",
+          "relation": "direct_report",
+          "object": "david",
+          "value": null,
+          "verdict": "contradicted",
+          "negated": false,
+          "supporting_page_ids": [],
+          "contradicting_page_ids": [
+            "david"
+          ],
+          "reason": "source reports this person to another manager"
+        }
+      ]
+    },
+    "mh49_orion_upward_chain_ceo": {
+      "verdict": "contradicted",
+      "claims": 3,
+      "supported": 2,
+      "contradicted": 1,
+      "unverifiable": 0,
+      "coverage": 1.0,
+      "claims_detail": [
+        {
+          "claim_id": "C0",
+          "text": "Project Orion's technical lead is David Kim, who reports to Eve Martinez.",
+          "subject": "david",
+          "relation": "reports_to",
+          "object": "eve",
+          "value": null,
+          "verdict": "supported",
+          "negated": false,
+          "supporting_page_ids": [
+            "david",
+            "project_orion"
+          ],
+          "contradicting_page_ids": [],
+          "reason": "source fact matches"
+        },
+        {
+          "claim_id": "C1",
+          "text": "Project Orion's technical lead is David Kim, who reports to Eve Martinez.",
+          "subject": "david",
+          "relation": "role",
+          "object": "technical_lead",
+          "value": null,
+          "verdict": "supported",
+          "negated": false,
+          "supporting_page_ids": [
+            "david"
+          ],
+          "contradicting_page_ids": [],
+          "reason": "source states the same role/membership"
+        },
+        {
+          "claim_id": "C2",
+          "text": "Eve Martinez reports to the Chief Technology Officer (CTO), who reports to the CEO.",
+          "subject": "eve",
+          "relation": "reports_to",
+          "object": "cto",
+          "value": null,
+          "verdict": "contradicted",
+          "negated": false,
+          "supporting_page_ids": [],
+          "contradicting_page_ids": [
+            "eve"
+          ],
+          "reason": "source gives a different value for this single-valued relation"
+        }
+      ]
+    }
+  },
+  "fixture": {
+    "cases": 10,
+    "matches": 10,
+    "per_case": [
+      {
+        "id": "ea01_cited_responsibility_swap",
+        "expected_verdict": "contradicted",
+        "actual_verdict": "contradicted",
+        "expected_claim_verdicts": [
+          "contradicted",
+          "supported",
+          "contradicted"
+        ],
+        "actual_claim_verdicts": [
+          "contradicted",
+          "supported",
+          "contradicted"
+        ],
+        "match": true
+      },
+      {
+        "id": "ea02_cited_fabricated_direct_reports",
+        "expected_verdict": "contradicted",
+        "actual_verdict": "contradicted",
+        "expected_claim_verdicts": [
+          "unverifiable",
+          "supported",
+          "supported",
+          "contradicted"
+        ],
+        "actual_claim_verdicts": [
+          "unverifiable",
+          "supported",
+          "supported",
+          "contradicted"
+        ],
+        "match": true
+      },
+      {
+        "id": "ea03_cited_inserted_cto",
+        "expected_verdict": "contradicted",
+        "actual_verdict": "contradicted",
+        "expected_claim_verdicts": [
+          "supported",
+          "supported",
+          "contradicted"
+        ],
+        "actual_claim_verdicts": [
+          "supported",
+          "supported",
+          "contradicted"
+        ],
+        "match": true
+      },
+      {
+        "id": "ea04_cited_relation_reversal",
+        "expected_verdict": "contradicted",
+        "actual_verdict": "contradicted",
+        "expected_claim_verdicts": [
+          "contradicted"
+        ],
+        "actual_claim_verdicts": [
+          "contradicted"
+        ],
+        "match": true
+      },
+      {
+        "id": "ea05_cited_wrong_budget",
+        "expected_verdict": "contradicted",
+        "actual_verdict": "contradicted",
+        "expected_claim_verdicts": [
+          "contradicted"
+        ],
+        "actual_claim_verdicts": [
+          "contradicted"
+        ],
+        "match": true
+      },
+      {
+        "id": "ea06_cited_negation_flip",
+        "expected_verdict": "contradicted",
+        "actual_verdict": "contradicted",
+        "expected_claim_verdicts": [
+          "contradicted"
+        ],
+        "actual_claim_verdicts": [
+          "contradicted"
+        ],
+        "match": true
+      },
+      {
+        "id": "ea07_cited_irrelevant_page",
+        "expected_verdict": "unverifiable",
+        "actual_verdict": "unverifiable",
+        "expected_claim_verdicts": [
+          "unverifiable"
+        ],
+        "actual_claim_verdicts": [
+          "unverifiable"
+        ],
+        "match": true
+      },
+      {
+        "id": "ea08_multi_page_support",
+        "expected_verdict": "supported",
+        "actual_verdict": "supported",
+        "expected_claim_verdicts": [
+          "supported",
+          "supported"
+        ],
+        "actual_claim_verdicts": [
+          "supported",
+          "supported"
+        ],
+        "match": true
+      },
+      {
+        "id": "ea09_complex_unverifiable",
+        "expected_verdict": "unverifiable",
+        "actual_verdict": "unverifiable",
+        "expected_claim_verdicts": [
+          "unverifiable"
+        ],
+        "actual_claim_verdicts": [
+          "unverifiable"
+        ],
+        "match": true
+      },
+      {
+        "id": "ea10_duplicate_claim_and_source",
+        "expected_verdict": "supported",
+        "actual_verdict": "supported",
+        "expected_claim_verdicts": [
+          "supported"
+        ],
+        "actual_claim_verdicts": [
+          "supported"
+        ],
+        "match": true
+      }
+    ]
+  },
+  "ablation": {
+    "core_v0.1": {
+      "known_correct": {
+        "records": 35,
+        "claims": 60,
+        "supported": 25,
+        "contradicted": 1,
+        "unverifiable": 34,
+        "claim_support_rate": 0.4166666666666667,
+        "claim_contradiction_rate": 0.016666666666666666,
+        "citation_claim_precision": 0.9615384615384616,
+        "case_coverage": 0.4,
+        "claim_coverage": 0.43333333333333335
+      },
+      "r3_answerable": {
+        "records": 86,
+        "claims": 170,
+        "supported": 71,
+        "contradicted": 1,
+        "unverifiable": 98,
+        "claim_support_rate": 0.4176470588235294,
+        "claim_contradiction_rate": 0.0058823529411764705,
+        "citation_claim_precision": 0.9861111111111112,
+        "case_coverage": 0.5116279069767442,
+        "claim_coverage": 0.4235294117647059
+      }
+    },
+    "paraphrase": {
+      "known_correct": {
+        "records": 35,
+        "claims": 80,
+        "supported": 50,
+        "contradicted": 1,
+        "unverifiable": 29,
+        "claim_support_rate": 0.625,
+        "claim_contradiction_rate": 0.0125,
+        "citation_claim_precision": 0.9803921568627451,
+        "case_coverage": 0.4857142857142857,
+        "claim_coverage": 0.6375
+      },
+      "r3_answerable": {
+        "records": 86,
+        "claims": 226,
+        "supported": 148,
+        "contradicted": 1,
+        "unverifiable": 77,
+        "claim_support_rate": 0.6548672566371682,
+        "claim_contradiction_rate": 0.004424778761061947,
+        "citation_claim_precision": 0.9932885906040269,
+        "case_coverage": 0.7209302325581395,
+        "claim_coverage": 0.6592920353982301
+      }
+    },
+    "clause_split": {
+      "known_correct": {
+        "records": 35,
+        "claims": 65,
+        "supported": 26,
+        "contradicted": 0,
+        "unverifiable": 39,
+        "claim_support_rate": 0.4,
+        "claim_contradiction_rate": 0.0,
+        "citation_claim_precision": 1.0,
+        "case_coverage": 0.42857142857142855,
+        "claim_coverage": 0.4
+      },
+      "r3_answerable": {
+        "records": 86,
+        "claims": 188,
+        "supported": 69,
+        "contradicted": 0,
+        "unverifiable": 119,
+        "claim_support_rate": 0.3670212765957447,
+        "claim_contradiction_rate": 0.0,
+        "citation_claim_precision": 1.0,
+        "case_coverage": 0.47674418604651164,
+        "claim_coverage": 0.3670212765957447
+      }
+    },
+    "dimensions": {
+      "known_correct": {
+        "records": 35,
+        "claims": 60,
+        "supported": 25,
+        "contradicted": 1,
+        "unverifiable": 34,
+        "claim_support_rate": 0.4166666666666667,
+        "claim_contradiction_rate": 0.016666666666666666,
+        "citation_claim_precision": 0.9615384615384616,
+        "case_coverage": 0.4,
+        "claim_coverage": 0.43333333333333335
+      },
+      "r3_answerable": {
+        "records": 86,
+        "claims": 170,
+        "supported": 71,
+        "contradicted": 1,
+        "unverifiable": 98,
+        "claim_support_rate": 0.4176470588235294,
+        "claim_contradiction_rate": 0.0058823529411764705,
+        "citation_claim_precision": 0.9861111111111112,
+        "case_coverage": 0.5116279069767442,
+        "claim_coverage": 0.4235294117647059
+      }
+    },
+    "paraphrase+clause": {
+      "known_correct": {
+        "records": 35,
+        "claims": 85,
+        "supported": 52,
+        "contradicted": 0,
+        "unverifiable": 33,
+        "claim_support_rate": 0.611764705882353,
+        "claim_contradiction_rate": 0.0,
+        "citation_claim_precision": 1.0,
+        "case_coverage": 0.5428571428571428,
+        "claim_coverage": 0.611764705882353
+      },
+      "r3_answerable": {
+        "records": 86,
+        "claims": 240,
+        "supported": 146,
+        "contradicted": 0,
+        "unverifiable": 94,
+        "claim_support_rate": 0.6083333333333333,
+        "claim_contradiction_rate": 0.0,
+        "citation_claim_precision": 1.0,
+        "case_coverage": 0.7093023255813954,
+        "claim_coverage": 0.6083333333333333
+      }
+    },
+    "all_v0.2": {
+      "known_correct": {
+        "records": 35,
+        "claims": 85,
+        "supported": 52,
+        "contradicted": 0,
+        "unverifiable": 33,
+        "claim_support_rate": 0.611764705882353,
+        "claim_contradiction_rate": 0.0,
+        "citation_claim_precision": 1.0,
+        "case_coverage": 0.5428571428571428,
+        "claim_coverage": 0.611764705882353
+      },
+      "r3_answerable": {
+        "records": 86,
+        "claims": 240,
+        "supported": 146,
+        "contradicted": 0,
+        "unverifiable": 94,
+        "claim_support_rate": 0.6083333333333333,
+        "claim_contradiction_rate": 0.0,
+        "citation_claim_precision": 1.0,
+        "case_coverage": 0.7093023255813954,
+        "claim_coverage": 0.6083333333333333
+      }
+    }
+  }
+}

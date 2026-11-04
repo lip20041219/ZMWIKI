@@ -1,0 +1,4505 @@
+{
+  "experiment_id": "stage12_multiround_stability",
+  "batch_id": "stage12_multiround_20261101_120442",
+  "generated_at": "2026-11-01T12:23:20+0800",
+  "rounds": 3,
+  "run_ids": [
+    "stage12_multiround_20261101_120442_r1",
+    "stage12_multiround_20261101_120442_r2",
+    "stage12_multiround_20261101_120442_r3"
+  ],
+  "dataset": {
+    "path": "benchmark/datasets/multihop_wiki.json",
+    "version": "1.4",
+    "sha256": "f12127421c762ce191252f6f82559dc6b60397f7b603101bc1b034ee3299cce8",
+    "sha256_16": "f12127421c762ce1"
+  },
+  "model": "deepseek-flash",
+  "base_url": "https://api.deepseek.com",
+  "temperature": 0.0,
+  "top_k": 5,
+  "max_steps": 8,
+  "rag_answer_corrections": 1,
+  "limit": null,
+  "stage10_config_hash": "6e6757132c92a6dd3e957632ff81b367ba6268ced4e85ddb92926794fa22ecc0",
+  "stage12_config_hash": "e5d6da4f3b82bc14c44276058c48aa7fa5e9d7c759106b2372ffcff0a710df05",
+  "stage12_source_sha256_16": "60ee2027288fb081",
+  "git_sha": "1cdd718481c03772867cd924b9f0ebfeb30d71e1",
+  "source_file_sha256_16": {
+    "benchmark/run_multihop_evaluation.py": "91a334ca9ddc8049",
+    "src/zmwiki/wiki/wiki_agent.py": "256f43f76d488557",
+    "src/zmwiki/wiki/wiki_compiler.py": "73c3adcd02f1daa7",
+    "src/zmwiki/wiki/wiki_index.py": "1da07287d408f463",
+    "src/zmwiki/wiki/wiki_retriever.py": "b3e86145637b9a0e",
+    "src/zmwiki/wiki/wiki_schema.py": "e82f9d666830f9bf",
+    "src/zmwiki/wiki/wiki_link_resolver.py": "5a18b38f59be549b",
+    "src/zmwiki/llm_generators.py": "0ef4a4fb5432ee9b",
+    "benchmark/run_stage10_comparison.py": "e29c48812e26e3d8"
+  },
+  "prompts": {
+    "rag_prompt_version": "stage10.traditional_rag.v1",
+    "rag_prompt_sha256_16": "6fe365dbda31e132",
+    "agent_prompt_version": "wiki_agent.system_prompt.frozen",
+    "agent_prompt_sha256_16": "c3511e73f4867428"
+  },
+  "scoring": {
+    "version": "stage9_4_frozen",
+    "score_answer_source_sha256_16": "2eea837cb06c19b1",
+    "aggregate_results_source_sha256_16": "9249e8c07b5bec78",
+    "manual_review_case_ids": [
+      "mh46_phoenix_reporting_chain",
+      "mh47_exec_level_to_phoenix_chain",
+      "mh50_orion_exact_completion_date",
+      "mh51_total_employee_count",
+      "mh52_alice_previous_startup_name",
+      "mh54_alice_carol_role_office_disambiguation"
+    ],
+    "manual_review_note": "manual_review_case_ids are flagged for audit, but no human verdicts are stored; summary metrics use automatic scores only"
+  },
+  "groups": {
+    "traditional_rag": {
+      "per_round": [
+        {
+          "cases": 50,
+          "correct": 39,
+          "answer_accuracy": {
+            "numerator": 39,
+            "denominator": 50,
+            "value": 0.78,
+            "ci95": {
+              "low": 0.6475845041874634,
+              "high": 0.8724608402978559,
+              "method": "wilson"
+            }
+          },
+          "verified_answer_accuracy": {
+            "numerator": 39,
+            "denominator": 50,
+            "value": 0.78,
+            "ci95": {
+              "low": 0.6475845041874634,
+              "high": 0.8724608402978559,
+              "method": "wilson"
+            }
+          },
+          "answerable_accuracy": {
+            "numerator": 36,
+            "denominator": 43,
+            "value": 0.8372093023255814,
+            "ci95": {
+              "low": 0.7002759410625283,
+              "high": 0.91883372652938,
+              "method": "wilson"
+            }
+          },
+          "unanswerable_handling": {
+            "numerator": 3,
+            "denominator": 7,
+            "value": 0.42857142857142855,
+            "ci95": {
+              "low": 0.15821985525146975,
+              "high": 0.7495416354723428,
+              "method": "wilson"
+            }
+          },
+          "evidence_recall_mean": 0.9275193798449612,
+          "read_evidence_recall_mean": 0.9275193798449612,
+          "multi_hop_success_rate": 0.7105263157894737,
+          "verified_multi_hop_success_rate": 0.7105263157894737,
+          "source_precision_all": 0.7616666666666667,
+          "source_precision_answerable": 0.8856589147286822,
+          "model_requests": 50,
+          "total_tokens": 56601,
+          "usage_missing_calls": 0,
+          "usage_missing_case_ids": [],
+          "mean_latency_seconds": 1.740933696000011,
+          "total_latency_seconds": 87.04668480000055,
+          "failure_rate": 0.0,
+          "non_answered_count": 0,
+          "api_failure_count": 0,
+          "protocol_error_count": 0,
+          "model_error_count": 0,
+          "timeout_count": 0,
+          "status_counts": {
+            "answered": 50
+          }
+        },
+        {
+          "cases": 50,
+          "correct": 38,
+          "answer_accuracy": {
+            "numerator": 38,
+            "denominator": 50,
+            "value": 0.76,
+            "ci95": {
+              "low": 0.6258731624205708,
+              "high": 0.8570260860300828,
+              "method": "wilson"
+            }
+          },
+          "verified_answer_accuracy": {
+            "numerator": 38,
+            "denominator": 50,
+            "value": 0.76,
+            "ci95": {
+              "low": 0.6258731624205708,
+              "high": 0.8570260860300828,
+              "method": "wilson"
+            }
+          },
+          "answerable_accuracy": {
+            "numerator": 35,
+            "denominator": 43,
+            "value": 0.813953488372093,
+            "ci95": {
+              "low": 0.6738299634272562,
+              "high": 0.9025824857100377,
+              "method": "wilson"
+            }
+          },
+          "unanswerable_handling": {
+            "numerator": 3,
+            "denominator": 7,
+            "value": 0.42857142857142855,
+            "ci95": {
+              "low": 0.15821985525146975,
+              "high": 0.7495416354723428,
+              "method": "wilson"
+            }
+          },
+          "evidence_recall_mean": 0.9275193798449612,
+          "read_evidence_recall_mean": 0.9275193798449612,
+          "multi_hop_success_rate": 0.6578947368421053,
+          "verified_multi_hop_success_rate": 0.6578947368421053,
+          "source_precision_all": 0.79,
+          "source_precision_answerable": 0.9186046511627907,
+          "model_requests": 50,
+          "total_tokens": 56540,
+          "usage_missing_calls": 0,
+          "usage_missing_case_ids": [],
+          "mean_latency_seconds": 1.7373029500000166,
+          "total_latency_seconds": 86.86514750000083,
+          "failure_rate": 0.0,
+          "non_answered_count": 0,
+          "api_failure_count": 0,
+          "protocol_error_count": 0,
+          "model_error_count": 0,
+          "timeout_count": 0,
+          "status_counts": {
+            "answered": 50
+          }
+        },
+        {
+          "cases": 50,
+          "correct": 41,
+          "answer_accuracy": {
+            "numerator": 41,
+            "denominator": 50,
+            "value": 0.82,
+            "ci95": {
+              "low": 0.6920394632569922,
+              "high": 0.9022980732976582,
+              "method": "wilson"
+            }
+          },
+          "verified_answer_accuracy": {
+            "numerator": 41,
+            "denominator": 50,
+            "value": 0.82,
+            "ci95": {
+              "low": 0.6920394632569922,
+              "high": 0.9022980732976582,
+              "method": "wilson"
+            }
+          },
+          "answerable_accuracy": {
+            "numerator": 36,
+            "denominator": 43,
+            "value": 0.8372093023255814,
+            "ci95": {
+              "low": 0.7002759410625283,
+              "high": 0.91883372652938,
+              "method": "wilson"
+            }
+          },
+          "unanswerable_handling": {
+            "numerator": 5,
+            "denominator": 7,
+            "value": 0.7142857142857143,
+            "ci95": {
+              "low": 0.35893445183261935,
+              "high": 0.9177810759959433,
+              "method": "wilson"
+            }
+          },
+          "evidence_recall_mean": 0.9275193798449612,
+          "read_evidence_recall_mean": 0.9275193798449612,
+          "multi_hop_success_rate": 0.6842105263157895,
+          "verified_multi_hop_success_rate": 0.6842105263157895,
+          "source_precision_all": 0.7756666666666667,
+          "source_precision_answerable": 0.9019379844961242,
+          "model_requests": 50,
+          "total_tokens": 56458,
+          "usage_missing_calls": 0,
+          "usage_missing_case_ids": [],
+          "mean_latency_seconds": 1.717409746000003,
+          "total_latency_seconds": 85.87048730000015,
+          "failure_rate": 0.0,
+          "non_answered_count": 0,
+          "api_failure_count": 0,
+          "protocol_error_count": 0,
+          "model_error_count": 0,
+          "timeout_count": 0,
+          "status_counts": {
+            "answered": 50
+          }
+        }
+      ],
+      "across_rounds": {
+        "answer_accuracy": {
+          "n": 3,
+          "mean": 0.7866666666666666,
+          "std": 0.030550504633038898,
+          "min": 0.76,
+          "max": 0.82,
+          "ci95": {
+            "low": 0.7107688807232605,
+            "high": 0.8625644526100728,
+            "method": "t"
+          }
+        },
+        "verified_answer_accuracy": {
+          "n": 3,
+          "mean": 0.7866666666666666,
+          "std": 0.030550504633038898,
+          "min": 0.76,
+          "max": 0.82,
+          "ci95": {
+            "low": 0.7107688807232605,
+            "high": 0.8625644526100728,
+            "method": "t"
+          }
+        },
+        "answerable_accuracy": {
+          "n": 3,
+          "mean": 0.8294573643410853,
+          "std": 0.01342675044627039,
+          "min": 0.813953488372093,
+          "max": 0.8372093023255814,
+          "ci95": {
+            "low": 0.7961007751937984,
+            "high": 0.8628139534883722,
+            "method": "t"
+          }
+        },
+        "unanswerable_handling": {
+          "n": 3,
+          "mean": 0.5238095238095238,
+          "std": 0.16495721976846453,
+          "min": 0.42857142857142855,
+          "max": 0.7142857142857143,
+          "ci95": {
+            "low": 0.11399999999999993,
+            "high": 0.9336190476190478,
+            "method": "t"
+          }
+        },
+        "evidence_recall_mean": {
+          "n": 3,
+          "mean": 0.9275193798449614,
+          "std": 0.0,
+          "min": 0.9275193798449612,
+          "max": 0.9275193798449612,
+          "ci95": {
+            "low": 0.9275193798449614,
+            "high": 0.9275193798449614,
+            "method": "t"
+          }
+        },
+        "read_evidence_recall_mean": {
+          "n": 3,
+          "mean": 0.9275193798449614,
+          "std": 0.0,
+          "min": 0.9275193798449612,
+          "max": 0.9275193798449612,
+          "ci95": {
+            "low": 0.9275193798449614,
+            "high": 0.9275193798449614,
+            "method": "t"
+          }
+        },
+        "multi_hop_success_rate": {
+          "n": 3,
+          "mean": 0.6842105263157895,
+          "std": 0.02631578947368418,
+          "min": 0.6578947368421053,
+          "max": 0.7105263157894737,
+          "ci95": {
+            "low": 0.6188332050441328,
+            "high": 0.7495878475874462,
+            "method": "t"
+          }
+        },
+        "verified_multi_hop_success_rate": {
+          "n": 3,
+          "mean": 0.6842105263157895,
+          "std": 0.02631578947368418,
+          "min": 0.6578947368421053,
+          "max": 0.7105263157894737,
+          "ci95": {
+            "low": 0.6188332050441328,
+            "high": 0.7495878475874462,
+            "method": "t"
+          }
+        },
+        "source_precision_all": {
+          "n": 3,
+          "mean": 0.7757777777777779,
+          "std": 0.01416699346028308,
+          "min": 0.7616666666666667,
+          "max": 0.79,
+          "ci95": {
+            "low": 0.7405821746273351,
+            "high": 0.8109733809282207,
+            "method": "t"
+          }
+        },
+        "source_precision_answerable": {
+          "n": 3,
+          "mean": 0.9020671834625323,
+          "std": 0.016473248209631468,
+          "min": 0.8856589147286822,
+          "max": 0.9186046511627907,
+          "ci95": {
+            "low": 0.8611420635201571,
+            "high": 0.9429923034049076,
+            "method": "t"
+          }
+        },
+        "model_requests": {
+          "n": 3,
+          "mean": 50.0,
+          "std": 0.0,
+          "min": 50.0,
+          "max": 50.0,
+          "ci95": {
+            "low": 50.0,
+            "high": 50.0,
+            "method": "t"
+          }
+        },
+        "total_tokens": {
+          "n": 3,
+          "mean": 56533.0,
+          "std": 71.75653280364095,
+          "min": 56458.0,
+          "max": 56601.0,
+          "ci95": {
+            "low": 56354.73250385914,
+            "high": 56711.26749614086,
+            "method": "t"
+          }
+        },
+        "usage_missing_calls": {
+          "n": 3,
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "ci95": {
+            "low": 0.0,
+            "high": 0.0,
+            "method": "t"
+          }
+        },
+        "mean_latency_seconds": {
+          "n": 3,
+          "mean": 1.731882130666677,
+          "std": 0.012664241690059868,
+          "min": 1.717409746000003,
+          "max": 1.740933696000011,
+          "ci95": {
+            "low": 1.7004198711566247,
+            "high": 1.7633443901767292,
+            "method": "t"
+          }
+        },
+        "failure_rate": {
+          "n": 3,
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "ci95": {
+            "low": 0.0,
+            "high": 0.0,
+            "method": "t"
+          }
+        },
+        "non_answered_count": {
+          "n": 3,
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "ci95": {
+            "low": 0.0,
+            "high": 0.0,
+            "method": "t"
+          }
+        },
+        "api_failure_count": {
+          "n": 3,
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "ci95": {
+            "low": 0.0,
+            "high": 0.0,
+            "method": "t"
+          }
+        },
+        "protocol_error_count": {
+          "n": 3,
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "ci95": {
+            "low": 0.0,
+            "high": 0.0,
+            "method": "t"
+          }
+        },
+        "model_error_count": {
+          "n": 3,
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "ci95": {
+            "low": 0.0,
+            "high": 0.0,
+            "method": "t"
+          }
+        },
+        "timeout_count": {
+          "n": 3,
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "ci95": {
+            "low": 0.0,
+            "high": 0.0,
+            "method": "t"
+          }
+        }
+      },
+      "per_case_consistency": {
+        "cases": 50,
+        "always_correct": 34,
+        "always_wrong": 7,
+        "unstable": 9,
+        "consistent_rate": 0.82,
+        "unstable_case_ids": [
+          "mh02_project_budget",
+          "mh08_ceo_unanswerable",
+          "mh18_orion_contributor_manager_office",
+          "mh20_phoenix_deadline_office",
+          "mh24_engineering_budget_vs_projects",
+          "mh25_project_launch_order",
+          "mh29_alice_salary",
+          "mh30_david_university",
+          "mh54_alice_carol_role_office_disambiguation"
+        ],
+        "always_correct_case_ids": [
+          "mh01_manager_title",
+          "mh03_orion_lead_chain",
+          "mh04_cafeteria_floor",
+          "mh06_shared_engineer",
+          "mh07_deadline_by_budget",
+          "mh09_negative_membership",
+          "mh10_direct_reports",
+          "mh11_vp_office_floor",
+          "mh12_connected_building",
+          "mh13_engineering_budget",
+          "mh14_orion_lead_degree",
+          "mh15_gym_location",
+          "mh21_team_intersection",
+          "mh23_building_floor_difference",
+          "mh26_alice_david_same_building",
+          "mh28_first_floor_office_premise",
+          "mh31_carol_manager_chain_tenure",
+          "mh32_director_report_kubernetes",
+          "mh33_gym_data_team_lead",
+          "mh34_vp_office_bob_team_size",
+          "mh35_phoenix_carol_bob_eve_groups",
+          "mh36_phoenix_carol_bob_responsibilities",
+          "mh37_budget_ratio_synthesis",
+          "mh38_responsibility_synthesis",
+          "mh39_project_purpose_synthesis",
+          "mh41_orion_tech_match",
+          "mh42_bob_eve_tenure_office",
+          "mh43_alice_david_join_degree_building",
+          "mh44_project_budget_timing_comparison",
+          "mh45_carol_david_role_office_project",
+          "mh48_building_a_carol_manager_chain",
+          "mh49_orion_upward_chain_ceo",
+          "mh52_alice_previous_startup_name",
+          "mh53_bob_david_office_disambiguation"
+        ],
+        "always_wrong_case_ids": [
+          "mh05_total_budget_aggregation",
+          "mh17_carol_two_project_leads",
+          "mh40_walkway_data_team_synthesis",
+          "mh46_phoenix_reporting_chain",
+          "mh47_exec_level_to_phoenix_chain",
+          "mh50_orion_exact_completion_date",
+          "mh51_total_employee_count"
+        ],
+        "non_answered_union_case_ids": [],
+        "non_answered_intersection_case_ids": [],
+        "api_failure_union_case_ids": [],
+        "api_failure_intersection_case_ids": [],
+        "per_case": [
+          {
+            "case_id": "mh01_manager_title",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh02_project_budget",
+            "correct_by_round": [
+              true,
+              false,
+              true
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh03_orion_lead_chain",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh04_cafeteria_floor",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh05_total_budget_aggregation",
+            "correct_by_round": [
+              false,
+              false,
+              false
+            ],
+            "correct_count": 0,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh06_shared_engineer",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh07_deadline_by_budget",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh08_ceo_unanswerable",
+            "correct_by_round": [
+              false,
+              true,
+              true
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh09_negative_membership",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh10_direct_reports",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh11_vp_office_floor",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh12_connected_building",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh13_engineering_budget",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh14_orion_lead_degree",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh15_gym_location",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh17_carol_two_project_leads",
+            "correct_by_round": [
+              false,
+              false,
+              false
+            ],
+            "correct_count": 0,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh18_orion_contributor_manager_office",
+            "correct_by_round": [
+              false,
+              true,
+              true
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh20_phoenix_deadline_office",
+            "correct_by_round": [
+              true,
+              false,
+              true
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh21_team_intersection",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh23_building_floor_difference",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh24_engineering_budget_vs_projects",
+            "correct_by_round": [
+              false,
+              false,
+              true
+            ],
+            "correct_count": 1,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh25_project_launch_order",
+            "correct_by_round": [
+              true,
+              true,
+              false
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh26_alice_david_same_building",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh28_first_floor_office_premise",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh29_alice_salary",
+            "correct_by_round": [
+              true,
+              false,
+              true
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh30_david_university",
+            "correct_by_round": [
+              false,
+              false,
+              true
+            ],
+            "correct_count": 1,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh31_carol_manager_chain_tenure",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh32_director_report_kubernetes",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh33_gym_data_team_lead",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh34_vp_office_bob_team_size",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh35_phoenix_carol_bob_eve_groups",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh36_phoenix_carol_bob_responsibilities",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh37_budget_ratio_synthesis",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh38_responsibility_synthesis",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh39_project_purpose_synthesis",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh40_walkway_data_team_synthesis",
+            "correct_by_round": [
+              false,
+              false,
+              false
+            ],
+            "correct_count": 0,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh41_orion_tech_match",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh42_bob_eve_tenure_office",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh43_alice_david_join_degree_building",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh44_project_budget_timing_comparison",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh45_carol_david_role_office_project",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh46_phoenix_reporting_chain",
+            "correct_by_round": [
+              false,
+              false,
+              false
+            ],
+            "correct_count": 0,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh47_exec_level_to_phoenix_chain",
+            "correct_by_round": [
+              false,
+              false,
+              false
+            ],
+            "correct_count": 0,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh48_building_a_carol_manager_chain",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh49_orion_upward_chain_ceo",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh50_orion_exact_completion_date",
+            "correct_by_round": [
+              false,
+              false,
+              false
+            ],
+            "correct_count": 0,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh51_total_employee_count",
+            "correct_by_round": [
+              false,
+              false,
+              false
+            ],
+            "correct_count": 0,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh52_alice_previous_startup_name",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh53_bob_david_office_disambiguation",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh54_alice_carol_role_office_disambiguation",
+            "correct_by_round": [
+              true,
+              true,
+              false
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          }
+        ]
+      }
+    },
+    "wiki_agent": {
+      "per_round": [
+        {
+          "cases": 50,
+          "correct": 46,
+          "answer_accuracy": {
+            "numerator": 46,
+            "denominator": 50,
+            "value": 0.92,
+            "ci95": {
+              "low": 0.8116175308165717,
+              "high": 0.968450485911407,
+              "method": "wilson"
+            }
+          },
+          "verified_answer_accuracy": {
+            "numerator": 45,
+            "denominator": 50,
+            "value": 0.9,
+            "ci95": {
+              "low": 0.7863976856252035,
+              "high": 0.9565242350681096,
+              "method": "wilson"
+            }
+          },
+          "answerable_accuracy": {
+            "numerator": 39,
+            "denominator": 43,
+            "value": 0.9069767441860465,
+            "ci95": {
+              "low": 0.783972963587464,
+              "high": 0.9632283593682872,
+              "method": "wilson"
+            }
+          },
+          "unanswerable_handling": {
+            "numerator": 7,
+            "denominator": 7,
+            "value": 1.0,
+            "ci95": {
+              "low": 0.6456695649333126,
+              "high": 1.0,
+              "method": "wilson"
+            }
+          },
+          "evidence_recall_mean": 0.9767441860465116,
+          "read_evidence_recall_mean": 0.9089147286821706,
+          "multi_hop_success_rate": 0.8947368421052632,
+          "verified_multi_hop_success_rate": 0.868421052631579,
+          "source_precision_all": 0.7373333333333334,
+          "source_precision_answerable": 0.8573643410852714,
+          "model_requests": 209,
+          "total_tokens": 194466,
+          "usage_missing_calls": 0,
+          "usage_missing_case_ids": [],
+          "mean_latency_seconds": 5.607072823999997,
+          "total_latency_seconds": 280.35364119999986,
+          "failure_rate": 0.04,
+          "non_answered_count": 2,
+          "api_failure_count": 1,
+          "protocol_error_count": 0,
+          "model_error_count": 0,
+          "timeout_count": 0,
+          "status_counts": {
+            "answered": 48,
+            "budget_exhausted": 1,
+            "insufficient_evidence": 1
+          }
+        },
+        {
+          "cases": 50,
+          "correct": 46,
+          "answer_accuracy": {
+            "numerator": 46,
+            "denominator": 50,
+            "value": 0.92,
+            "ci95": {
+              "low": 0.8116175308165717,
+              "high": 0.968450485911407,
+              "method": "wilson"
+            }
+          },
+          "verified_answer_accuracy": {
+            "numerator": 44,
+            "denominator": 50,
+            "value": 0.88,
+            "ci95": {
+              "low": 0.7619518261679701,
+              "high": 0.9438239984906773,
+              "method": "wilson"
+            }
+          },
+          "answerable_accuracy": {
+            "numerator": 39,
+            "denominator": 43,
+            "value": 0.9069767441860465,
+            "ci95": {
+              "low": 0.783972963587464,
+              "high": 0.9632283593682872,
+              "method": "wilson"
+            }
+          },
+          "unanswerable_handling": {
+            "numerator": 7,
+            "denominator": 7,
+            "value": 1.0,
+            "ci95": {
+              "low": 0.6456695649333126,
+              "high": 1.0,
+              "method": "wilson"
+            }
+          },
+          "evidence_recall_mean": 0.9534883720930233,
+          "read_evidence_recall_mean": 0.8953488372093024,
+          "multi_hop_success_rate": 0.8947368421052632,
+          "verified_multi_hop_success_rate": 0.8421052631578947,
+          "source_precision_all": 0.7323333333333334,
+          "source_precision_answerable": 0.8515503875968993,
+          "model_requests": 190,
+          "total_tokens": 165443,
+          "usage_missing_calls": 0,
+          "usage_missing_case_ids": [],
+          "mean_latency_seconds": 5.293239838000063,
+          "total_latency_seconds": 264.66199190000316,
+          "failure_rate": 0.08,
+          "non_answered_count": 4,
+          "api_failure_count": 2,
+          "protocol_error_count": 2,
+          "model_error_count": 0,
+          "timeout_count": 0,
+          "status_counts": {
+            "answered": 46,
+            "insufficient_evidence": 2,
+            "protocol_error": 2
+          }
+        },
+        {
+          "cases": 50,
+          "correct": 47,
+          "answer_accuracy": {
+            "numerator": 47,
+            "denominator": 50,
+            "value": 0.94,
+            "ci95": {
+              "low": 0.8378290831116182,
+              "high": 0.979385029651026,
+              "method": "wilson"
+            }
+          },
+          "verified_answer_accuracy": {
+            "numerator": 47,
+            "denominator": 50,
+            "value": 0.94,
+            "ci95": {
+              "low": 0.8378290831116182,
+              "high": 0.979385029651026,
+              "method": "wilson"
+            }
+          },
+          "answerable_accuracy": {
+            "numerator": 41,
+            "denominator": 43,
+            "value": 0.9534883720930233,
+            "ci95": {
+              "low": 0.8454450199593603,
+              "high": 0.9871507399056197,
+              "method": "wilson"
+            }
+          },
+          "unanswerable_handling": {
+            "numerator": 6,
+            "denominator": 7,
+            "value": 0.8571428571428571,
+            "ci95": {
+              "low": 0.4868721707256811,
+              "high": 0.9743203756552565,
+              "method": "wilson"
+            }
+          },
+          "evidence_recall_mean": 0.9767441860465116,
+          "read_evidence_recall_mean": 0.9709302325581395,
+          "multi_hop_success_rate": 0.9473684210526315,
+          "verified_multi_hop_success_rate": 0.9473684210526315,
+          "source_precision_all": 0.7873333333333333,
+          "source_precision_answerable": 0.9155038759689923,
+          "model_requests": 196,
+          "total_tokens": 192078,
+          "usage_missing_calls": 1,
+          "usage_missing_case_ids": [
+            "mh41_orion_tech_match"
+          ],
+          "mean_latency_seconds": 6.226613814000047,
+          "total_latency_seconds": 311.3306907000024,
+          "failure_rate": 0.02,
+          "non_answered_count": 1,
+          "api_failure_count": 1,
+          "protocol_error_count": 0,
+          "model_error_count": 1,
+          "timeout_count": 1,
+          "status_counts": {
+            "answered": 49,
+            "model_error": 1
+          }
+        }
+      ],
+      "across_rounds": {
+        "answer_accuracy": {
+          "n": 3,
+          "mean": 0.9266666666666667,
+          "std": 0.011547005383792462,
+          "min": 0.92,
+          "max": 0.94,
+          "ci95": {
+            "low": 0.8979800000000002,
+            "high": 0.9553533333333333,
+            "method": "t"
+          }
+        },
+        "verified_answer_accuracy": {
+          "n": 3,
+          "mean": 0.9066666666666666,
+          "std": 0.030550504633038898,
+          "min": 0.88,
+          "max": 0.94,
+          "ci95": {
+            "low": 0.8307688807232605,
+            "high": 0.9825644526100727,
+            "method": "t"
+          }
+        },
+        "answerable_accuracy": {
+          "n": 3,
+          "mean": 0.9224806201550387,
+          "std": 0.02685350089254078,
+          "min": 0.9069767441860465,
+          "max": 0.9534883720930233,
+          "ci95": {
+            "low": 0.8557674418604649,
+            "high": 0.9891937984496125,
+            "method": "t"
+          }
+        },
+        "unanswerable_handling": {
+          "n": 3,
+          "mean": 0.9523809523809524,
+          "std": 0.08247860988423228,
+          "min": 0.8571428571428571,
+          "max": 1.0,
+          "ci95": {
+            "low": 0.7474761904761904,
+            "high": 1.1572857142857145,
+            "method": "t"
+          }
+        },
+        "evidence_recall_mean": {
+          "n": 3,
+          "mean": 0.9689922480620154,
+          "std": 0.013426750446270326,
+          "min": 0.9534883720930233,
+          "max": 0.9767441860465116,
+          "ci95": {
+            "low": 0.9356356589147288,
+            "high": 1.0023488372093021,
+            "method": "t"
+          }
+        },
+        "read_evidence_recall_mean": {
+          "n": 3,
+          "mean": 0.9250645994832042,
+          "std": 0.040295788562663234,
+          "min": 0.8953488372093024,
+          "max": 0.9709302325581395,
+          "ci95": {
+            "low": 0.8249562323224766,
+            "high": 1.0251729666439318,
+            "method": "t"
+          }
+        },
+        "multi_hop_success_rate": {
+          "n": 3,
+          "mean": 0.912280701754386,
+          "std": 0.030386856273138165,
+          "min": 0.8947368421052632,
+          "max": 0.9473684210526315,
+          "ci95": {
+            "low": 0.8367894736842106,
+            "high": 0.9877719298245614,
+            "method": "t"
+          }
+        },
+        "verified_multi_hop_success_rate": {
+          "n": 3,
+          "mean": 0.8859649122807017,
+          "std": 0.054780684196477164,
+          "min": 0.8421052631578947,
+          "max": 0.9473684210526315,
+          "ci95": {
+            "low": 0.7498711654533198,
+            "high": 1.0220586591080836,
+            "method": "t"
+          }
+        },
+        "source_precision_all": {
+          "n": 3,
+          "mean": 0.7523333333333334,
+          "std": 0.03041381265149106,
+          "min": 0.7323333333333334,
+          "max": 0.7873333333333333,
+          "ci95": {
+            "low": 0.6767751365024579,
+            "high": 0.8278915301642089,
+            "method": "t"
+          }
+        },
+        "source_precision_answerable": {
+          "n": 3,
+          "mean": 0.8748062015503876,
+          "std": 0.03536489843196639,
+          "min": 0.8515503875968993,
+          "max": 0.9155038759689923,
+          "ci95": {
+            "low": 0.7869478331423927,
+            "high": 0.9626645699583825,
+            "method": "t"
+          }
+        },
+        "model_requests": {
+          "n": 3,
+          "mean": 198.33333333333334,
+          "std": 9.71253485622231,
+          "min": 190.0,
+          "max": 209.0,
+          "ci95": {
+            "low": 174.20411189035173,
+            "high": 222.46255477631496,
+            "method": "t"
+          }
+        },
+        "total_tokens": {
+          "n": 3,
+          "mean": 183995.66666666666,
+          "std": 16111.38468081913,
+          "min": 165443.0,
+          "max": 194466.0,
+          "ci95": {
+            "low": 143969.53811511848,
+            "high": 224021.79521821483,
+            "method": "t"
+          }
+        },
+        "usage_missing_calls": {
+          "n": 3,
+          "mean": 0.3333333333333333,
+          "std": 0.5773502691896257,
+          "min": 0.0,
+          "max": 1.0,
+          "ci95": {
+            "low": -1.101,
+            "high": 1.7676666666666665,
+            "method": "t"
+          }
+        },
+        "mean_latency_seconds": {
+          "n": 3,
+          "mean": 5.708975492000036,
+          "std": 0.4749577455707502,
+          "min": 5.293239838000063,
+          "max": 6.226613814000047,
+          "ci95": {
+            "low": 4.529019817339686,
+            "high": 6.888931166660386,
+            "method": "t"
+          }
+        },
+        "failure_rate": {
+          "n": 3,
+          "mean": 0.04666666666666666,
+          "std": 0.030550504633038933,
+          "min": 0.02,
+          "max": 0.08,
+          "ci95": {
+            "low": -0.02923111927673956,
+            "high": 0.12256445261007289,
+            "method": "t"
+          }
+        },
+        "non_answered_count": {
+          "n": 3,
+          "mean": 2.3333333333333335,
+          "std": 1.5275252316519468,
+          "min": 1.0,
+          "max": 4.0,
+          "ci95": {
+            "low": -1.461555963836978,
+            "high": 6.128222630503645,
+            "method": "t"
+          }
+        },
+        "api_failure_count": {
+          "n": 3,
+          "mean": 1.3333333333333333,
+          "std": 0.5773502691896257,
+          "min": 1.0,
+          "max": 2.0,
+          "ci95": {
+            "low": -0.10099999999999998,
+            "high": 2.7676666666666665,
+            "method": "t"
+          }
+        },
+        "protocol_error_count": {
+          "n": 3,
+          "mean": 0.6666666666666666,
+          "std": 1.1547005383792515,
+          "min": 0.0,
+          "max": 2.0,
+          "ci95": {
+            "low": -2.202,
+            "high": 3.535333333333333,
+            "method": "t"
+          }
+        },
+        "model_error_count": {
+          "n": 3,
+          "mean": 0.3333333333333333,
+          "std": 0.5773502691896257,
+          "min": 0.0,
+          "max": 1.0,
+          "ci95": {
+            "low": -1.101,
+            "high": 1.7676666666666665,
+            "method": "t"
+          }
+        },
+        "timeout_count": {
+          "n": 3,
+          "mean": 0.3333333333333333,
+          "std": 0.5773502691896257,
+          "min": 0.0,
+          "max": 1.0,
+          "ci95": {
+            "low": -1.101,
+            "high": 1.7676666666666665,
+            "method": "t"
+          }
+        }
+      },
+      "per_case_consistency": {
+        "cases": 50,
+        "always_correct": 42,
+        "always_wrong": 0,
+        "unstable": 8,
+        "consistent_rate": 0.84,
+        "unstable_case_ids": [
+          "mh08_ceo_unanswerable",
+          "mh17_carol_two_project_leads",
+          "mh21_team_intersection",
+          "mh24_engineering_budget_vs_projects",
+          "mh41_orion_tech_match",
+          "mh46_phoenix_reporting_chain",
+          "mh47_exec_level_to_phoenix_chain",
+          "mh54_alice_carol_role_office_disambiguation"
+        ],
+        "always_correct_case_ids": [
+          "mh01_manager_title",
+          "mh02_project_budget",
+          "mh03_orion_lead_chain",
+          "mh04_cafeteria_floor",
+          "mh05_total_budget_aggregation",
+          "mh06_shared_engineer",
+          "mh07_deadline_by_budget",
+          "mh09_negative_membership",
+          "mh10_direct_reports",
+          "mh11_vp_office_floor",
+          "mh12_connected_building",
+          "mh13_engineering_budget",
+          "mh14_orion_lead_degree",
+          "mh15_gym_location",
+          "mh18_orion_contributor_manager_office",
+          "mh20_phoenix_deadline_office",
+          "mh23_building_floor_difference",
+          "mh25_project_launch_order",
+          "mh26_alice_david_same_building",
+          "mh28_first_floor_office_premise",
+          "mh29_alice_salary",
+          "mh30_david_university",
+          "mh31_carol_manager_chain_tenure",
+          "mh32_director_report_kubernetes",
+          "mh33_gym_data_team_lead",
+          "mh34_vp_office_bob_team_size",
+          "mh35_phoenix_carol_bob_eve_groups",
+          "mh36_phoenix_carol_bob_responsibilities",
+          "mh37_budget_ratio_synthesis",
+          "mh38_responsibility_synthesis",
+          "mh39_project_purpose_synthesis",
+          "mh40_walkway_data_team_synthesis",
+          "mh42_bob_eve_tenure_office",
+          "mh43_alice_david_join_degree_building",
+          "mh44_project_budget_timing_comparison",
+          "mh45_carol_david_role_office_project",
+          "mh48_building_a_carol_manager_chain",
+          "mh49_orion_upward_chain_ceo",
+          "mh50_orion_exact_completion_date",
+          "mh51_total_employee_count",
+          "mh52_alice_previous_startup_name",
+          "mh53_bob_david_office_disambiguation"
+        ],
+        "always_wrong_case_ids": [],
+        "non_answered_union_case_ids": [
+          "mh10_direct_reports",
+          "mh21_team_intersection",
+          "mh38_responsibility_synthesis",
+          "mh41_orion_tech_match",
+          "mh49_orion_upward_chain_ceo",
+          "mh54_alice_carol_role_office_disambiguation"
+        ],
+        "non_answered_intersection_case_ids": [],
+        "api_failure_union_case_ids": [
+          "mh21_team_intersection",
+          "mh41_orion_tech_match",
+          "mh54_alice_carol_role_office_disambiguation"
+        ],
+        "api_failure_intersection_case_ids": [],
+        "per_case": [
+          {
+            "case_id": "mh01_manager_title",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh02_project_budget",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh03_orion_lead_chain",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh04_cafeteria_floor",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh05_total_budget_aggregation",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh06_shared_engineer",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh07_deadline_by_budget",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh08_ceo_unanswerable",
+            "correct_by_round": [
+              true,
+              true,
+              false
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh09_negative_membership",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh10_direct_reports",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "insufficient_evidence",
+              "answered"
+            ],
+            "status_consistent": false,
+            "non_answered_by_round": [
+              false,
+              true,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh11_vp_office_floor",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh12_connected_building",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh13_engineering_budget",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh14_orion_lead_degree",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh15_gym_location",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh17_carol_two_project_leads",
+            "correct_by_round": [
+              false,
+              true,
+              true
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh18_orion_contributor_manager_office",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh20_phoenix_deadline_office",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh21_team_intersection",
+            "correct_by_round": [
+              false,
+              true,
+              true
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "budget_exhausted",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": false,
+            "non_answered_by_round": [
+              true,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              true,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh23_building_floor_difference",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh24_engineering_budget_vs_projects",
+            "correct_by_round": [
+              true,
+              true,
+              false
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh25_project_launch_order",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh26_alice_david_same_building",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh28_first_floor_office_premise",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh29_alice_salary",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh30_david_university",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh31_carol_manager_chain_tenure",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh32_director_report_kubernetes",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh33_gym_data_team_lead",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh34_vp_office_bob_team_size",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh35_phoenix_carol_bob_eve_groups",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh36_phoenix_carol_bob_responsibilities",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh37_budget_ratio_synthesis",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh38_responsibility_synthesis",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "insufficient_evidence",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": false,
+            "non_answered_by_round": [
+              true,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh39_project_purpose_synthesis",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh40_walkway_data_team_synthesis",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh41_orion_tech_match",
+            "correct_by_round": [
+              true,
+              false,
+              false
+            ],
+            "correct_count": 1,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "protocol_error",
+              "model_error"
+            ],
+            "status_consistent": false,
+            "non_answered_by_round": [
+              false,
+              true,
+              true
+            ],
+            "api_failure_by_round": [
+              false,
+              true,
+              true
+            ]
+          },
+          {
+            "case_id": "mh42_bob_eve_tenure_office",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh43_alice_david_join_degree_building",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh44_project_budget_timing_comparison",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh45_carol_david_role_office_project",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh46_phoenix_reporting_chain",
+            "correct_by_round": [
+              false,
+              false,
+              true
+            ],
+            "correct_count": 1,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh47_exec_level_to_phoenix_chain",
+            "correct_by_round": [
+              false,
+              false,
+              true
+            ],
+            "correct_count": 1,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh48_building_a_carol_manager_chain",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh49_orion_upward_chain_ceo",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "insufficient_evidence",
+              "answered"
+            ],
+            "status_consistent": false,
+            "non_answered_by_round": [
+              false,
+              true,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh50_orion_exact_completion_date",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh51_total_employee_count",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh52_alice_previous_startup_name",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh53_bob_david_office_disambiguation",
+            "correct_by_round": [
+              true,
+              true,
+              true
+            ],
+            "correct_count": 3,
+            "correct_consistent": true,
+            "status_by_round": [
+              "answered",
+              "answered",
+              "answered"
+            ],
+            "status_consistent": true,
+            "non_answered_by_round": [
+              false,
+              false,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "case_id": "mh54_alice_carol_role_office_disambiguation",
+            "correct_by_round": [
+              true,
+              false,
+              true
+            ],
+            "correct_count": 2,
+            "correct_consistent": false,
+            "status_by_round": [
+              "answered",
+              "protocol_error",
+              "answered"
+            ],
+            "status_consistent": false,
+            "non_answered_by_round": [
+              false,
+              true,
+              false
+            ],
+            "api_failure_by_round": [
+              false,
+              true,
+              false
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "paired": {
+    "per_round": [
+      {
+        "cases": 50,
+        "agent_only_correct": 8,
+        "rag_only_correct": 1,
+        "both_correct": 38,
+        "both_wrong": 3,
+        "mean_agent_minus_rag": {
+          "answer_correct": 0.14,
+          "grounded_correct": 0.12,
+          "evidence_recall": 0.04922480620155039,
+          "read_evidence_recall": -0.018604651162790687,
+          "source_precision": -0.02433333333333333,
+          "model_requests": 3.18,
+          "total_tokens": 2757.3,
+          "latency_seconds": 3.866139127999986,
+          "steps": 3.18
+        }
+      },
+      {
+        "cases": 50,
+        "agent_only_correct": 10,
+        "rag_only_correct": 2,
+        "both_correct": 36,
+        "both_wrong": 2,
+        "mean_agent_minus_rag": {
+          "answer_correct": 0.16,
+          "grounded_correct": 0.12,
+          "evidence_recall": 0.025968992248062026,
+          "read_evidence_recall": -0.03217054263565891,
+          "source_precision": -0.05766666666666666,
+          "model_requests": 2.8,
+          "total_tokens": 2178.06,
+          "latency_seconds": 3.5559368880000464,
+          "steps": 2.8
+        }
+      },
+      {
+        "cases": 50,
+        "agent_only_correct": 9,
+        "rag_only_correct": 3,
+        "both_correct": 38,
+        "both_wrong": 0,
+        "mean_agent_minus_rag": {
+          "answer_correct": 0.12,
+          "grounded_correct": 0.12,
+          "evidence_recall": 0.0492248062015504,
+          "read_evidence_recall": 0.0434108527131783,
+          "source_precision": 0.011666666666666669,
+          "model_requests": 2.92,
+          "total_tokens": 2712.4,
+          "latency_seconds": 4.509204068000044,
+          "steps": 2.92
+        }
+      }
+    ],
+    "cases": 50,
+    "agent_only_correct": 27,
+    "rag_only_correct": 6,
+    "ties": 117,
+    "mean_agent_minus_rag": 0.14,
+    "mean_agent_minus_rag_ci95": {
+      "low": 0.04838276262033814,
+      "high": 0.2316172373796619,
+      "method": "normal approximation over per-case mean differences"
+    },
+    "flipped_case_ids": [
+      "mh02_project_budget",
+      "mh08_ceo_unanswerable",
+      "mh17_carol_two_project_leads",
+      "mh18_orion_contributor_manager_office",
+      "mh20_phoenix_deadline_office",
+      "mh21_team_intersection",
+      "mh24_engineering_budget_vs_projects",
+      "mh25_project_launch_order",
+      "mh29_alice_salary",
+      "mh30_david_university",
+      "mh41_orion_tech_match",
+      "mh46_phoenix_reporting_chain",
+      "mh47_exec_level_to_phoenix_chain",
+      "mh54_alice_carol_role_office_disambiguation"
+    ],
+    "consistent_agent_win_case_ids": [
+      "mh05_total_budget_aggregation",
+      "mh40_walkway_data_team_synthesis",
+      "mh50_orion_exact_completion_date",
+      "mh51_total_employee_count"
+    ],
+    "consistent_rag_win_case_ids": [],
+    "consistent_tie_case_ids": [
+      "mh01_manager_title",
+      "mh03_orion_lead_chain",
+      "mh04_cafeteria_floor",
+      "mh06_shared_engineer",
+      "mh07_deadline_by_budget",
+      "mh09_negative_membership",
+      "mh10_direct_reports",
+      "mh11_vp_office_floor",
+      "mh12_connected_building",
+      "mh13_engineering_budget",
+      "mh14_orion_lead_degree",
+      "mh15_gym_location",
+      "mh23_building_floor_difference",
+      "mh26_alice_david_same_building",
+      "mh28_first_floor_office_premise",
+      "mh31_carol_manager_chain_tenure",
+      "mh32_director_report_kubernetes",
+      "mh33_gym_data_team_lead",
+      "mh34_vp_office_bob_team_size",
+      "mh35_phoenix_carol_bob_eve_groups",
+      "mh36_phoenix_carol_bob_responsibilities",
+      "mh37_budget_ratio_synthesis",
+      "mh38_responsibility_synthesis",
+      "mh39_project_purpose_synthesis",
+      "mh42_bob_eve_tenure_office",
+      "mh43_alice_david_join_degree_building",
+      "mh44_project_budget_timing_comparison",
+      "mh45_carol_david_role_office_project",
+      "mh48_building_a_carol_manager_chain",
+      "mh49_orion_upward_chain_ceo",
+      "mh52_alice_previous_startup_name",
+      "mh53_bob_david_office_disambiguation"
+    ],
+    "per_case": [
+      {
+        "case_id": "mh01_manager_title",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh02_project_budget",
+        "diff_by_round": [
+          0,
+          1,
+          0
+        ],
+        "mean_diff": 0.3333333333333333,
+        "agent_wins": 1,
+        "rag_wins": 0,
+        "ties": 2,
+        "flipped": true
+      },
+      {
+        "case_id": "mh03_orion_lead_chain",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh04_cafeteria_floor",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh05_total_budget_aggregation",
+        "diff_by_round": [
+          1,
+          1,
+          1
+        ],
+        "mean_diff": 1.0,
+        "agent_wins": 3,
+        "rag_wins": 0,
+        "ties": 0,
+        "flipped": false
+      },
+      {
+        "case_id": "mh06_shared_engineer",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh07_deadline_by_budget",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh08_ceo_unanswerable",
+        "diff_by_round": [
+          1,
+          0,
+          -1
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 1,
+        "rag_wins": 1,
+        "ties": 1,
+        "flipped": true
+      },
+      {
+        "case_id": "mh09_negative_membership",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh10_direct_reports",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh11_vp_office_floor",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh12_connected_building",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh13_engineering_budget",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh14_orion_lead_degree",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh15_gym_location",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh17_carol_two_project_leads",
+        "diff_by_round": [
+          0,
+          1,
+          1
+        ],
+        "mean_diff": 0.6666666666666666,
+        "agent_wins": 2,
+        "rag_wins": 0,
+        "ties": 1,
+        "flipped": true
+      },
+      {
+        "case_id": "mh18_orion_contributor_manager_office",
+        "diff_by_round": [
+          1,
+          0,
+          0
+        ],
+        "mean_diff": 0.3333333333333333,
+        "agent_wins": 1,
+        "rag_wins": 0,
+        "ties": 2,
+        "flipped": true
+      },
+      {
+        "case_id": "mh20_phoenix_deadline_office",
+        "diff_by_round": [
+          0,
+          1,
+          0
+        ],
+        "mean_diff": 0.3333333333333333,
+        "agent_wins": 1,
+        "rag_wins": 0,
+        "ties": 2,
+        "flipped": true
+      },
+      {
+        "case_id": "mh21_team_intersection",
+        "diff_by_round": [
+          -1,
+          0,
+          0
+        ],
+        "mean_diff": -0.3333333333333333,
+        "agent_wins": 0,
+        "rag_wins": 1,
+        "ties": 2,
+        "flipped": true
+      },
+      {
+        "case_id": "mh23_building_floor_difference",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh24_engineering_budget_vs_projects",
+        "diff_by_round": [
+          1,
+          1,
+          -1
+        ],
+        "mean_diff": 0.3333333333333333,
+        "agent_wins": 2,
+        "rag_wins": 1,
+        "ties": 0,
+        "flipped": true
+      },
+      {
+        "case_id": "mh25_project_launch_order",
+        "diff_by_round": [
+          0,
+          0,
+          1
+        ],
+        "mean_diff": 0.3333333333333333,
+        "agent_wins": 1,
+        "rag_wins": 0,
+        "ties": 2,
+        "flipped": true
+      },
+      {
+        "case_id": "mh26_alice_david_same_building",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh28_first_floor_office_premise",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh29_alice_salary",
+        "diff_by_round": [
+          0,
+          1,
+          0
+        ],
+        "mean_diff": 0.3333333333333333,
+        "agent_wins": 1,
+        "rag_wins": 0,
+        "ties": 2,
+        "flipped": true
+      },
+      {
+        "case_id": "mh30_david_university",
+        "diff_by_round": [
+          1,
+          1,
+          0
+        ],
+        "mean_diff": 0.6666666666666666,
+        "agent_wins": 2,
+        "rag_wins": 0,
+        "ties": 1,
+        "flipped": true
+      },
+      {
+        "case_id": "mh31_carol_manager_chain_tenure",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh32_director_report_kubernetes",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh33_gym_data_team_lead",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh34_vp_office_bob_team_size",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh35_phoenix_carol_bob_eve_groups",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh36_phoenix_carol_bob_responsibilities",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh37_budget_ratio_synthesis",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh38_responsibility_synthesis",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh39_project_purpose_synthesis",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh40_walkway_data_team_synthesis",
+        "diff_by_round": [
+          1,
+          1,
+          1
+        ],
+        "mean_diff": 1.0,
+        "agent_wins": 3,
+        "rag_wins": 0,
+        "ties": 0,
+        "flipped": false
+      },
+      {
+        "case_id": "mh41_orion_tech_match",
+        "diff_by_round": [
+          0,
+          -1,
+          -1
+        ],
+        "mean_diff": -0.6666666666666666,
+        "agent_wins": 0,
+        "rag_wins": 2,
+        "ties": 1,
+        "flipped": true
+      },
+      {
+        "case_id": "mh42_bob_eve_tenure_office",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh43_alice_david_join_degree_building",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh44_project_budget_timing_comparison",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh45_carol_david_role_office_project",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh46_phoenix_reporting_chain",
+        "diff_by_round": [
+          0,
+          0,
+          1
+        ],
+        "mean_diff": 0.3333333333333333,
+        "agent_wins": 1,
+        "rag_wins": 0,
+        "ties": 2,
+        "flipped": true
+      },
+      {
+        "case_id": "mh47_exec_level_to_phoenix_chain",
+        "diff_by_round": [
+          0,
+          0,
+          1
+        ],
+        "mean_diff": 0.3333333333333333,
+        "agent_wins": 1,
+        "rag_wins": 0,
+        "ties": 2,
+        "flipped": true
+      },
+      {
+        "case_id": "mh48_building_a_carol_manager_chain",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh49_orion_upward_chain_ceo",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh50_orion_exact_completion_date",
+        "diff_by_round": [
+          1,
+          1,
+          1
+        ],
+        "mean_diff": 1.0,
+        "agent_wins": 3,
+        "rag_wins": 0,
+        "ties": 0,
+        "flipped": false
+      },
+      {
+        "case_id": "mh51_total_employee_count",
+        "diff_by_round": [
+          1,
+          1,
+          1
+        ],
+        "mean_diff": 1.0,
+        "agent_wins": 3,
+        "rag_wins": 0,
+        "ties": 0,
+        "flipped": false
+      },
+      {
+        "case_id": "mh52_alice_previous_startup_name",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh53_bob_david_office_disambiguation",
+        "diff_by_round": [
+          0,
+          0,
+          0
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 0,
+        "rag_wins": 0,
+        "ties": 3,
+        "flipped": false
+      },
+      {
+        "case_id": "mh54_alice_carol_role_office_disambiguation",
+        "diff_by_round": [
+          0,
+          -1,
+          1
+        ],
+        "mean_diff": 0.0,
+        "agent_wins": 1,
+        "rag_wins": 1,
+        "ties": 1,
+        "flipped": true
+      }
+    ]
+  },
+  "statistics": {
+    "proportion_ci95": "Wilson score interval per round; see groups.*.per_round",
+    "across_rounds_ci95": "mean +/- t(0.975, rounds-1) * sample_sd / sqrt(rounds)",
+    "paired_difference_ci95": "mean +/- 1.96 * sample_sd / sqrt(cases) over per-case mean differences (normal approximation)",
+    "usage_note": "A model call with total_tokens=0 is counted as missing usage; total_tokens is a known lower bound, never zero-imputed.",
+    "denominator_note": "Every round uses the full case list; terminal failures are retained in accuracy denominators."
+  },
+  "outputs": [
+    {
+      "round": 1,
+      "run_id": "stage12_multiround_20261101_120442_r1",
+      "output": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r1.json",
+      "checkpoint": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r1.checkpoint.jsonl",
+      "checkpoint_owner": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r1.checkpoint.jsonl.owner.json"
+    },
+    {
+      "round": 2,
+      "run_id": "stage12_multiround_20261101_120442_r2",
+      "output": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r2.json",
+      "checkpoint": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r2.checkpoint.jsonl",
+      "checkpoint_owner": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r2.checkpoint.jsonl.owner.json"
+    },
+    {
+      "round": 3,
+      "run_id": "stage12_multiround_20261101_120442_r3",
+      "output": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r3.json",
+      "checkpoint": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r3.checkpoint.jsonl",
+      "checkpoint_owner": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r3.checkpoint.jsonl.owner.json"
+    }
+  ]
+}

@@ -1,0 +1,378 @@
+{
+  "experiment_id": "stage10_traditional_rag_vs_wiki_agent",
+  "dataset_sha256": "f12127421c762ce191252f6f82559dc6b60397f7b603101bc1b034ee3299cce8",
+  "dataset_sha256_16": "f12127421c762ce1",
+  "dataset_sha256_expected": "f12127421c762ce191252f6f82559dc6b60397f7b603101bc1b034ee3299cce8",
+  "model": "deepseek-flash",
+  "base_url": "https://api.deepseek.com",
+  "temperature": 0.0,
+  "top_k": 5,
+  "max_steps": 8,
+  "traditional_rag": {
+    "total_cases": 50,
+    "answerable_cases": 43,
+    "unanswerable_cases": 7,
+    "multi_hop_cases": 38,
+    "retrieval_evidence_metrics": {
+      "note": "Stage 10: read_evidence_recall uses only pages actually read; Traditional RAG reads only its Top-K pages, WikiAgent reads pages returned by search/read/follow_links.",
+      "mean_evidence_recall_answerable": {
+        "value": 0.9275193798449612,
+        "numerator_sum": 98,
+        "denominator_sum": 109,
+        "scope": "answerable cases only (unanswerable excluded; evidence_recall=None)",
+        "definition": "LEGACY: |accessed_pages ∩ required| / |required|. accessed_pages includes search candidate accesses."
+      },
+      "mean_access_recall_answerable": {
+        "value": 0.9275193798449612,
+        "numerator_sum": 98,
+        "denominator_sum": 109,
+        "cases_with_access_data": 43,
+        "scope": "answerable cases only (unanswerable excluded; access_recall=None)",
+        "definition": "|accessed_pages ∩ required| / |required|. accessed_pages records every get/get_by_path lookup, including search candidates; it is not read-only."
+      },
+      "mean_read_evidence_recall_answerable": {
+        "value": 0.9275193798449612,
+        "numerator_sum": 98,
+        "denominator_sum": 109,
+        "cases_with_read_data": 43,
+        "scope": "answerable cases only (unanswerable excluded; read_evidence_recall=None)",
+        "definition": "|read_page_ids ∩ required| / |required|. read_page_ids comes from AgentResult.read_page_ids (actual read/follow_links results), not search candidates. Baseline maps read_page_ids to its retrieved context set."
+      },
+      "mean_source_precision": {
+        "value": 0.7756666666666667,
+        "scope": "all cases"
+      },
+      "evidence_support_rate_answerable": {
+        "value": 0.7209302325581395,
+        "numerator": 31,
+        "denominator": 43,
+        "definition": "LEGACY: answer_correct AND evidence_recall==1.0, among answerable cases. Does NOT require cited sources or a successful terminal status; use verified_evidence_support_rate_answerable."
+      },
+      "verified_evidence_support_rate_answerable": {
+        "value": 0.7209302325581395,
+        "numerator": 31,
+        "denominator": 43,
+        "definition": "grounded_correct AND evidence_recall==1.0, among answerable cases. grounded_correct requires a successful answer status and at least one cited source."
+      },
+      "multi_hop_success_rate": {
+        "value": 0.6842105263157895,
+        "numerator": 26,
+        "denominator": 38,
+        "definition": "LEGACY: answer_correct AND evidence_recall==1.0, among answerable multi-hop cases. See verified_multi_hop_success_rate."
+      },
+      "verified_multi_hop_success_rate": {
+        "value": 0.6842105263157895,
+        "numerator": 26,
+        "denominator": 38,
+        "definition": "grounded_correct AND evidence_recall==1.0, among answerable multi-hop cases."
+      },
+      "unanswerable_cases": {
+        "count": 7,
+        "evidence_recall_treatment": "excluded from mean (evidence_recall=None, not 1.0)"
+      }
+    },
+    "answer_quality_metrics": {
+      "note": "Stage 10: both groups use the same LLM, temperature, question, answer schema, citation rules, and frozen scorer. Answer-quality differences are attributable to retrieval/tool policy, not generator identity.",
+      "answer_accuracy": {
+        "value": 0.82,
+        "numerator": 41,
+        "denominator": 50,
+        "scope": "all cases",
+        "grounding_note": "LEGACY metric: keyword_group_match only. It can count an answer with no cited evidence as correct. See verified_answer_accuracy."
+      },
+      "verified_answer_accuracy": {
+        "value": 0.82,
+        "numerator": 41,
+        "denominator": 50,
+        "scope": "all cases",
+        "definition": "answer_correct AND status=='answered' AND at least one cited source"
+      },
+      "unsupported_correct": {
+        "count": 0,
+        "rate": 0.0,
+        "definition": "keyword-correct but NOT grounded: no cited source, or a non-answered terminal status (insufficient_evidence / budget / protocol / model error)",
+        "interpretation": "Candidate false positives from the lexical scorer or answers produced without evidence."
+      },
+      "answerable_accuracy": {
+        "value": 0.8372093023255814,
+        "numerator": 36,
+        "denominator": 43,
+        "scope": "answerable cases only"
+      },
+      "unanswerable_handling": {
+        "value": 0.7142857142857143,
+        "numerator": 5,
+        "denominator": 7,
+        "scope": "unanswerable cases only",
+        "caveat": "7 unanswerable case(s); keyword-only refusal scoring can accept a refusal followed by a fabricated answer. Treat as a manual-audit metric."
+      },
+      "scoring_rule": "keyword_group_match (lexical heuristic, NOT semantic correctness; paraphrases may score low even when correct)"
+    },
+    "efficiency_metrics": {
+      "mean_steps": 1.0,
+      "mean_pages_read": 4.98,
+      "failure_rate": 0.0,
+      "failure_rate_definition": "cases with a terminal error or status in (model_error, protocol_error); budget_exhausted also carries an error string, so it is included",
+      "budget_exhausted_rate": 0.0,
+      "status_counts": {
+        "answered": 50
+      },
+      "status_rates": {
+        "insufficient_evidence": 0.0,
+        "budget_exhausted": 0.0,
+        "protocol_error": 0.0,
+        "model_error": 0.0
+      }
+    },
+    "answer_accuracy": 0.82,
+    "verified_answer_accuracy": 0.82,
+    "unsupported_correct_count": 0,
+    "answerable_accuracy": 0.8372093023255814,
+    "unanswerable_handling": 0.7142857142857143,
+    "mean_evidence_recall": 0.9275193798449612,
+    "mean_access_recall": 0.9275193798449612,
+    "mean_read_evidence_recall": 0.9275193798449612,
+    "mean_source_precision": 0.7756666666666667,
+    "multi_hop_success_rate": 0.6842105263157895,
+    "verified_multi_hop_success_rate": 0.6842105263157895,
+    "mean_steps": 1.0,
+    "mean_pages_read": 4.98,
+    "failure_rate": 0.0,
+    "budget_exhausted_rate": 0.0,
+    "status_counts": {
+      "answered": 50
+    },
+    "status_rates": {
+      "insufficient_evidence": 0.0,
+      "budget_exhausted": 0.0,
+      "protocol_error": 0.0,
+      "model_error": 0.0
+    },
+    "correct_count": 41,
+    "answerable_correct_count": 36,
+    "model_usage": {
+      "mean_model_requests": 1.0,
+      "total_model_requests": 50,
+      "mean_prompt_tokens": 982.48,
+      "mean_completion_tokens": 146.68,
+      "mean_total_tokens": 1129.16,
+      "total_tokens": 56458,
+      "total_cache_hit_tokens": 38400,
+      "total_cache_miss_tokens": 10724,
+      "mean_latency_seconds": 1.717409746000003,
+      "total_latency_seconds": 85.87048730000015,
+      "mean_wall_seconds": 1.7180104499999924,
+      "mean_retrieval_pages": 4.98,
+      "citation_correction_count": 0,
+      "protocol_error_count": 0,
+      "model_error_count": 0,
+      "insufficient_evidence_count": 0,
+      "retrieval_error_count": 0,
+      "runtime_error_count": 0
+    }
+  },
+  "wiki_agent": {
+    "total_cases": 50,
+    "answerable_cases": 43,
+    "unanswerable_cases": 7,
+    "multi_hop_cases": 38,
+    "retrieval_evidence_metrics": {
+      "note": "Stage 10: read_evidence_recall uses only pages actually read; Traditional RAG reads only its Top-K pages, WikiAgent reads pages returned by search/read/follow_links.",
+      "mean_evidence_recall_answerable": {
+        "value": 0.9767441860465116,
+        "numerator_sum": 104,
+        "denominator_sum": 106,
+        "scope": "answerable cases only (unanswerable excluded; evidence_recall=None)",
+        "definition": "LEGACY: |accessed_pages ∩ required| / |required|. accessed_pages includes search candidate accesses."
+      },
+      "mean_access_recall_answerable": {
+        "value": 0.9767441860465116,
+        "numerator_sum": 104,
+        "denominator_sum": 106,
+        "cases_with_access_data": 43,
+        "scope": "answerable cases only (unanswerable excluded; access_recall=None)",
+        "definition": "|accessed_pages ∩ required| / |required|. accessed_pages records every get/get_by_path lookup, including search candidates; it is not read-only."
+      },
+      "mean_read_evidence_recall_answerable": {
+        "value": 0.9709302325581395,
+        "numerator_sum": 103,
+        "denominator_sum": 106,
+        "cases_with_read_data": 43,
+        "scope": "answerable cases only (unanswerable excluded; read_evidence_recall=None)",
+        "definition": "|read_page_ids ∩ required| / |required|. read_page_ids comes from AgentResult.read_page_ids (actual read/follow_links results), not search candidates. Baseline maps read_page_ids to its retrieved context set."
+      },
+      "mean_source_precision": {
+        "value": 0.7873333333333333,
+        "scope": "all cases"
+      },
+      "evidence_support_rate_answerable": {
+        "value": 0.9534883720930233,
+        "numerator": 41,
+        "denominator": 43,
+        "definition": "LEGACY: answer_correct AND evidence_recall==1.0, among answerable cases. Does NOT require cited sources or a successful terminal status; use verified_evidence_support_rate_answerable."
+      },
+      "verified_evidence_support_rate_answerable": {
+        "value": 0.9534883720930233,
+        "numerator": 41,
+        "denominator": 43,
+        "definition": "grounded_correct AND evidence_recall==1.0, among answerable cases. grounded_correct requires a successful answer status and at least one cited source."
+      },
+      "multi_hop_success_rate": {
+        "value": 0.9473684210526315,
+        "numerator": 36,
+        "denominator": 38,
+        "definition": "LEGACY: answer_correct AND evidence_recall==1.0, among answerable multi-hop cases. See verified_multi_hop_success_rate."
+      },
+      "verified_multi_hop_success_rate": {
+        "value": 0.9473684210526315,
+        "numerator": 36,
+        "denominator": 38,
+        "definition": "grounded_correct AND evidence_recall==1.0, among answerable multi-hop cases."
+      },
+      "unanswerable_cases": {
+        "count": 7,
+        "evidence_recall_treatment": "excluded from mean (evidence_recall=None, not 1.0)"
+      }
+    },
+    "answer_quality_metrics": {
+      "note": "Stage 10: both groups use the same LLM, temperature, question, answer schema, citation rules, and frozen scorer. Answer-quality differences are attributable to retrieval/tool policy, not generator identity.",
+      "answer_accuracy": {
+        "value": 0.94,
+        "numerator": 47,
+        "denominator": 50,
+        "scope": "all cases",
+        "grounding_note": "LEGACY metric: keyword_group_match only. It can count an answer with no cited evidence as correct. See verified_answer_accuracy."
+      },
+      "verified_answer_accuracy": {
+        "value": 0.94,
+        "numerator": 47,
+        "denominator": 50,
+        "scope": "all cases",
+        "definition": "answer_correct AND status=='answered' AND at least one cited source"
+      },
+      "unsupported_correct": {
+        "count": 0,
+        "rate": 0.0,
+        "definition": "keyword-correct but NOT grounded: no cited source, or a non-answered terminal status (insufficient_evidence / budget / protocol / model error)",
+        "interpretation": "Candidate false positives from the lexical scorer or answers produced without evidence."
+      },
+      "answerable_accuracy": {
+        "value": 0.9534883720930233,
+        "numerator": 41,
+        "denominator": 43,
+        "scope": "answerable cases only"
+      },
+      "unanswerable_handling": {
+        "value": 0.8571428571428571,
+        "numerator": 6,
+        "denominator": 7,
+        "scope": "unanswerable cases only",
+        "caveat": "7 unanswerable case(s); keyword-only refusal scoring can accept a refusal followed by a fabricated answer. Treat as a manual-audit metric."
+      },
+      "scoring_rule": "keyword_group_match (lexical heuristic, NOT semantic correctness; paraphrases may score low even when correct)"
+    },
+    "efficiency_metrics": {
+      "mean_steps": 3.92,
+      "mean_pages_read": 3.24,
+      "failure_rate": 0.02,
+      "failure_rate_definition": "cases with a terminal error or status in (model_error, protocol_error); budget_exhausted also carries an error string, so it is included",
+      "budget_exhausted_rate": 0.0,
+      "status_counts": {
+        "answered": 49,
+        "model_error": 1
+      },
+      "status_rates": {
+        "insufficient_evidence": 0.0,
+        "budget_exhausted": 0.0,
+        "protocol_error": 0.0,
+        "model_error": 0.02
+      }
+    },
+    "answer_accuracy": 0.94,
+    "verified_answer_accuracy": 0.94,
+    "unsupported_correct_count": 0,
+    "answerable_accuracy": 0.9534883720930233,
+    "unanswerable_handling": 0.8571428571428571,
+    "mean_evidence_recall": 0.9767441860465116,
+    "mean_access_recall": 0.9767441860465116,
+    "mean_read_evidence_recall": 0.9709302325581395,
+    "mean_source_precision": 0.7873333333333333,
+    "multi_hop_success_rate": 0.9473684210526315,
+    "verified_multi_hop_success_rate": 0.9473684210526315,
+    "mean_steps": 3.92,
+    "mean_pages_read": 3.24,
+    "failure_rate": 0.02,
+    "budget_exhausted_rate": 0.0,
+    "status_counts": {
+      "answered": 49,
+      "model_error": 1
+    },
+    "status_rates": {
+      "insufficient_evidence": 0.0,
+      "budget_exhausted": 0.0,
+      "protocol_error": 0.0,
+      "model_error": 0.02
+    },
+    "correct_count": 47,
+    "answerable_correct_count": 41,
+    "model_usage": {
+      "mean_model_requests": 3.92,
+      "total_model_requests": 196,
+      "mean_prompt_tokens": 3434.16,
+      "mean_completion_tokens": 407.4,
+      "mean_total_tokens": 3841.56,
+      "total_tokens": 192078,
+      "total_cache_hit_tokens": 113015,
+      "total_cache_miss_tokens": 58693,
+      "mean_latency_seconds": 6.226613814000047,
+      "total_latency_seconds": 311.3306907000024,
+      "mean_wall_seconds": 6.227748355999993,
+      "mean_retrieval_pages": 5.16,
+      "citation_correction_count": 0,
+      "protocol_error_count": 0,
+      "model_error_count": 1,
+      "insufficient_evidence_count": 0,
+      "retrieval_error_count": 0,
+      "runtime_error_count": 0
+    }
+  },
+  "paired_summary": {
+    "cases": 50,
+    "agent_only_correct": 9,
+    "rag_only_correct": 3,
+    "both_correct": 38,
+    "both_wrong": 0,
+    "mean_agent_minus_rag": {
+      "answer_correct": 0.12,
+      "grounded_correct": 0.12,
+      "evidence_recall": 0.0492248062015504,
+      "read_evidence_recall": 0.0434108527131783,
+      "source_precision": 0.011666666666666669,
+      "model_requests": 2.92,
+      "total_tokens": 2712.4,
+      "latency_seconds": 4.509204068000044,
+      "steps": 2.92
+    }
+  },
+  "scoring": {
+    "version": "stage9_4_frozen",
+    "rule": "answer_correct = for every group in answer_keyword_groups, at least one keyword appears in the normalized answer. For unanswerable cases, answer_correct = at least one refusal_keyword appears and no case-specific fabrication_keyword appears. All matching is case-insensitive after stripping punctuation. The fabrication guard is a lexical heuristic for refusal-plus-invention; it does not replace manual audit of unanswerable cases.",
+    "score_answer_source_sha256_16": "2eea837cb06c19b1",
+    "aggregate_results_source_sha256_16": "9249e8c07b5bec78",
+    "manual_review_case_ids": [
+      "mh46_phoenix_reporting_chain",
+      "mh47_exec_level_to_phoenix_chain",
+      "mh50_orion_exact_completion_date",
+      "mh51_total_employee_count",
+      "mh52_alice_previous_startup_name",
+      "mh54_alice_carol_role_office_disambiguation"
+    ]
+  },
+  "stage12_experiment_id": "stage12_multiround_stability",
+  "batch_id": "stage12_multiround_20261101_120442",
+  "run_id": "stage12_multiround_20261101_120442_r3",
+  "round_index": 3,
+  "rounds_total": 3,
+  "stage12_config_hash": "e5d6da4f3b82bc14c44276058c48aa7fa5e9d7c759106b2372ffcff0a710df05",
+  "stage12_source_sha256_16": "60ee2027288fb081"
+}

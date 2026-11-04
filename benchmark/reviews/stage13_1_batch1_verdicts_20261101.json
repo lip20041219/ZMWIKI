@@ -1,0 +1,246 @@
+{
+  "metadata": {
+    "verdict_dataset_id": "stage13_1_batch1_verdicts_20261101",
+    "created_at": "2026-11-01",
+    "verdict_source": "user-provided Stage 13.1 batch 1 verdict table",
+    "source_review_markdown": "benchmark/reviews/stage13_1_batch1_review_20261101.md",
+    "source_review_json": "benchmark/reviews/stage13_0_human_review_20261101.json",
+    "source_review_csv": "benchmark/reviews/stage13_0_human_review_20261101.csv",
+    "source_sha256": {
+      "source_json": "5aca638edf6a35fac9ab4519ed3374f5816b069d0bc8e7c207fba10b0e391d21",
+      "source_csv": "6a0267fe4a9d747084fe5362dcaccb5c79c7121656b341972e5abf2019ab621a",
+      "source_markdown": "58ea3455b8dbcc5092d84a04eac67b8679dba06ab100e13c9f39da23eae2534c"
+    },
+    "record_count": 9,
+    "risk_record_count": 3,
+    "auto_correct_sample_count": 6,
+    "pending_confirmation_count": 0,
+    "validation": {
+      "unique_review_ids": true,
+      "unique_case_round_group": true,
+      "round_group_copied_from_source": true,
+      "all_review_notes_nonempty": true,
+      "all_human_verdict_values_allowed": true,
+      "all_human_evidence_verdict_values_allowed": true,
+      "source_json_csv_markdown_unchanged": true
+    },
+    "api_calls": 0,
+    "git_commit": false
+  },
+  "verdicts": [
+    {
+      "review_id": "s13_risk_r1_wiki_agent_mh38_responsibility_synthesis",
+      "case_id": "mh38_responsibility_synthesis",
+      "round": 1,
+      "group": "wiki_agent",
+      "human_verdict": "incorrect",
+      "human_evidence_verdict": "unsupported",
+      "review_notes": "裁定 incorrect/unsupported：`bob` 页面写 Bob 负责 technical roadmap planning 和 quarterly performance reviews；`eve` 页面写 Eve 负责 annual engineering budget。答案把 roadmap 归 Eve、budget 归 Bob，并加入 architecture review board、quarterly engineering objectives、budget forecasting、headcount planning、vendor spend 等语料未出现内容。该条 read_page_ids=[]、source_ids=[]、status=insufficient_evidence，无已读页面证据。",
+      "source_record_type": "risk",
+      "auto_correct": true,
+      "verified_correct": false,
+      "status": "insufficient_evidence",
+      "source_ids": [],
+      "read_page_ids": [],
+      "original_result_path": "benchmark/results/stage12_multiround_20261101_120442_r1.json",
+      "original_checkpoint_path": "benchmark/results/stage12_multiround_20261101_120442_r1.checkpoint.jsonl"
+    },
+    {
+      "review_id": "s13_risk_r2_wiki_agent_mh10_direct_reports",
+      "case_id": "mh10_direct_reports",
+      "round": 2,
+      "group": "wiki_agent",
+      "human_verdict": "incorrect",
+      "human_evidence_verdict": "unsupported",
+      "review_notes": "裁定 incorrect/unsupported：参考答案只有 Alice Smith、Carol Chen。`alice`/`carol`/`bob` 支持两人向 Bob 汇报；`david` 页面明确 David reports to Eve；Frank Osei、Grace Liu 在 9 个 Wiki 页面中不存在；`bob` 只写 team of twelve engineers, including Alice/Carol，没有 “five direct reports”。该条 read_page_ids=[]、source_ids=[]、status=insufficient_evidence。",
+      "source_record_type": "risk",
+      "auto_correct": true,
+      "verified_correct": false,
+      "status": "insufficient_evidence",
+      "source_ids": [],
+      "read_page_ids": [],
+      "original_result_path": "benchmark/results/stage12_multiround_20261101_120442_r2.json",
+      "original_checkpoint_path": "benchmark/results/stage12_multiround_20261101_120442_r2.checkpoint.jsonl"
+    },
+    {
+      "review_id": "s13_risk_r2_wiki_agent_mh49_orion_upward_chain_ceo",
+      "case_id": "mh49_orion_upward_chain_ceo",
+      "round": 2,
+      "group": "wiki_agent",
+      "human_verdict": "incorrect",
+      "human_evidence_verdict": "unsupported",
+      "review_notes": "裁定 incorrect/unsupported：`project_orion`/`david` 支持 Orion→David→Eve，`eve` 支持 Eve 是 VP 并 reports directly to the CEO；但答案在 Eve 与 CEO 之间插入 CTO，9 个页面中没有 CTO/Chief Technology Officer。该条 read_page_ids=[]、source_ids=[]、status=insufficient_evidence。",
+      "source_record_type": "risk",
+      "auto_correct": true,
+      "verified_correct": false,
+      "status": "insufficient_evidence",
+      "source_ids": [],
+      "read_page_ids": [],
+      "original_result_path": "benchmark/results/stage12_multiround_20261101_120442_r2.json",
+      "original_checkpoint_path": "benchmark/results/stage12_multiround_20261101_120442_r2.checkpoint.jsonl"
+    },
+    {
+      "review_id": "s13_auto_correct_sample_r1_traditional_rag_mh21_team_intersection",
+      "case_id": "mh21_team_intersection",
+      "round": 1,
+      "group": "traditional_rag",
+      "human_verdict": "correct",
+      "human_evidence_verdict": "supported",
+      "review_notes": "裁定 correct/supported：`bob` 写 Bob 是 Director of Engineering 且团队包含 Alice/Carol；`project_phoenix` 写 Alice leads Phoenix；`project_orion` 写 Carol contributes to Orion。source_ids [bob, project_phoenix, project_orion] 全部在 read_page_ids 中；alternative evidence path 合法，read_evidence_recall=1.0，source_precision=1.0。",
+      "source_record_type": "auto_correct_sample",
+      "auto_correct": true,
+      "verified_correct": true,
+      "status": "answered",
+      "source_ids": [
+        "bob",
+        "project_phoenix",
+        "project_orion"
+      ],
+      "read_page_ids": [
+        "bob",
+        "project_orion",
+        "project_phoenix",
+        "eve",
+        "david"
+      ],
+      "original_result_path": "benchmark/results/stage12_multiround_20261101_120442_r1.json",
+      "original_checkpoint_path": "benchmark/results/stage12_multiround_20261101_120442_r1.checkpoint.jsonl"
+    },
+    {
+      "review_id": "s13_auto_correct_sample_r3_traditional_rag_mh24_engineering_budget_vs_projects",
+      "case_id": "mh24_engineering_budget_vs_projects",
+      "round": 3,
+      "group": "traditional_rag",
+      "human_verdict": "correct",
+      "human_evidence_verdict": "supported",
+      "review_notes": "裁定 correct/supported：`eve` 写 annual engineering budget 4M；`project_phoenix` 写 500k；`project_orion` 写 300k；combined 800k，4M > 800k，算术和比较方向正确。source_ids 全部在 read_page_ids 中；source_precision=1.0。",
+      "source_record_type": "auto_correct_sample",
+      "auto_correct": true,
+      "verified_correct": true,
+      "status": "answered",
+      "source_ids": [
+        "eve",
+        "project_phoenix",
+        "project_orion"
+      ],
+      "read_page_ids": [
+        "project_orion",
+        "project_phoenix",
+        "eve",
+        "david",
+        "bob"
+      ],
+      "original_result_path": "benchmark/results/stage12_multiround_20261101_120442_r3.json",
+      "original_checkpoint_path": "benchmark/results/stage12_multiround_20261101_120442_r3.checkpoint.jsonl"
+    },
+    {
+      "review_id": "s13_auto_correct_sample_r2_traditional_rag_mh41_orion_tech_match",
+      "case_id": "mh41_orion_tech_match",
+      "round": 2,
+      "group": "traditional_rag",
+      "human_verdict": "correct",
+      "human_evidence_verdict": "supported",
+      "review_notes": "裁定 correct/supported：`project_orion` 写 columnar database + stream processing engine + React frontend 且由 David Kim 领导；`david`/`building_b` 写 David 办公室在 Building B 四楼。source_ids 全部在 read_page_ids 中；read_evidence_recall=1.0。source_precision=0.667 是因为 building_b 不在 required_page_ids，但它支撑 office floor，不是证据缺失。",
+      "source_record_type": "auto_correct_sample",
+      "auto_correct": true,
+      "verified_correct": true,
+      "status": "answered",
+      "source_ids": [
+        "project_orion",
+        "david",
+        "building_b"
+      ],
+      "read_page_ids": [
+        "project_orion",
+        "david",
+        "building_a",
+        "carol",
+        "building_b"
+      ],
+      "original_result_path": "benchmark/results/stage12_multiround_20261101_120442_r2.json",
+      "original_checkpoint_path": "benchmark/results/stage12_multiround_20261101_120442_r2.checkpoint.jsonl"
+    },
+    {
+      "review_id": "s13_auto_correct_sample_r2_traditional_rag_mh54_alice_carol_role_office_disambiguation",
+      "case_id": "mh54_alice_carol_role_office_disambiguation",
+      "round": 2,
+      "group": "traditional_rag",
+      "human_verdict": "correct",
+      "human_evidence_verdict": "supported",
+      "review_notes": "裁定 correct/supported：`project_phoenix` 写 Alice leads、Carol core member；`alice`/`building_a` 写 Alice 办公室 Building A 二楼；`carol`/`building_a` 写 Carol 一楼 desk/office。answer_bindings=True；source_ids 全部在 read_page_ids 中；source_precision=1.0。",
+      "source_record_type": "auto_correct_sample",
+      "auto_correct": true,
+      "verified_correct": true,
+      "status": "answered",
+      "source_ids": [
+        "alice",
+        "carol",
+        "project_phoenix",
+        "building_a"
+      ],
+      "read_page_ids": [
+        "alice",
+        "carol",
+        "building_a",
+        "project_phoenix",
+        "building_b"
+      ],
+      "original_result_path": "benchmark/results/stage12_multiround_20261101_120442_r2.json",
+      "original_checkpoint_path": "benchmark/results/stage12_multiround_20261101_120442_r2.checkpoint.jsonl"
+    },
+    {
+      "review_id": "s13_auto_correct_sample_r2_wiki_agent_mh02_project_budget",
+      "case_id": "mh02_project_budget",
+      "round": 2,
+      "group": "wiki_agent",
+      "human_verdict": "correct",
+      "human_evidence_verdict": "supported",
+      "review_notes": "裁定 correct/supported：`alice` 写 Alice leads Project Phoenix；`project_phoenix` 写 internal platform migration 且 allocated budget 500k。source_ids [alice, project_phoenix] 全部在 read_page_ids 中；read_evidence_recall=1.0，source_precision=1.0。注意同题 RAG R2 的裸 `$500,000` 因 lexical keyword group 被判 False；本条 Agent 答案含 “five hundred thousand”，不影响本条裁定。",
+      "source_record_type": "auto_correct_sample",
+      "auto_correct": true,
+      "verified_correct": true,
+      "status": "answered",
+      "source_ids": [
+        "alice",
+        "project_phoenix"
+      ],
+      "read_page_ids": [
+        "alice",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "original_result_path": "benchmark/results/stage12_multiround_20261101_120442_r2.json",
+      "original_checkpoint_path": "benchmark/results/stage12_multiround_20261101_120442_r2.checkpoint.jsonl"
+    },
+    {
+      "review_id": "s13_auto_correct_sample_r2_wiki_agent_mh17_carol_two_project_leads",
+      "case_id": "mh17_carol_two_project_leads",
+      "round": 2,
+      "group": "wiki_agent",
+      "human_verdict": "correct",
+      "human_evidence_verdict": "supported",
+      "review_notes": "裁定 correct/supported：`carol` 写 Carol 参与 Phoenix/Orion；`project_phoenix`/`alice` 写 Alice leads Phoenix 且办公室 Building A 二楼；`project_orion`/`david` 写 David leads Orion 且办公室 Building B 四楼。source_ids 全部在 read_page_ids 中；read_evidence_recall=1.0。source_precision=0.6 是因为两个项目页不在 required_page_ids，但它们用于连接 Carol 与项目 leader/office，不是证据缺失。",
+      "source_record_type": "auto_correct_sample",
+      "auto_correct": true,
+      "verified_correct": true,
+      "status": "answered",
+      "source_ids": [
+        "carol",
+        "project_phoenix",
+        "project_orion",
+        "alice",
+        "david"
+      ],
+      "read_page_ids": [
+        "alice",
+        "carol",
+        "david",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "original_result_path": "benchmark/results/stage12_multiround_20261101_120442_r2.json",
+      "original_checkpoint_path": "benchmark/results/stage12_multiround_20261101_120442_r2.checkpoint.jsonl"
+    }
+  ],
+  "pending_confirmation": []
+}

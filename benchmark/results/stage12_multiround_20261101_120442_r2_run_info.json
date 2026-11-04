@@ -1,0 +1,104 @@
+{
+  "experiment_id": "stage10_traditional_rag_vs_wiki_agent",
+  "timestamp": "2026-11-01T12:16:42+0800",
+  "dataset": "benchmark/datasets/multihop_wiki.json",
+  "dataset_version": "1.4",
+  "dataset_sha256": "f12127421c762ce191252f6f82559dc6b60397f7b603101bc1b034ee3299cce8",
+  "dataset_sha256_16": "f12127421c762ce1",
+  "dataset_sha256_expected": "f12127421c762ce191252f6f82559dc6b60397f7b603101bc1b034ee3299cce8",
+  "git_sha": "1cdd718481c03772867cd924b9f0ebfeb30d71e1",
+  "python_version": "3.11.9",
+  "model": "deepseek-flash",
+  "base_url": "https://api.deepseek.com",
+  "temperature": 0.0,
+  "top_k": 5,
+  "max_steps": 8,
+  "rag_answer_corrections": 1,
+  "api_key_recorded": false,
+  "working_tree_status": {
+    "dirty": true,
+    "file_count": 47
+  },
+  "source_file_sha256_16": {
+    "benchmark/run_multihop_evaluation.py": "91a334ca9ddc8049",
+    "src/zmwiki/wiki/wiki_agent.py": "256f43f76d488557",
+    "src/zmwiki/wiki/wiki_compiler.py": "73c3adcd02f1daa7",
+    "src/zmwiki/wiki/wiki_index.py": "1da07287d408f463",
+    "src/zmwiki/wiki/wiki_retriever.py": "b3e86145637b9a0e",
+    "src/zmwiki/wiki/wiki_schema.py": "e82f9d666830f9bf",
+    "src/zmwiki/wiki/wiki_link_resolver.py": "5a18b38f59be549b",
+    "src/zmwiki/llm_generators.py": "0ef4a4fb5432ee9b",
+    "benchmark/run_stage10_comparison.py": "e29c48812e26e3d8"
+  },
+  "answer_generation": {
+    "shared_answer_rules": "You MUST read at least one page before answering.\nBase your answer ONLY on content from pages you have read.\nIf evidence is insufficient, answer with text explaining what you could not confirm, and list the page IDs of the pages you did read as sources.\nSources must be the exact page IDs shown in [square brackets] in the search/read results. Never use titles, paths, filenames, or source document IDs.",
+    "answer_schema": "{\"action\": \"answer\", \"text\": \"...\", \"sources\": [\"page_id\"]}",
+    "rag_prompt_version": "stage10.traditional_rag.v1",
+    "rag_prompt_sha256_16": "6fe365dbda31e132",
+    "agent_prompt_version": "wiki_agent.system_prompt.frozen",
+    "agent_prompt_sha256_16": "c3511e73f4867428"
+  },
+  "scoring": {
+    "version": "stage9_4_frozen",
+    "rule": "answer_correct = for every group in answer_keyword_groups, at least one keyword appears in the normalized answer. For unanswerable cases, answer_correct = at least one refusal_keyword appears and no case-specific fabrication_keyword appears. All matching is case-insensitive after stripping punctuation. The fabrication guard is a lexical heuristic for refusal-plus-invention; it does not replace manual audit of unanswerable cases.",
+    "score_answer_source_sha256_16": "2eea837cb06c19b1",
+    "aggregate_results_source_sha256_16": "9249e8c07b5bec78",
+    "manual_review_case_ids": [
+      "mh46_phoenix_reporting_chain",
+      "mh47_exec_level_to_phoenix_chain",
+      "mh50_orion_exact_completion_date",
+      "mh51_total_employee_count",
+      "mh52_alice_previous_startup_name",
+      "mh54_alice_carol_role_office_disambiguation"
+    ]
+  },
+  "config": {
+    "traditional_rag": {
+      "retrieval": "wiki_search(top_k) then wiki_read(only those pages)",
+      "tools": [],
+      "max_context_pages": 5,
+      "answer_calls": "1 single-shot answer + up to 1 citation correction",
+      "link_source": "none"
+    },
+    "wiki_agent": {
+      "agent": "WikiAgent",
+      "tools": [
+        "search",
+        "read",
+        "follow_links"
+      ],
+      "max_steps": 8,
+      "search_top_k": 5,
+      "link_source": "manual",
+      "fail_closed": true
+    },
+    "shared": {
+      "model": "deepseek-flash",
+      "base_url": "https://api.deepseek.com",
+      "temperature": 0.0,
+      "dataset": "benchmark/datasets/multihop_wiki.json",
+      "scoring": "run_multihop_evaluation.score_answer",
+      "answer_schema": "WikiAgent answer action JSON"
+    }
+  },
+  "comparability_notes": {
+    "fairness": "Both groups use the same model, base URL, temperature, question set, answer rules, citation requirements, action parser, and score_answer implementation.",
+    "difference": "Traditional RAG may only use the first Top-K search result set; WikiAgent may perform additional search/read/follow_links calls. This is the system difference under test.",
+    "failure_handling": "Protocol, model, retrieval, insufficient-evidence, and budget failures are retained as failed samples; no successful-only filtering.",
+    "steps_definition": "Traditional RAG steps=1 per single retrieval/generation round; model_requests counts actual model calls, including at most one citation correction. WikiAgent steps=action iterations.",
+    "manual_review": "mh46/mh47 and other manual_review cases keep automatic scores; manual review is not merged into answer_correct."
+  },
+  "config_hash": "6e6757132c92a6dd3e957632ff81b367ba6268ced4e85ddb92926794fa22ecc0",
+  "checkpoint": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r2.checkpoint.jsonl",
+  "output": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r2.json",
+  "metrics": "D:\\desk\\ZMWiki\\benchmark\\results\\stage12_multiround_20261101_120442_r2_metrics.json",
+  "case_count": 50,
+  "status": "completed",
+  "stage12_experiment_id": "stage12_multiround_stability",
+  "batch_id": "stage12_multiround_20261101_120442",
+  "run_id": "stage12_multiround_20261101_120442_r2",
+  "round_index": 2,
+  "rounds_total": 3,
+  "stage12_config_hash": "e5d6da4f3b82bc14c44276058c48aa7fa5e9d7c759106b2372ffcff0a710df05",
+  "stage12_source_sha256_16": "60ee2027288fb081"
+}
