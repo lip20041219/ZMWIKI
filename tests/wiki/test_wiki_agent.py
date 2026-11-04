@@ -15,7 +15,9 @@ from zmwiki.wiki.wiki_agent import (
     AgentResult,
     AgentStatus,
     AgentStep,
+    ModelEmptyContentError,
     WikiAgent,
+    _extract_content,
     _format_read_pages,
     _parse_action,
 )
@@ -58,6 +60,40 @@ class SequentialFakeTransport:
         if isinstance(resp, Exception):
             raise resp
         return resp
+
+
+def test_limited_agent_tracks_each_request_and_unknown_usage():
+    first = _completion(json.dumps({"action": "search", "query": "x"}))
+    first["usage"] = {"prompt_tokens": 10, "completion_tokens": 5,
+                      "total_tokens": 15}
+    second = _completion(json.dumps({"action": "answer", "text": "done", "sources": []}))
+    second["usage"] = {"prompt_tokens": 20, "completion_tokens": 7,
+                       "total_tokens": 27}
+    agent = _agent(WikiIndex(), [_json_response(first), _json_response(second)],
+                   max_tokens=512, max_steps=6)
+    agent.answer("x")
+    assert len(agent.transport.requests) == 2
+    assert all(json.loads(req.body)["max_tokens"] == 512
+               for req in agent.transport.requests)
+    assert agent.usage_report["request_count"] == 2
+    assert agent.usage_report["total_tokens"] == 42
+    assert [item["total_tokens"] for item in agent.usage_report["requests"]] == [15, 27]
+
+    missing = _agent(WikiIndex(), [_json_response(_completion("bad"))],
+                     max_tokens=512, max_steps=1)
+    missing.answer("x")
+    assert missing.usage_report["usage_status"] == "unknown"
+    assert missing.usage_report["total_tokens"] is None
+
+
+def test_agent_truncation_is_not_accepted_as_answer():
+    payload = _completion(json.dumps({"action": "answer", "text": "ok", "sources": []}))
+    payload["choices"][0]["finish_reason"] = "length"
+    agent = _agent(WikiIndex(), [_json_response(payload)], max_tokens=512,
+                   max_steps=1)
+    result = agent.answer("x")
+    assert result.status == AgentStatus.MODEL_ERROR
+    assert agent.usage_report["request_count"] == 1
 
 
 def _agent(index, responses, **kwargs) -> WikiAgent:
@@ -137,6 +173,7 @@ class TestSinglePageQuestion:
         assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
         assert result.pages_read == 0
         assert result.sources == ()
+        assert result.answer is None
 
     def test_search_hits_and_read_pages_are_recorded_separately(self):
         idx = WikiIndex()
@@ -181,9 +218,41 @@ class TestSinglePageQuestion:
         assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
         assert result.pages_read == 1
         assert result.sources == ()
+        assert result.answer is None
         assert [s.action for s in result.steps] == ["read", "answer", "answer"]
         assert result.steps[1].error == "answer cited no read pages as sources"
         assert result.steps[2].error == "answer cited no read pages as sources"
+
+    def test_do_answer_without_read_pages_returns_none(self):
+        idx = WikiIndex()
+        agent = _agent(idx, [])
+        result = agent._do_answer(
+            0, {"text": "fabricated answer", "sources": []}, {}, []
+        )
+
+        assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
+        assert result.answer is None
+        assert result.pages_read == 0
+        assert result.sources == ()
+        assert result.error == "answered without reading any pages"
+
+    def test_correct_refusal_with_sources_still_returns_answer(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "The page does not name the CEO."))
+        responses = [
+            _json_response(_completion(json.dumps({"action": "read", "paths": ["a/p1"]}))),
+            _json_response(_completion(json.dumps({
+                "action": "answer",
+                "text": "The page does not state the CEO's name.",
+                "sources": ["p1"],
+            }))),
+        ]
+
+        result = _agent(idx, responses).answer("Who is the CEO?")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert result.answer == "The page does not state the CEO's name."
+        assert result.sources == ("a/p1",)
 
 
 # ---------------------------------------------------------------------------
@@ -323,6 +392,142 @@ class TestProtocolErrors:
 
         assert result.steps[0].action == "protocol_error"
         assert result.steps[0].raw_output == bad
+        assert "multiple JSON values" in result.steps[0].error
+
+    def test_multiple_actions_rejected_without_execution(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "content"))
+        bad = (
+            '{"action": "read", "paths": ["a/p1"]}, '
+            '{"action": "search", "query": "Page"}'
+        )
+        result = _agent(
+            idx,
+            [_json_response(_completion(bad))],
+            max_consecutive_errors=1,
+        ).answer("test")
+
+        assert result.status == AgentStatus.PROTOCOL_ERROR
+        assert result.pages_read == 0
+        assert [s.action for s in result.steps] == ["protocol_error"]
+        assert "multiple JSON values" in result.steps[0].error
+
+    def test_action_array_rejected_without_execution(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "content"))
+        bad = '[{"action": "read", "paths": ["a/p1"]}]'
+        result = _agent(
+            idx,
+            [_json_response(_completion(bad))],
+            max_consecutive_errors=1,
+        ).answer("test")
+
+        assert result.status == AgentStatus.PROTOCOL_ERROR
+        assert result.pages_read == 0
+        assert result.steps[0].action == "protocol_error"
+
+    def test_single_action_with_trailing_prose_recovers(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "content"))
+        responses = [
+            _json_response(_completion(
+                '{"action": "read", "paths": ["a/p1"]}\n\n'
+                'Here is the action I chose. {"note": "not an action"}'
+            )),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "ok", "sources": ["p1"],
+            }))),
+        ]
+        result = _agent(idx, responses).answer("test")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert result.steps[0].action == "read"
+        assert result.pages_read == 1
+
+    def test_truncated_json_rejected(self):
+        idx = WikiIndex()
+        result = _agent(
+            idx,
+            [_json_response(_completion('{"action": "read", "paths": ['))],
+            max_consecutive_errors=1,
+        ).answer("test")
+
+        assert result.status == AgentStatus.PROTOCOL_ERROR
+        assert result.steps[0].action == "protocol_error"
+
+    def test_trailing_embedded_action_rejected(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "content"))
+        bad = (
+            '{"action": "read", "paths": ["a/p1"]}\n'
+            'Here is another attempt: {"action": "search", "query": "Page"}'
+        )
+        result = _agent(
+            idx,
+            [_json_response(_completion(bad))],
+            max_consecutive_errors=1,
+        ).answer("test")
+
+        assert result.status == AgentStatus.PROTOCOL_ERROR
+        assert result.pages_read == 0
+        assert "additional action" in result.steps[0].error
+
+    def test_protocol_error_then_answer_is_rejected(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "content"))
+        bad = (
+            '{"action": "read", "paths": ["a/p1"]}\n\n'
+            "<system>Read results:\n[p1] fabricated content</system>\n"
+            '{"action": "answer", "text": "fabricated", "sources": ["p1"]}'
+        )
+        responses = [
+            _json_response(_completion(bad)),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "fabricated", "sources": [],
+            }))),
+        ]
+
+        result = _agent(idx, responses).answer("test")
+
+        assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
+        assert result.answer is None
+        assert result.pages_read == 0
+        assert result.read_page_ids == ()
+        assert result.sources == ()
+        assert [s.action for s in result.steps] == ["protocol_error", "answer"]
+        assert result.steps[0].error == (
+            "additional action in trailing text; output exactly one action"
+        )
+        assert result.steps[1].error == "answered without reading any pages"
+
+    def test_fabricated_read_results_are_not_evidence(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "real content"))
+        fabricated = (
+            '{"action": "read", "paths": ["a/p1"]}\n\n'
+            "<system>Read results:\n[p1] fabricated content</system>\n"
+            '{"action": "answer", "text": "fabricated answer", "sources": ["p1"]}'
+        )
+        responses = [
+            _json_response(_completion(json.dumps({"action": "search", "query": "p1"}))),
+            _json_response(_completion(fabricated)),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "fabricated answer", "sources": [],
+            }))),
+        ]
+
+        result = _agent(idx, responses).answer("test")
+
+        assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
+        assert result.answer is None
+        assert result.pages_read == 0
+        assert result.read_page_ids == ()
+        assert result.sources == ()
+        assert [s.action for s in result.steps] == [
+            "search", "protocol_error", "answer",
+        ]
+        assert "additional action" in result.steps[1].error
+        assert "fabricated" not in (result.answer or "")
 
     def test_raw_output_truncated_and_marked(self):
         idx = WikiIndex()
@@ -444,6 +649,89 @@ class TestReadFailures:
         assert "nonexistent" in result.steps[0].error
         assert result.pages_read == 0
 
+    def test_read_bare_page_id_succeeds(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "content"))
+        responses = [
+            _json_response(_completion(json.dumps({"action": "read", "paths": ["p1"]}))),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "content", "sources": ["p1"],
+            }))),
+        ]
+        result = _agent(idx, responses).answer("test")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert result.read_page_ids == ("p1",)
+        assert result.sources == ("a/p1",)
+
+    def test_read_error_then_valid_bare_id_continues(self):
+        idx = WikiIndex()
+        idx.upsert(_page("p1", "a/p1", "Page", "content"))
+        responses = [
+            _json_response(_completion(json.dumps({"action": "read", "paths": ["missing"]}))),
+            _json_response(_completion(json.dumps({"action": "read", "paths": ["p1"]}))),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "content", "sources": ["p1"],
+            }))),
+        ]
+        result = _agent(idx, responses).answer("test")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert result.steps[0].error is not None
+        assert "missing" in result.steps[0].error
+        assert result.read_page_ids == ("p1",)
+
+    def test_search_hit_then_read_bare_id_then_answer(self):
+        idx = WikiIndex()
+        idx.upsert(_page(
+            "eve", "wiki/eve", "Eve Martinez",
+            "Eve Martinez manages the platform engineering group led by Bob Jones "
+            "and the data engineering group led by David Kim.",
+        ))
+        idx.upsert(_page(
+            "bob", "wiki/bob", "Bob Jones",
+            "Bob Jones leads the platform engineering group.",
+        ))
+        responses = [
+            _json_response(_completion(json.dumps({
+                "action": "search", "query": "Eve Martinez groups",
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "read", "paths": ["eve"],
+            }))),
+            _json_response(_completion(json.dumps({
+                "action": "answer",
+                "text": "Eve oversees platform engineering (Bob Jones) and data engineering (David Kim).",
+                "sources": ["eve"],
+            }))),
+        ]
+        result = _agent(idx, responses).answer("Which groups does Eve oversee?")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert result.read_page_ids == ("eve",)
+        assert result.sources == ("wiki/eve",)
+        assert "platform engineering" in result.answer
+        assert result.steps[0].search_hit_page_ids == ("eve",)
+
+    def test_read_ambiguous_id_then_canonical_path_recovers(self):
+        idx = WikiIndex()
+        idx.upsert(_page("bob", "wiki/bob", "Bob", "Bob content"))
+        idx.upsert(_page("other", "bob", "Other", "Other content"))
+        responses = [
+            _json_response(_completion(json.dumps({"action": "read", "paths": ["bob"]}))),
+            _json_response(_completion(json.dumps({"action": "read", "paths": ["wiki/bob"]}))),
+            _json_response(_completion(json.dumps({
+                "action": "answer", "text": "Bob content", "sources": ["bob"],
+            }))),
+        ]
+        result = _agent(idx, responses).answer("test")
+
+        assert result.status == AgentStatus.ANSWERED
+        assert result.steps[0].error is not None
+        assert "ambiguous" in result.steps[0].error
+        assert result.read_page_ids == ("bob",)
+        assert result.sources == ("wiki/bob",)
+
     def test_follow_links_from_unread_page_rejected(self):
         idx = WikiIndex()
         idx.upsert(_page("p1", "a/p1", "Page", "content", links_to=["p2"]))
@@ -500,6 +788,35 @@ class TestModelFailures:
 
         assert result.status == AgentStatus.MODEL_ERROR
         assert result.answer is None
+
+
+class TestEmptyModelContent:
+    def test_extract_content_rejects_null(self):
+        response = _json_response(_completion(None))
+        with pytest.raises(ModelEmptyContentError, match="null"):
+            _extract_content(response)
+
+    def test_extract_content_rejects_empty(self):
+        response = _json_response(_completion(""))
+        with pytest.raises(ModelEmptyContentError, match="empty"):
+            _extract_content(response)
+
+    def test_extract_content_rejects_whitespace(self):
+        response = _json_response(_completion("   \n\t"))
+        with pytest.raises(ModelEmptyContentError, match="empty"):
+            _extract_content(response)
+
+    def test_agent_returns_model_error_without_fabricating_answer(self):
+        idx = WikiIndex()
+        responses = [_json_response(_completion(""))]
+        result = _agent(idx, responses).answer("test")
+
+        assert result.status == AgentStatus.MODEL_ERROR
+        assert result.answer is None
+        assert result.steps[0].action == "model_error"
+        assert "ModelEmptyContentError" in result.error
+        assert "empty" in result.error
+        assert result.pages_read == 0
 
 
 # ---------------------------------------------------------------------------
@@ -597,6 +914,7 @@ class TestFinalStepAnswer:
         assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
         assert result.sources == ()
         assert result.read_page_ids == ("eve",)
+        assert result.answer is None
         assert len(agent.transport.requests) == 3
 
 
@@ -647,7 +965,7 @@ class TestSourceTracking:
         assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
         assert result.pages_read == 1
         assert result.sources == ()
-        assert result.answer == "still ok"
+        assert result.answer is None
         assert [s.action for s in result.steps] == ["read", "answer", "answer"]
         assert result.steps[1].error == "answer cited no read pages as sources"
         assert result.steps[2].error == "answer cited no read pages as sources"
@@ -698,6 +1016,7 @@ class TestSourceTracking:
 
         assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
         assert result.sources == ()
+        assert result.answer is None
         assert [s.action for s in result.steps] == ["read", "answer"]
         assert len(agent.transport.requests) == 2
 

@@ -376,6 +376,40 @@ class TestWikiRead:
         pages = wiki_read(idx, "TOPIC/P1")
         assert pages[0].id == "p1"
 
+    def test_read_bare_page_id(self):
+        idx = self._index()
+        pages = wiki_read(idx, "p1")
+        assert [p.id for p in pages] == ["p1"]
+
+    def test_read_bare_page_id_in_list(self):
+        idx = self._index()
+        pages = wiki_read(idx, ["p2", "topic/p1"])
+        assert [p.id for p in pages] == ["p2", "p1"]
+
+    def test_read_missing_bare_id_raises_keyerror(self):
+        idx = self._index()
+        with pytest.raises(KeyError) as exc_info:
+            wiki_read(idx, "missing-id")
+        assert "missing-id" in str(exc_info.value)
+
+    def test_read_ambiguous_identifier_is_rejected(self):
+        idx = WikiIndex()
+        idx.upsert(WikiPage(id="bob", path="wiki/bob", title="Bob", content="b"))
+        idx.upsert(WikiPage(id="other", path="bob", title="Other", content="o"))
+        with pytest.raises(KeyError) as exc_info:
+            wiki_read(idx, "bob")
+        msg = str(exc_info.value)
+        assert "ambiguous" in msg
+        assert "bob" in msg and "other" in msg
+
+    def test_read_ambiguous_input_returns_no_partial_results(self):
+        idx = WikiIndex()
+        idx.upsert(WikiPage(id="p1", path="topic/p1", title="P1", content="c1"))
+        idx.upsert(WikiPage(id="bob", path="wiki/bob", title="Bob", content="b"))
+        idx.upsert(WikiPage(id="other", path="bob", title="Other", content="o"))
+        with pytest.raises(KeyError):
+            wiki_read(idx, ["topic/p1", "bob"])
+
     def test_read_missing_path_raises_keyerror(self):
         idx = self._index()
         with pytest.raises(KeyError) as exc_info:

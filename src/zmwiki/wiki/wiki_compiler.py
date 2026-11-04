@@ -35,11 +35,13 @@ from ..llm_generators import (
     _check_base_url,
     _check_temperature,
     _check_timeout,
+    _check_max_tokens,
     _required_str,
     _resolve_api_key,
 )
 from ..schema import Document, _nonempty_str
 from .wiki_schema import WikiPage
+from .token_usage import response_usage, usage_report
 
 __all__ = [
     "WikiCompiler",
@@ -90,6 +92,14 @@ class CompilerValidationError(WikiCompilerError):
     (missing required fields, wrong types, empty title/content)."""
 
 
+class CompilerOutputTruncatedError(CompilerResponseError):
+    """Provider reported that the token limit cut off the completion."""
+
+
+class CompilerInvalidOutputError(CompilerValidationError):
+    """The completion is not a complete JSON object."""
+
+
 # ---------------------------------------------------------------------------
 # Result
 # ---------------------------------------------------------------------------
@@ -134,6 +144,7 @@ class WikiCompiler:
         api_key: str | None = None,
         temperature: float = 0.0,
         timeout: float = 30.0,
+        max_tokens: int | None = None,
         transport: Transport | None = None,
     ) -> None:
         self.base_url = _check_base_url(base_url)
@@ -141,6 +152,10 @@ class WikiCompiler:
         self._api_key = _resolve_api_key(api_key)
         self.temperature = _check_temperature(temperature)
         self.timeout = _check_timeout(timeout)
+        self.max_tokens = _check_max_tokens(max_tokens)
+        self.request_usages: list[dict[str, int] | None] = []
+        self.last_upstream_status: int | None = None
+        self.last_request_id: str | None = None
         self.transport: Transport = (
             transport if transport is not None else urllib_transport
         )
@@ -170,6 +185,9 @@ class WikiCompiler:
             )
 
         request = self._build_request(document)
+        self.request_usages.append(None)
+        self.last_upstream_status = None
+        self.last_request_id = None
         try:
             response = self.transport(request)
         except Exception as exc:  # transport may raise any exception
@@ -182,6 +200,13 @@ class WikiCompiler:
                 "transport must return an HttpResponse, got "
                 f"{type(response).__name__}"
             )
+        self.request_usages[-1] = response_usage(response.body)
+        self.last_upstream_status = response.status
+        request_id = response.headers.get("x-request-id", "")
+        if isinstance(request_id, str) and 0 < len(request_id) <= 128 and all(
+            char.isascii() and (char.isalnum() or char in "._-") for char in request_id
+        ):
+            self.last_request_id = request_id
 
         raw = self._extract_content(response)
         data = self._parse_json(raw)
@@ -191,6 +216,10 @@ class WikiCompiler:
             candidate_links=tuple(candidate_links),
             raw_response=raw,
         )
+
+    @property
+    def usage_report(self) -> dict:
+        return usage_report(self.request_usages)
 
     # ------------------------------------------------------------------
     # Request building
@@ -205,6 +234,8 @@ class WikiCompiler:
             ],
             "temperature": self.temperature,
         }
+        if self.max_tokens is not None:
+            payload["max_tokens"] = self.max_tokens
         headers: dict[str, str] = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -264,6 +295,8 @@ class WikiCompiler:
         first = choices[0]
         if not isinstance(first, dict):
             raise CompilerResponseError("choices[0] must be an object")
+        if first.get("finish_reason") == "length":
+            raise CompilerOutputTruncatedError("model output was truncated by the token limit")
         message = first.get("message")
         if not isinstance(message, dict):
             raise CompilerResponseError("choices[0] has no 'message' object")
@@ -282,12 +315,12 @@ class WikiCompiler:
         try:
             data = json.loads(text)
         except json.JSONDecodeError as exc:
-            raise CompilerValidationError(
+            raise CompilerInvalidOutputError(
                 f"model output is not valid JSON: {exc}. "
                 f"Raw output: {_brief(text)}"
             ) from exc
         if not isinstance(data, dict):
-            raise CompilerValidationError(
+            raise CompilerInvalidOutputError(
                 f"model JSON must be an object, got {type(data).__name__}"
             )
         return data

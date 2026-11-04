@@ -61,6 +61,41 @@ class FakeTransport:
         return self.response
 
 
+def test_limited_request_tracks_usage_and_rejects_truncation():
+    payload = _completion('{"title":"Short","content":"Body"}',
+                          usage={"prompt_tokens": 12, "completion_tokens": 8,
+                                 "total_tokens": 20})
+    fake = FakeTransport(_json_response(payload))
+    compiler = WikiCompiler(base_url="https://api.example.com/v1",
+                            model="test-model", transport=fake, max_tokens=1024)
+    assert compiler.compile(_doc()).page.title == "Short"
+    assert len(fake.requests) == 1
+    assert json.loads(fake.requests[0].body)["max_tokens"] == 1024
+    assert compiler.usage_report["total_tokens"] == 20
+    assert compiler.usage_report["request_count"] == 1
+
+    payload["choices"][0]["finish_reason"] = "length"
+    truncated = WikiCompiler(base_url="https://api.example.com/v1",
+                             model="test-model", transport=FakeTransport(_json_response(payload)),
+                             max_tokens=1024)
+    with pytest.raises(CompilerResponseError, match="truncated"):
+        truncated.compile(_doc())
+    assert truncated.usage_report["total_tokens"] == 20
+
+
+def test_compiler_missing_usage_and_transport_failure_are_unknown():
+    fake = FakeTransport()
+    compiler = _compiler(fake)
+    compiler.compile(_doc())
+    assert compiler.usage_report["usage_status"] == "unknown"
+    assert compiler.usage_report["total_tokens"] is None
+    broken = _compiler(FakeTransport(error=OSError("offline")))
+    with pytest.raises(CompilerTransportError):
+        broken.compile(_doc())
+    assert broken.usage_report["request_count"] == 1
+    assert broken.usage_report["total_tokens"] is None
+
+
 def _compiler(transport=None) -> WikiCompiler:
     return WikiCompiler(
         base_url="https://api.example.com/v1",

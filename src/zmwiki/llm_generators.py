@@ -34,7 +34,7 @@ import os
 import urllib.error
 import urllib.request
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
 from .context import Context
@@ -70,10 +70,9 @@ _ENV_API_KEY = "ZMWIKI_API_KEY"
 #: that is ``https://api.openai.com/v1``, not the full endpoint.
 _CHAT_COMPLETIONS_PATH = "/chat/completions"
 
-#: The whole system prompt. Deliberately one fixed sentence pair rather than a
-#: template system: this adapter carries no prompt-engineering layer, and a
-#: caller who wants different wording belongs behind the same ``Generator``
-#: contract rather than inside this transport adapter.
+#: Default system prompt. Deliberately one fixed sentence pair rather than a
+#: template system; callers that need a different prompt can pass
+#: ``system_prompt`` explicitly.
 _SYSTEM_INSTRUCTIONS = (
     "Answer the user's question using the provided context. "
     "If the context does not contain enough information, say that the "
@@ -165,6 +164,7 @@ class HttpResponse:
 
     status: int
     body: bytes
+    headers: dict[str, str] = field(default_factory=dict)
 
 
 #: The injectable HTTP boundary. A transport takes one request and returns one
@@ -189,10 +189,17 @@ def urllib_transport(request: HttpRequest) -> HttpResponse:
     )
     try:
         with urllib.request.urlopen(http_request, timeout=request.timeout) as response:
-            return HttpResponse(status=response.status, body=response.read())
+            return HttpResponse(status=response.status, body=response.read(),
+                                headers={"x-request-id": trace_id} if (
+                                    trace_id := getattr(response, "headers", {}).get("x-request-id")
+                                ) else {})
     except urllib.error.HTTPError as error:
         # HTTPError *is* a URLError (and an OSError), so it must come first.
-        return HttpResponse(status=error.code, body=error.read())
+        return HttpResponse(status=error.code, body=error.read(),
+                            headers={"x-request-id": trace_id} if (
+                                trace_id := error.headers.get("x-request-id")
+                                if error.headers is not None else None
+                            ) else {})
     except (urllib.error.URLError, OSError) as error:
         # ponytail: one blocking attempt, no retry/backoff -- swap in a
         # retrying transport here if a provider turns out to need it.
@@ -225,6 +232,7 @@ class OpenAICompatibleGenerator(Generator):
         max_tokens: int | None = None,
         timeout: float = _DEFAULT_TIMEOUT,
         transport: Transport | None = None,
+        system_prompt: str | None = None,
     ) -> None:
         self.base_url = _check_base_url(base_url)
         self.model = _required_str(model, "model")
@@ -232,6 +240,11 @@ class OpenAICompatibleGenerator(Generator):
         self.temperature = _check_temperature(temperature)
         self.max_tokens = _check_max_tokens(max_tokens)
         self.timeout = _check_timeout(timeout)
+        self.system_prompt = (
+            _SYSTEM_INSTRUCTIONS
+            if system_prompt is None
+            else _required_str(system_prompt, "system_prompt")
+        )
         self.transport = transport if transport is not None else urllib_transport
         if not callable(self.transport):
             raise TypeError(
@@ -280,7 +293,7 @@ class OpenAICompatibleGenerator(Generator):
         payload: dict[str, object] = {
             "model": self.model,
             "messages": [
-                {"role": "system", "content": _SYSTEM_INSTRUCTIONS},
+                {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": build_prompt(query, context)},
             ],
             "temperature": self.temperature,

@@ -180,7 +180,7 @@ def test_ask_reports_insufficient_evidence():
     assert response.status == 200
     payload = _json(body)
     assert payload["status"] == AgentStatus.INSUFFICIENT_EVIDENCE
-    assert payload["answer"] == "I am not sure."
+    assert payload["answer"] is None
     assert payload["sources"] == []
     assert payload["evidence"] == []
     assert "enough read evidence" in payload["error"]

@@ -373,9 +373,10 @@ def test_empty_workspace_reports_insufficient_evidence():
             result = app.last_agent_result
             assert result.status == AgentStatus.INSUFFICIENT_EVIDENCE
             assert result.pages_read == 0
+            assert result.answer is None
             reader = app.query_one("#reader", Static).content
             assert "[证据不足]" in reader
-            assert "模型备注（未经验证）" in reader
+            assert "模型备注（未经验证）" not in reader
             assert "无经核实的来源" in reader
             assert result.sources == ()
 

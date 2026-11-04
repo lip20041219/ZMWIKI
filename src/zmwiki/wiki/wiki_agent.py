@@ -19,6 +19,7 @@ Design constraints (M3):
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -32,12 +33,14 @@ from ..llm_generators import (
     _check_base_url,
     _check_temperature,
     _check_timeout,
+    _check_max_tokens,
     _required_str,
     _resolve_api_key,
 )
 from .wiki_index import WikiIndex
 from .wiki_retriever import WikiSearchResult, wiki_read, wiki_search
 from .wiki_schema import WikiPage
+from .token_usage import response_usage, usage_report
 
 __all__ = [
     "WikiAgent",
@@ -45,6 +48,7 @@ __all__ = [
     "AgentStep",
     "AgentStatus",
     "AgentProtocolError",
+    "ModelEmptyContentError",
 ]
 
 #: Default maximum number of action iterations before forced stop.
@@ -88,6 +92,7 @@ _SYSTEM_PROMPT = (
 _VALID_ACTIONS = frozenset({"search", "read", "follow_links", "answer"})
 
 _ANSWER_SOURCES_ERROR = "answer cited no read pages as sources"
+_NO_READ_ANSWER_ERROR = "answered without reading any pages"
 
 #: Protocol-error diagnostics keep at most this many characters of model output.
 _MAX_RAW_OUTPUT_CHARS = 2000
@@ -110,6 +115,14 @@ class AgentStatus:
 
 class AgentProtocolError(Exception):
     """Raised when the model output cannot be parsed as a valid action."""
+
+
+class ModelEmptyContentError(RuntimeError):
+    """Raised when a model response has null or blank message content.
+
+    This is a terminal model error: an empty response is never treated as a
+    valid answer or silently replaced by generated text.
+    """
 
 
 # ---------------------------------------------------------------------------
@@ -153,7 +166,9 @@ class AgentResult:
 
     Attributes
     ----------
-    answer: the model's answer text, or None if no answer was produced.
+    answer: the model's answer text only when ``status`` is ANSWERED; None for
+        insufficient_evidence and all other non-answered terminal statuses.
+        Rejected no-evidence text is retained only in step diagnostics.
     sources: page paths of pages actually read and cited as sources.
     status: one of AgentStatus constants.
     steps: full action history for diagnostics.
@@ -194,8 +209,11 @@ class WikiAgent:
         timeout: float = 30.0,
         transport: Transport | None = None,
         max_steps: int = _DEFAULT_MAX_STEPS,
+        max_tokens: int | None = None,
         search_top_k: int = _DEFAULT_SEARCH_TOP_K,
         max_consecutive_errors: int = _DEFAULT_MAX_CONSECUTIVE_ERRORS,
+        system_prompt: str | None = None,
+        allowed_actions: frozenset[str] | None = None,
     ) -> None:
         if not isinstance(index, WikiIndex):
             raise TypeError(
@@ -215,10 +233,33 @@ class WikiAgent:
                 f"transport must be callable, got {type(self.transport).__name__}"
             )
         self.max_steps = _check_positive_int(max_steps, "max_steps")
+        self.max_tokens = _check_max_tokens(max_tokens)
+        self.request_usages: list[dict[str, int] | None] = []
         self.search_top_k = _check_positive_int(search_top_k, "search_top_k")
         self.max_consecutive_errors = _check_positive_int(
             max_consecutive_errors, "max_consecutive_errors"
         )
+        self.system_prompt = (
+            _SYSTEM_PROMPT
+            if system_prompt is None
+            else _required_str(system_prompt, "system_prompt")
+        )
+        if allowed_actions is None:
+            self.allowed_actions = _VALID_ACTIONS
+        else:
+            if not isinstance(allowed_actions, (set, frozenset, tuple, list)):
+                raise TypeError(
+                    "allowed_actions must be a set/frozenset/tuple/list of action names"
+                )
+            enabled = frozenset(allowed_actions)
+            if not enabled:
+                raise ValueError("allowed_actions must not be empty")
+            unknown = enabled - _VALID_ACTIONS
+            if unknown:
+                raise ValueError(f"unknown allowed_actions: {sorted(unknown)}")
+            if "answer" not in enabled:
+                raise ValueError("allowed_actions must include 'answer'")
+            self.allowed_actions = enabled
 
     # ------------------------------------------------------------------
     # Public API
@@ -235,7 +276,7 @@ class WikiAgent:
             raise TypeError("question must be a non-empty str")
 
         messages: list[dict[str, str]] = [
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": question},
         ]
         steps: list[AgentStep] = []
@@ -263,13 +304,14 @@ class WikiAgent:
             try:
                 raw = self._call_model(messages)
             except Exception as exc:
+                error_text = f"{type(exc).__name__}: {exc}"
                 steps.append(AgentStep(
                     step=step_num, action="model_error", params={},
-                    result_summary="model call failed", error=str(exc),
+                    result_summary="model call failed", error=error_text,
                 ))
                 return AgentResult(
                     answer=None, sources=(), status=AgentStatus.MODEL_ERROR,
-                    steps=tuple(steps), error=str(exc), pages_read=len(read_pages),
+                    steps=tuple(steps), error=error_text, pages_read=len(read_pages),
                     read_page_ids=tuple(sorted(read_pages)),
                 )
 
@@ -301,6 +343,34 @@ class WikiAgent:
 
             consecutive_errors = 0
             action = action_data["action"]
+
+            # --- Disabled action guard ---
+            if action not in self.allowed_actions:
+                action_key = _action_key(action, action_data)
+                if action_key in seen_actions:
+                    steps.append(AgentStep(
+                        step=step_num, action="duplicate", params=action_data,
+                        result_summary=f"duplicate action ignored: {action}",
+                    ))
+                    messages.append({"role": "assistant", "content": raw})
+                    messages.append({
+                        "role": "user",
+                        "content": f"Action {action!r} is disabled and was already "
+                        "attempted. Choose a different action or answer with what you have.",
+                    })
+                    continue
+                seen_actions.add(action_key)
+                steps.append(AgentStep(
+                    step=step_num, action="tool_disabled", params=action_data,
+                    result_summary=f"action {action!r} disabled",
+                    error=f"action {action!r} is not available in this run",
+                ))
+                messages.append({"role": "assistant", "content": raw})
+                messages.append({
+                    "role": "user",
+                    "content": _disabled_action_msg(action, self.allowed_actions),
+                })
+                continue
 
             # --- Duplicate action detection ---
             action_key = _action_key(action, action_data)
@@ -334,6 +404,21 @@ class WikiAgent:
                     read_pages[p.id] = p
                     seen_page_ids.add(p.id)
             elif action == "answer":
+                if not read_pages:
+                    steps.append(AgentStep(
+                        step=step_num, action="answer",
+                        params={"text": action_data["text"][:200], "sources": []},
+                        result_summary="answer rejected: no pages read",
+                        error=_NO_READ_ANSWER_ERROR,
+                    ))
+                    return AgentResult(
+                        answer=None, sources=(),
+                        status=AgentStatus.INSUFFICIENT_EVIDENCE,
+                        steps=tuple(steps),
+                        error=_NO_READ_ANSWER_ERROR,
+                        pages_read=0,
+                        read_page_ids=(),
+                    )
                 valid_ids = _valid_source_ids(
                     action_data.get("sources", []), read_pages
                 )
@@ -392,6 +477,8 @@ class WikiAgent:
             "messages": messages,
             "temperature": self.temperature,
         }
+        if self.max_tokens is not None:
+            payload["max_tokens"] = self.max_tokens
         headers: dict[str, str] = {
             "Content-Type": "application/json",
             "Accept": "application/json",
@@ -405,12 +492,18 @@ class WikiAgent:
             body=json.dumps(payload).encode("utf-8"),
             timeout=self.timeout,
         )
+        self.request_usages.append(None)
         response = self.transport(request)
         if not isinstance(response, HttpResponse):
             raise RuntimeError(
                 f"transport must return HttpResponse, got {type(response).__name__}"
             )
+        self.request_usages[-1] = response_usage(response.body)
         return _extract_content(response)
+
+    @property
+    def usage_report(self) -> dict:
+        return usage_report(self.request_usages)
 
     # ------------------------------------------------------------------
     # Action executors
@@ -445,9 +538,12 @@ class WikiAgent:
                 params["offset"] = offset
             step = AgentStep(
                 step=step_num, action="read", params=params,
-                result_summary="read failed: paths not found", error=str(exc),
+                result_summary="read failed: unresolved paths", error=str(exc),
             )
-            return step, f"Read error: {exc}", []
+            return step, (
+                f"Read error: {exc}. Use a canonical path from search results "
+                "(for example wiki/<id>) or a unique bare page ID."
+            ), []
         new_pages = [p for p in pages if p.id not in read_pages]
         summary = f"read {len(pages)} pages ({len(new_pages)} new)"
         params = {"paths": paths}
@@ -529,22 +625,28 @@ class WikiAgent:
 
         if not read_pages:
             status = AgentStatus.INSUFFICIENT_EVIDENCE
-            error = "answered without reading any pages"
+            error = _NO_READ_ANSWER_ERROR
+            answer_text = None
+            summary = "answer rejected: no pages read"
         elif not valid_ids:
             status = AgentStatus.INSUFFICIENT_EVIDENCE
             error = _ANSWER_SOURCES_ERROR
+            answer_text = None
+            summary = "answer rejected: no valid read-page source ID"
         else:
             status = AgentStatus.ANSWERED
             error = None
+            answer_text = text if text else None
+            summary = f"answer produced ({len(valid_ids)} sources)"
 
         steps.append(AgentStep(
             step=step_num, action="answer",
             params={"text": text[:200], "sources": valid_ids},
-            result_summary=f"answer produced ({len(valid_ids)} sources)",
+            result_summary=summary,
             error=error,
         ))
         return AgentResult(
-            answer=text if text else None,
+            answer=answer_text,
             sources=source_paths,
             status=status,
             steps=tuple(steps),
@@ -720,28 +822,50 @@ def _format_read_pages(
 def _protocol_error_msg(exc: AgentProtocolError) -> str:
     return (
         f"Error: {exc}\n"
-        "Output ONLY a valid JSON action object with one of these actions: "
-        f"{sorted(_VALID_ACTIONS)}. "
-        "Do not include markdown fencing or extra text."
+        "Output ONLY exactly one valid JSON action object with one of these "
+        f"actions: {sorted(_VALID_ACTIONS)}. "
+        "Do not include markdown fencing, additional actions, or extra text."
     )
 
 
-def _decode_leading_object(text: str) -> dict[str, Any] | None:
-    """Decode one leading JSON object when followed by non-JSON prose.
+def _disabled_action_msg(action: str, allowed_actions: frozenset[str]) -> str:
+    return (
+        f"Error: action {action!r} is disabled in this run. "
+        f"Use one of these actions: {sorted(allowed_actions)}. "
+        "Do not call disabled tools."
+    )
 
-    Multiple adjacent JSON values are deliberately NOT accepted: that output
-    is ambiguous and stays a protocol error.
+
+_TRAILING_JSON_STARTS = ("{", "[", '"', ",", "]", "}", ":")
+_EXTRA_ACTION_RE = re.compile(r'"action"\s*:')
+
+
+def _decode_leading_object(text: str) -> dict[str, Any] | None:
+    """Decode one leading JSON object when followed by non-action prose.
+
+    Exactly one action is allowed. A second JSON value, an array wrapper, or
+    another ``"action"`` key in the trailing text is rejected as ambiguous;
+    arbitrary non-action prose may be ignored.
     """
-    start = text.find("{")
+    stripped = text.lstrip()
+    if stripped.startswith("["):
+        raise AgentProtocolError("output must be one JSON action object, not an array")
+    start = stripped.find("{")
     if start == -1:
         return None
     try:
-        data, end = json.JSONDecoder().raw_decode(text[start:])
+        data, end = json.JSONDecoder().raw_decode(stripped[start:])
     except json.JSONDecodeError:
         return None
-    trailing = text[start + end:].lstrip()
-    if trailing.startswith(("{", "[", '"')):
-        return None
+    trailing = stripped[start + end:].lstrip()
+    if trailing.startswith(_TRAILING_JSON_STARTS):
+        raise AgentProtocolError(
+            "multiple JSON values in one response; output exactly one action"
+        )
+    if _EXTRA_ACTION_RE.search(trailing):
+        raise AgentProtocolError(
+            "additional action in trailing text; output exactly one action"
+        )
     return data if isinstance(data, dict) else None
 
 
@@ -774,12 +898,27 @@ def _extract_content(response: HttpResponse) -> str:
     choices = payload.get("choices")
     if not isinstance(choices, list) or not choices:
         raise RuntimeError("response has no non-empty 'choices' list")
+    if not isinstance(choices[0], dict):
+        raise RuntimeError("choices[0] must be an object")
+    if choices[0].get("finish_reason") == "length":
+        raise RuntimeError("model output was truncated by the token limit")
     message = choices[0].get("message")
     if not isinstance(message, dict):
         raise RuntimeError("choices[0] has no 'message' object")
     content = message.get("content")
-    if not isinstance(content, str) or not content.strip():
-        raise RuntimeError("choices[0].message.content must be a non-empty str")
+    if content is None:
+        raise ModelEmptyContentError(
+            "model returned null choices[0].message.content; no answer was produced"
+        )
+    if not isinstance(content, str):
+        raise RuntimeError(
+            "choices[0].message.content must be a str, "
+            f"got {type(content).__name__}"
+        )
+    if not content.strip():
+        raise ModelEmptyContentError(
+            "model returned empty choices[0].message.content; no answer was produced"
+        )
     return content
 
 

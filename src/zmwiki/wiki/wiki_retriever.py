@@ -155,17 +155,41 @@ def wiki_search(
     return results[:top_k]
 
 
+def _resolve_read_target(index: WikiIndex, value: str) -> WikiPage:
+    """Resolve a canonical path or a unique bare page ID.
+
+    Paths keep their existing case-insensitive / slash-collapsed behavior.
+    A bare page ID is accepted only when ``index.get(value)`` finds one page.
+    If ``value`` is simultaneously a path to one page and an ID of a different
+    page, the input is ambiguous and is rejected rather than guessed.
+    """
+    by_path = index.get_by_path(value)
+    by_id = index.get(value)
+    if by_path is not None and by_id is not None and by_path.id != by_id.id:
+        raise KeyError(
+            f"ambiguous page identifier {value!r}: matches path of "
+            f"{by_path.id!r} and page id {by_id.id!r}"
+        )
+    if by_path is not None:
+        return by_path
+    if by_id is not None:
+        return by_id
+    raise KeyError(value)
+
+
 def wiki_read(
     index: WikiIndex,
     paths: str | list[str] | tuple[str, ...],
 ) -> list[WikiPage]:
-    """Read one or more pages by path, in input order.
+    """Read one or more pages by path or unique bare page ID, in input order.
 
     Parameters
     ----------
     index: the WikiIndex to read from.
-    paths: a single path string or a list/tuple of path strings. Each path
-        is normalized before lookup (case-insensitive, slash-collapsed).
+    paths: a single path string or a list/tuple of path strings. Each input
+        is first resolved as a canonical path (case-insensitive, slash-
+        collapsed); if that misses, it is resolved as an exact bare page ID.
+        Bare IDs are accepted only when they identify exactly one page.
 
     Returns
     -------
@@ -175,9 +199,10 @@ def wiki_read(
     Raises
     ------
     TypeError: if index is not a WikiIndex, paths is not a str/list/tuple,
-        or any individual path is not a str.
-    KeyError: if any path does not exist in the index. The error message
-        lists every missing path. No partial results are returned.
+        or any individual input is not a str.
+    KeyError: if any input is missing or ambiguous. The error message lists
+        every missing input and every ambiguous candidate. No partial results
+        are returned.
     """
     if not isinstance(index, WikiIndex):
         raise TypeError(
@@ -194,19 +219,29 @@ def wiki_read(
 
     results: list[WikiPage] = []
     missing: list[str] = []
+    ambiguous: list[str] = []
     for p in path_list:
         if not isinstance(p, str):
             raise TypeError(
                 f"each path must be a str, got {type(p).__name__} for {p!r}"
             )
-        page = index.get_by_path(p)
-        if page is None:
-            missing.append(p)
+        try:
+            page = _resolve_read_target(index, p)
+        except KeyError as exc:
+            if "ambiguous page identifier" in str(exc):
+                ambiguous.append(str(exc))
+            else:
+                missing.append(p)
         else:
             results.append(page)
 
-    if missing:
-        raise KeyError(f"paths not found in wiki index: {missing}")
+    if missing or ambiguous:
+        parts: list[str] = []
+        if missing:
+            parts.append(f"paths not found in wiki index: {missing}")
+        if ambiguous:
+            parts.append("ambiguous page identifiers: " + "; ".join(ambiguous))
+        raise KeyError("; ".join(parts))
     return results
 
 

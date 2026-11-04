@@ -2,6 +2,7 @@
 
 import http.client
 import json
+import pytest
 import threading
 from contextlib import contextmanager
 from urllib.parse import quote
@@ -393,6 +394,85 @@ def test_import_model_error_does_not_echo_upstream_body(tmp_path):
         assert b"was rejected" not in body
         assert server.index.count() == 0
         assert workspace.read_bytes() == before
+
+
+@pytest.mark.parametrize("status", [400, 401, 402, 422, 429, 500, 503])
+def test_upstream_http_diagnostics_are_safe(tmp_path, capsys, status):
+    workspace = _workspace(tmp_path)
+    before = workspace.read_bytes()
+    payload = {"error": "sk-test-secret private response",
+               "usage": {"prompt_tokens": 7, "completion_tokens": 2,
+                         "total_tokens": 9}}
+    factory, transport = _compiler([HttpResponse(
+        status=status, body=json.dumps(payload).encode(),
+        headers={"x-request-id": "trace-123"})])
+    with _serving(WikiIndex(), workspace_path=workspace,
+                  compiler_factory=factory) as server:
+        response, body = _upload(server, b"test")
+        data = _json(body)
+        assert response.status == 502
+        assert data["error"] == "compile_failed"
+        assert data["diagnostic"] == {
+            "category": "upstream_http_error", "upstream_http_status": status,
+            "request_id": "trace-123"}
+        assert data["model_usage"]["total_tokens"] == 9
+        assert len(transport.requests) == 1
+        assert server.index.count() == 0
+    assert workspace.read_bytes() == before
+    assert b"sk-test-secret" not in body
+    logs = capsys.readouterr().err
+    assert "category=upstream_http_error" in logs
+    assert "sk-test-secret" not in logs
+
+
+def test_upstream_missing_usage_and_unsafe_trace_id(tmp_path):
+    factory, _ = _compiler([HttpResponse(
+        status=503, body=b'{"error":"private upstream body"}',
+        headers={"x-request-id": "unsafe\nprivate"})])
+    with _serving(WikiIndex(), workspace_path=_workspace(tmp_path),
+                  compiler_factory=factory) as server:
+        response, body = _upload(server, b"test")
+        data = _json(body)
+    assert response.status == 502
+    assert data["diagnostic"]["request_id"] is None
+    assert data["model_usage"]["usage_status"] == "unknown"
+    assert data["model_usage"]["total_tokens"] is None
+    assert b"private upstream body" not in body
+
+
+@pytest.mark.parametrize("response,category,usage", [
+    (TimeoutError("private timeout"), "timeout", None),
+    (ConnectionError("private network"), "network_error", None),
+    (HttpResponse(status=200, body=json.dumps({
+        "choices": [{"finish_reason": "length", "message": {
+            "content": '{"title":"cut","content":"cut"}'}}],
+        "usage": {"prompt_tokens": 8, "completion_tokens": 4,
+                  "total_tokens": 12}}).encode()), "output_truncated", 12),
+    (HttpResponse(status=200, body=json.dumps({
+        "choices": [{"message": {"content": "not json"}}]}).encode()),
+     "invalid_model_output", None),
+    ({"content": "missing title"}, "schema_validation_error", None),
+])
+def test_compile_failure_categories_preserve_workspace(
+    tmp_path, capsys, response, category, usage,
+):
+    workspace = _workspace(tmp_path)
+    before = workspace.read_bytes()
+    factory, transport = _compiler([response])
+    with _serving(WikiIndex(), workspace_path=workspace,
+                  compiler_factory=factory) as server:
+        http, body = _upload(server, b"test")
+        data = _json(body)
+        assert http.status == 502
+        assert data["diagnostic"]["category"] == category
+        assert data["model_usage"]["request_count"] == 1
+        assert data["model_usage"]["total_tokens"] == usage
+        assert data["model_usage"]["usage_status"] == (
+            "known" if usage is not None else "unknown")
+        assert len(transport.requests) == 1
+        assert server.index.count() == 0
+    assert workspace.read_bytes() == before
+    assert category in capsys.readouterr().err
 
 
 def test_save_failure_rolls_back_import(tmp_path, monkeypatch):

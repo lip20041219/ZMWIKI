@@ -262,6 +262,18 @@ def test_prompt_carries_the_shared_prompt_and_a_system_instruction():
     assert "insufficient" in system.lower()  # no inventing facts
 
 
+def test_custom_system_prompt_is_used_when_provided():
+    transport = FakeTransport()
+    _generate(transport=transport, system_prompt="CUSTOM ANSWER RULES")
+    messages = transport.payload()["messages"]
+    assert messages[0]["content"] == "CUSTOM ANSWER RULES"
+
+
+def test_blank_custom_system_prompt_is_rejected():
+    with pytest.raises(GeneratorConfigError):
+        _generator(system_prompt="   ")
+
+
 def test_request_body_is_utf8_json_bytes():
     transport = FakeTransport()
     _generate("¿qué es? 苹果", transport=transport)

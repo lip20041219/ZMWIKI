@@ -19,6 +19,7 @@ import argparse
 import hashlib
 import json
 import os
+import socket
 import sys
 import tempfile
 import threading
@@ -28,12 +29,15 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlsplit
+from urllib.error import URLError
 
 from zmwiki.file_ingestion import PlainTextFileIngestor
 from zmwiki.schema import Document
 from zmwiki.wiki.wiki_agent import AgentResult, AgentStatus, WikiAgent
 from zmwiki.wiki.wiki_compiler import (
     CompilerResponseError,
+    CompilerInvalidOutputError,
+    CompilerOutputTruncatedError,
     CompilerTransportError,
     CompilerValidationError,
     WikiCompiler,
@@ -131,6 +135,9 @@ class ZMWikiServer(ThreadingHTTPServer):
         settings_store: SettingsStore | None = None,
         connection_tester: Callable[[ModelConfig], ConnectionTestResult] | None = None,
         config_source: str = "none",
+        compiler_max_tokens: int | None = None,
+        agent_max_tokens: int | None = None,
+        agent_max_steps: int = 8,
     ) -> None:
         self.index = index
         self.workspace_path = (
@@ -148,6 +155,9 @@ class ZMWikiServer(ThreadingHTTPServer):
         self.settings_store = settings_store
         self.connection_tester = connection_tester
         self.config_source = config_source
+        self.compiler_max_tokens = compiler_max_tokens
+        self.agent_max_tokens = agent_max_tokens
+        self.agent_max_steps = agent_max_steps
         # WikiIndex has no internal locking; serialize requests so readers and
         # writers never observe a partially-updated index.
         self.lock = threading.RLock()
@@ -170,6 +180,8 @@ class ZMWikiServer(ThreadingHTTPServer):
             base_url=config.base_url,
             model=config.model,
             api_key=config.api_key,
+            max_tokens=self.agent_max_tokens,
+            max_steps=self.agent_max_steps,
         )
 
     def build_compiler(self) -> WikiCompiler | None:
@@ -182,6 +194,7 @@ class ZMWikiServer(ThreadingHTTPServer):
             base_url=config.base_url,
             model=config.model,
             api_key=config.api_key,
+            max_tokens=self.compiler_max_tokens,
         )
 
 
@@ -701,7 +714,16 @@ class ZMWikiHandler(BaseHTTPRequestHandler):
         try:
             compiled = compiler.compile(document)
         except WikiCompilerError as exc:
-            self._send_error(502, "compile_failed", _compiler_error_message(exc))
+            diagnostic = _compiler_diagnostic(exc, compiler)
+            self.log_error(
+                "compile_failed category=%s upstream_status=%s request_id=%s usage_status=%s",
+                diagnostic["category"], diagnostic["upstream_http_status"],
+                diagnostic["request_id"],
+                (getattr(compiler, "usage_report", None) or {}).get("usage_status", "unknown"),
+            )
+            self._send_error(502, "compile_failed", _compiler_error_message(exc),
+                             extra={"diagnostic": diagnostic,
+                                    "model_usage": getattr(compiler, "usage_report", None)})
             return
         page = compiled.page
 
@@ -770,6 +792,7 @@ class ZMWikiHandler(BaseHTTPRequestHandler):
                 "unresolved": report.unresolved_count,
             },
             "saved": True,
+            "model_usage": getattr(compiler, "usage_report", None),
             "errors": [],
         })
 
@@ -929,7 +952,8 @@ class ZMWikiHandler(BaseHTTPRequestHandler):
             self._send_error(502, "agent_failed", "agent returned an invalid result")
             return
         self._send_json(
-            200, self._serialize_agent_result(question, result, snapshot)
+            200, {**self._serialize_agent_result(question, result, snapshot),
+                  "model_usage": getattr(agent, "usage_report", None)}
         )
 
     def _snapshot_index(self) -> WikiIndex:
@@ -1318,8 +1342,10 @@ class ZMWikiHandler(BaseHTTPRequestHandler):
     def _send_error(
         self, status: int, code: str, message: str, *,
         headers: dict[str, str] | None = None,
+        extra: dict[str, Any] | None = None,
     ) -> None:
-        self._send_json(status, {"error": code, "message": message}, headers=headers)
+        self._send_json(status, {"error": code, "message": message, **(extra or {})},
+                        headers=headers)
 
     def _send_bytes(
         self, status: int, body: bytes, content_type: str, *,
@@ -1370,6 +1396,34 @@ def _import_filename_error(filename: str | None) -> str | None:
     if name.suffix.lower() != ".txt" or not name.stem:
         return "'filename' must be a non-empty .txt file name"
     return None
+
+
+def _compiler_diagnostic(exc: WikiCompilerError, compiler: WikiCompiler) -> dict:
+    status = getattr(compiler, "last_upstream_status", None)
+    if isinstance(exc, CompilerTransportError):
+        category = "network_error"
+        cause = exc.__cause__
+        while cause is not None:
+            reason = cause.reason if isinstance(cause, URLError) else cause
+            if isinstance(reason, (TimeoutError, socket.timeout)):
+                category = "timeout"
+                break
+            cause = cause.__cause__
+    elif isinstance(exc, CompilerOutputTruncatedError):
+        category = "output_truncated"
+    elif isinstance(exc, CompilerInvalidOutputError):
+        category = "invalid_model_output"
+    elif isinstance(exc, CompilerValidationError):
+        category = "schema_validation_error"
+    elif isinstance(exc, CompilerResponseError) and status is not None and not 200 <= status < 300:
+        category = "upstream_http_error"
+    else:
+        category = "invalid_model_output"
+    return {
+        "category": category,
+        "upstream_http_status": status,
+        "request_id": getattr(compiler, "last_request_id", None),
+    }
 
 
 def _compiler_error_message(exc: WikiCompilerError) -> str:
@@ -1429,6 +1483,9 @@ def make_server(
     settings_store: SettingsStore | None = None,
     connection_tester: Callable[[ModelConfig], ConnectionTestResult] | None = None,
     config_source: str = "none",
+    compiler_max_tokens: int | None = None,
+    agent_max_tokens: int | None = None,
+    agent_max_steps: int = 8,
 ) -> ZMWikiServer:
     """Create a loopback-only server. Tests pass port=0 for an ephemeral port."""
     return ZMWikiServer(
@@ -1443,6 +1500,9 @@ def make_server(
         settings_store=settings_store,
         connection_tester=connection_tester,
         config_source=config_source,
+        compiler_max_tokens=compiler_max_tokens,
+        agent_max_tokens=agent_max_tokens,
+        agent_max_steps=agent_max_steps,
     )
 
 
@@ -1482,12 +1542,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--api-key", default=None,
                         help="server-side API key for /api/ask "
                              "(or set ZMWIKI_API_KEY; never sent to the browser)")
+    parser.add_argument("--compiler-max-tokens", type=int, default=None)
+    parser.add_argument("--agent-max-tokens", type=int, default=None)
+    parser.add_argument("--agent-max-steps", type=int, default=8)
     args = parser.parse_args(argv)
 
     if not 1 <= args.port <= 65535:
         parser.error("--port must be between 1 and 65535")
     if (args.base_url is None) != (args.model is None):
         parser.error("--base-url and --model must be provided together")
+    if (args.compiler_max_tokens is not None and args.compiler_max_tokens < 1
+            or args.agent_max_tokens is not None and args.agent_max_tokens < 1
+            or args.agent_max_steps < 1):
+        parser.error("model token limits and agent steps must be positive")
 
     try:
         index, sources = _load_or_create_workspace(
@@ -1531,6 +1598,9 @@ def main(argv: list[str] | None = None) -> int:
             model_config=model_config,
             settings_store=settings_store,
             config_source=config_source,
+            compiler_max_tokens=args.compiler_max_tokens,
+            agent_max_tokens=args.agent_max_tokens,
+            agent_max_steps=args.agent_max_steps,
         )
     except OSError as exc:
         detail = exc.strerror or str(exc)
