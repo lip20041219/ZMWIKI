@@ -1,9 +1,30 @@
 {
   "dataset": "multihop_wiki",
-  "version": "1.2",
-  "description": "Multi-hop question answering dataset for ZMWiki baseline vs experiment comparison. Built over a fictional company wiki (Acme Corp) with 9 interlinked pages. 26 questions; answers require combining information across 1-3 pages. Standard answers and keyword groups are used only by the evaluator, never passed to the system under test. Some cases annotate complete alternative evidence paths; evidence recall uses the best legal path.",
+  "version": "1.4",
+  "description": "Multi-hop question answering dataset for ZMWiki baseline vs experiment comparison. Built over a fictional company wiki (Acme Corp) with 9 interlinked pages. 50 questions (26 original cases mh01-mh30 plus 24 extension cases mh31-mh54); answers require combining information across 1-5 pages. Standard answers and keyword groups are used only by the evaluator, never passed to the system under test. Some cases annotate complete alternative evidence paths; evidence recall uses the best legal path. Extension cases add optional difficulty, reasoning_chain, relation_edges/attribute_lookups/reasoning_hops, answer_bindings/binding_entities, relation_chain, ratio_checks, comparison_checks, fabrication_patterns, fabrication_patterns_positive, manual_review, and distractor evidence annotations; the loader and evaluator ignore unknown fields, so the schema remains backward compatible.",
   "corpus": "benchmark/corpus/wiki/",
   "link_construction": "WikiPage links_to/links_from are manually verified from source document content, NOT produced by WikiCompiler. WikiCompiler currently leaves links_to empty; this dataset uses hand-built linked pages to evaluate follow_links capability. This is explicitly recorded as a capability gap of the current compiler.",
+  "question_type_taxonomy": {
+    "_field_definitions": {
+      "hops": "Number of required evidence pages (len(required_page_ids)); NOT the number of graph relation edges.",
+      "relation_edges": "Number of entity-to-entity relation traversals such as reports_to, leads, manages, contributes_to, located_in, connected_to.",
+      "attribute_lookups": "Number of terminal scalar attribute lookups such as title, tenure, budget, deadline, team size, degree, tech stack, responsibilities.",
+      "reasoning_hops": "relation_edges + attribute_lookups; the evidence-binding step count recorded in reasoning_chain.",
+      "answer_bindings": "Entity-bound attribute checks; binding_entities bounds each subject's clause by other entity mentions.",
+      "relation_chain": "Ordered chain plus direct/indirect relation checks.",
+      "ratio_checks": "Bounded n:d ratio recognition; a bare numerator is accepted only when allow_bare is true.",
+      "comparison_checks": "Directed greater/less comparison: the greater marker must bind the left entity before the right, or the less marker must bind the right before the left.",
+      "fabrication_patterns": "Regex guards for unanswerable cases; heuristic, not a complete hallucination detector.",
+      "fabrication_patterns_positive": "Regex guards that skip matches surrounded by negation, so a refusal may mention a true related fact without being treated as fabrication.",
+      "manual_review": "True when the automatic score is heuristic and a human should audit the case."
+    },
+    "three_plus_hop_chain": "Requires at least three consecutive knowledge relations across three or more pages.",
+    "cross_topic_synthesis": "Integrates information from at least two topics or domains and requires a conclusion or classification, not simple fact concatenation.",
+    "multi_entity_comparison": "Compares at least two entities on explicit dimensions using only corpus evidence.",
+    "complex_relation_tracking": "Tracks at least three relationship layers from a person, organization, or project and distinguishes direct from indirect links.",
+    "distractor_disambiguation": "Requires selecting the correct evidence when similar entities or a related but insufficient page could mislead.",
+    "unanswerable": "The corpus lacks the required information; a refusal is required."
+  },
   "scoring_rule": "answer_correct = for every group in answer_keyword_groups, at least one keyword appears in the normalized answer. For unanswerable cases, answer_correct = at least one refusal_keyword appears and no case-specific fabrication_keyword appears. All matching is case-insensitive after stripping punctuation. The fabrication guard is a lexical heuristic for refusal-plus-invention; it does not replace manual audit of unanswerable cases.",
   "cases": [
     {
@@ -196,7 +217,7 @@
       "answer_keyword_groups": [
         ["december 31 2026", "december 31, 2026", "2026 12 31", "20261231", "31 december 2026", "december 31st 2026", "december 31st, 2026"],
         ["alice smith leads project phoenix", "alice smith leads phoenix", "project phoenix is led by alice smith", "project phoenix is led by alice", "phoenix is led by alice smith", "phoenix is led by alice", "alice smith is the leader of project phoenix", "alice smith is the leader of phoenix", "alice smith who leads project phoenix", "alice smith who leads phoenix", "alice smith who is the leader of project phoenix", "alice leads project phoenix", "alice leads phoenix", "phoenix alice smith", "alice smith phoenix", "it is led by alice smith", "it is led by alice", "the project is led by alice smith", "alice smith is its leader", "its leader is alice smith", "alice smith leads it"],
-        ["alice smith's office is on the second floor of building a", "alice's office is on the second floor of building a", "alice smith's office is located on the second floor of building a", "alice's office is located on the second floor of building a", "alice smith's office is on the 2nd floor of building a", "alice's office is on the 2nd floor of building a", "alice smith whose office is on the second floor of building a", "alice smith whose office is on the 2nd floor of building a", "she has an office on the second floor of building a", "her office is on the second floor of building a", "her office is located on the second floor of building a", "her office is on the 2nd floor of building a", "alice smith is on the second floor of building a", "alice is on the second floor of building a", "alice smith second floor building a", "second floor building a alice smith", "alice smith building a second floor", "building a second floor alice smith"]
+        ["alice smith's office is on the second floor of building a", "alice's office is on the second floor of building a", "alice smith's office is located on the second floor of building a", "alice's office is located on the second floor of building a", "alice smith's office is on the 2nd floor of building a", "alice's office is on the 2nd floor of building a", "alice smith whose office is on the second floor of building a", "alice smith whose office is on the 2nd floor of building a", "alice smith whose office is located on the second floor of building a", "alice smith whose office is located on the 2nd floor of building a", "alice smith whose office is located on second floor of building a", "she has an office on the second floor of building a", "her office is on the second floor of building a", "her office is located on the second floor of building a", "her office is on the 2nd floor of building a", "alice smith is on the second floor of building a", "alice is on the second floor of building a", "alice smith second floor building a", "second floor building a alice smith", "alice smith building a second floor", "building a second floor alice smith"]
       ],
       "answerable": true,
       "required_page_ids": ["project_phoenix", "alice"],
@@ -235,9 +256,16 @@
       "question": "Is Acme's annual engineering budget greater than the combined budgets of Project Phoenix and Project Orion?",
       "reference_answer": "Yes. Acme's annual engineering budget is four million dollars ($4,000,000), which is greater than the combined budgets of Project Phoenix ($500,000) and Project Orion ($300,000), totaling eight hundred thousand dollars ($800,000).",
       "answer_keyword_groups": [
-        ["greater than", "larger than", "bigger than", "exceeds", "more than", "is greater", "is larger", "is bigger", "the larger amount", "the larger figure", "the larger budget"],
         ["4000000", "four million", "$4,000,000"],
         ["800000", "eight hundred thousand", "$800,000"]
+      ],
+      "comparison_checks": [
+        {
+          "left_entities": [["annual engineering budget", "annual budget", "engineering budget", "four million", "4000000"]],
+          "right_entities": [["combined budgets", "combined project budgets", "project budgets", "two projects", "eight hundred thousand", "800000"]],
+          "left_greater_markers": ["greater than", "larger than", "bigger than", "exceeds", "more than", "well above", "is greater", "is larger", "is bigger"],
+          "right_less_markers": ["well below", "less than", "lower than", "smaller than", "is less", "is lower", "is smaller"]
+        }
       ],
       "answerable": true,
       "required_page_ids": ["eve", "project_phoenix", "project_orion"],
@@ -278,7 +306,16 @@
       "reference_answer": "The corpus does not provide this. Building B's first floor is a gym with locker rooms and showers, not an office; David Kim's office is on the fourth floor and Eve Martinez's office is on the fifth floor. Therefore the premise of a first-floor office is not supported, and no such person or project is stated.",
       "answer_keyword_groups": [],
       "refusal_keywords": ["cannot", "could not", "not mentioned", "no information", "unclear", "not found", "unknown", "not stated", "does not say", "don't know", "not provided", "does not provide", "not supported", "not an office", "does not contain an office", "does not contain any office", "no such person", "no such project", "no such office", "no person uses", "no person who uses", "no project lead", "no project lead associated", "no office on the first floor", "no first floor office", "does not state", "does not name"],
-      "fabrication_keywords": ["project phoenix", "project orion", "leads project", "leads the project", "is the leader of", "project lead is", "office is used by", "office belongs to", "belongs to david", "used by david"],
+      "fabrication_keywords": [],
+      "fabrication_patterns_positive": [
+        "\\b(?:the\\s+)?first[- ]floor\\s+(?:office|room|suite)\\s+(?:is|belongs|houses|contains|has|was|will be)\\b",
+        "\\b(?:the\\s+)?office\\s+(?:on|at)\\s+(?:the\\s+)?first[- ]floor\\s+(?:is|belongs|houses|contains|has|was|will be)\\b",
+        "\\boffice\\s+(?:number|no\\.?)\\s*[A-Za-z0-9-]+\\b",
+        "\\boffice\\s+[A-Z]?\\d{1,4}(?:-\\d{1,4})?\\b",
+        "\\b(?:belongs|belong)\\s+to\\s+(?:david|alice|bob|carol|eve)\\b",
+        "\\b(?:used|occupied|owned)\\s+by\\s+(?:david|alice|bob|carol|eve)\\b",
+        "\\b(?:david|alice|bob|carol|eve)\\s+(?:uses|occupies|owns)\\s+(?:the\\s+)?(?:first[- ]floor\\s+)?office\\b"
+      ],
       "answerable": false,
       "required_page_ids": [],
       "hops": 0,
@@ -307,6 +344,710 @@
       "required_page_ids": [],
       "hops": 0,
       "question_type": "unanswerable"
+    },
+    {
+      "id": "mh31_carol_manager_chain_tenure",
+      "relation_edges": 2,
+      "attribute_lookups": 2,
+      "reasoning_hops": 4,
+      "question": "Who is the manager of Carol Chen's manager, and what is that person's job title and tenure in the role?",
+      "reference_answer": "Carol Chen reports to Bob Jones, and Bob Jones reports to Eve Martinez. Eve Martinez is the VP of Engineering and has held that role since 2018.",
+      "answer_keyword_groups": [["vp", "vice president"], ["2018"]],
+      "answerable": true,
+      "required_page_ids": ["carol", "bob", "eve"],
+      "hops": 3,
+      "question_type": "three_plus_hop_chain",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "carol: Carol Chen reports to Bob Jones.",
+        "bob: Bob Jones reports to Eve Martinez.",
+        "eve: Eve Martinez is the VP of Engineering and has held the role since 2018."
+      ],
+      "evidence_note": "Each page supplies one link or attribute; no single page contains the full answer."
+    },
+    {
+      "id": "mh32_director_report_kubernetes",
+      "relation_edges": 2,
+      "attribute_lookups": 1,
+      "reasoning_hops": 3,
+      "question": "The Director of Engineering manages an engineer who leads a project to migrate Acme's legacy monolithic application to microservices. Which engineer is it, which project do they lead, and which platform does the project run on?",
+      "reference_answer": "The engineer is Alice Smith. She leads Project Phoenix, which migrates the legacy monolithic application to a microservices architecture running on Kubernetes.",
+      "answer_keyword_groups": [["alice"], ["phoenix"], ["kubernetes"]],
+      "answerable": true,
+      "required_page_ids": ["bob", "alice", "project_phoenix"],
+      "alternative_evidence_sets": [["alice", "project_phoenix"]],
+      "hops": 3,
+      "question_type": "three_plus_hop_chain",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "bob: Bob Jones is the Director of Engineering and manages Alice Smith among his direct reports.",
+        "alice: Alice Smith leads Project Phoenix.",
+        "project_phoenix: Project Phoenix migrates the legacy monolith to microservices on Kubernetes."
+      ],
+      "evidence_note": "alice alone names both her manager title and her project, so alice + project_phoenix is a complete legal alternative path."
+    },
+    {
+      "id": "mh33_gym_data_team_lead",
+      "relation_edges": 3,
+      "attribute_lookups": 0,
+      "reasoning_hops": 3,
+      "question": "Building B's first floor contains a gym, and its second and third floors contain workspace for the data engineering team. Who leads the data engineering group, and which project does that person lead?",
+      "reference_answer": "David Kim leads the data engineering group and is the technical lead for Project Orion.",
+      "answer_keyword_groups": [["david"], ["orion"]],
+      "answerable": true,
+      "required_page_ids": ["building_b", "eve", "david"],
+      "hops": 3,
+      "question_type": "three_plus_hop_chain",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "building_b: the second and third floors are workspace for the data engineering team.",
+        "eve: David Kim leads the data engineering group.",
+        "david: David Kim is the technical lead for Project Orion."
+      ],
+      "evidence_note": "building_b identifies the team and its floors; eve identifies the group's lead; david identifies the project."
+    },
+    {
+      "id": "mh34_vp_office_bob_team_size",
+      "relation_edges": 2,
+      "attribute_lookups": 1,
+      "reasoning_hops": 3,
+      "question": "The VP of Engineering's office is on the fifth floor of Building B. The director who leads the platform engineering group reports to that VP. How many engineers does that director manage?",
+      "reference_answer": "Bob Jones leads the platform engineering group and manages a team of twelve engineers.",
+      "answer_keyword_groups": [["bob"], ["twelve", "12"]],
+      "answerable": true,
+      "required_page_ids": ["building_b", "eve", "bob"],
+      "alternative_evidence_sets": [["eve", "bob"]],
+      "hops": 3,
+      "question_type": "three_plus_hop_chain",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "building_b: the fifth floor is the executive level with the VP of Engineering's office.",
+        "eve: Bob Jones leads the platform engineering group and reports to Eve Martinez.",
+        "bob: Bob Jones manages a team of twelve engineers."
+      ],
+      "evidence_note": "eve supplies the VP office location and Bob's platform-group leadership, so eve + bob is a complete legal alternative path."
+    },
+    {
+      "id": "mh35_phoenix_carol_bob_eve_groups",
+      "relation_edges": 4,
+      "attribute_lookups": 0,
+      "reasoning_hops": 4,
+      "question": "Starting from Project Phoenix's core team member, follow that person's reporting line upward to the top manager. Which two groups does that top manager oversee, and who leads each of them?",
+      "reference_answer": "Eve Martinez oversees the platform engineering group, led by Bob Jones, and the data engineering group, led by David Kim.",
+      "answer_keyword_groups": [["platform engineering"], ["data engineering"], ["bob"], ["david"]],
+      "answerable": true,
+      "required_page_ids": ["project_phoenix", "carol", "bob", "eve"],
+      "hops": 4,
+      "question_type": "three_plus_hop_chain",
+      "difficulty": "high",
+      "reasoning_chain": [
+        "project_phoenix: Carol Chen is a core team member.",
+        "carol: Carol Chen reports to Bob Jones.",
+        "bob: Bob Jones reports to Eve Martinez.",
+        "eve: Eve Martinez oversees the platform engineering group (Bob Jones) and the data engineering group (David Kim)."
+      ],
+      "evidence_note": "The chain starts at Project Phoenix, passes through Carol and Bob, and ends at Eve's two group assignments."
+    },
+    {
+      "id": "mh36_phoenix_carol_bob_responsibilities",
+      "relation_edges": 2,
+      "attribute_lookups": 1,
+      "reasoning_hops": 3,
+      "question": "What two responsibilities does the manager of Project Phoenix's core team member have for his direct reports?",
+      "reference_answer": "Bob Jones is responsible for technical roadmap planning and quarterly performance reviews for his direct reports.",
+      "answer_keyword_groups": [["roadmap"], ["performance review", "performance reviews", "performance evaluation", "performance evaluations"]],
+      "answerable": true,
+      "required_page_ids": ["project_phoenix", "carol", "bob"],
+      "alternative_evidence_sets": [["carol", "bob"]],
+      "hops": 3,
+      "question_type": "three_plus_hop_chain",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "project_phoenix: Carol Chen is a core team member.",
+        "carol: Carol Chen reports to Bob Jones.",
+        "bob: Bob Jones is responsible for technical roadmap planning and quarterly performance reviews."
+      ],
+      "evidence_note": "carol names both her Phoenix membership and her manager, so carol + bob is a complete legal alternative path."
+    },
+    {
+      "id": "mh37_budget_ratio_synthesis",
+      "relation_edges": 0,
+      "attribute_lookups": 3,
+      "reasoning_hops": 3,
+      "question": "What is the ratio of Acme's annual engineering budget to the combined budgets of Project Phoenix and Project Orion?",
+      "reference_answer": "The ratio is five to one (5 to 1): the annual engineering budget is $4,000,000 and the combined project budgets are $800,000.",
+      "answer_keyword_groups": [],
+      "ratio_checks": [{"numerator": 5, "denominator": 1, "allow_bare": true}],
+      "answerable": true,
+      "required_page_ids": ["eve", "project_phoenix", "project_orion"],
+      "hops": 3,
+      "question_type": "cross_topic_synthesis",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "eve: the annual engineering budget is four million dollars.",
+        "project_phoenix: the budget is five hundred thousand dollars.",
+        "project_orion: the budget is three hundred thousand dollars.",
+        "synthesis: the project budgets total eight hundred thousand dollars; four million divided by eight hundred thousand is five."
+      ],
+      "evidence_note": "Combines a company-wide finance fact with two project budgets; the ratio is derived arithmetic, not a stated sentence."
+    },
+    {
+      "id": "mh38_responsibility_synthesis",
+      "relation_edges": 0,
+      "attribute_lookups": 2,
+      "reasoning_hops": 2,
+      "question": "Which manager is responsible for technical roadmap planning and quarterly performance reviews, and which manager owns the annual engineering budget?",
+      "reference_answer": "Bob Jones is responsible for technical roadmap planning and quarterly performance reviews. Eve Martinez is responsible for the annual engineering budget.",
+      "answer_keyword_groups": [["bob"], ["roadmap"], ["eve"], ["budget"]],
+      "answerable": true,
+      "required_page_ids": ["bob", "eve"],
+      "hops": 2,
+      "question_type": "cross_topic_synthesis",
+      "difficulty": "low",
+      "reasoning_chain": [
+        "bob: Bob Jones is responsible for technical roadmap planning and quarterly performance reviews.",
+        "eve: Eve Martinez is responsible for the annual engineering budget.",
+        "synthesis: assign each responsibility to the correct role rather than conflating the two managers."
+      ],
+      "evidence_note": "Requires separating overlapping responsibilities of two managers across two pages."
+    },
+    {
+      "id": "mh39_project_purpose_synthesis",
+      "relation_edges": 0,
+      "attribute_lookups": 2,
+      "reasoning_hops": 2,
+      "question": "Acme has two named projects. Which one is primarily an application modernization effort, and which one is primarily an analytics platform? State the evidence for each.",
+      "reference_answer": "Project Phoenix is the application modernization effort: it migrates the legacy monolith to microservices on Kubernetes. Project Orion is the analytics platform: it provides real-time business intelligence dashboards.",
+      "answer_keyword_groups": [["phoenix"], ["modernization", "modernisation", "migrat"], ["orion"], ["analytics", "business intelligence"]],
+      "answerable": true,
+      "required_page_ids": ["project_phoenix", "project_orion"],
+      "hops": 2,
+      "question_type": "cross_topic_synthesis",
+      "difficulty": "low",
+      "reasoning_chain": [
+        "project_phoenix: the project migrates the legacy monolith to microservices on Kubernetes.",
+        "project_orion: the project provides real-time business intelligence dashboards with a columnar database, stream processing engine, and React frontend.",
+        "synthesis: classify Phoenix as modernization and Orion as analytics."
+      ],
+      "evidence_note": "Requires classifying both projects by purpose and technology rather than copying one project page."
+    },
+    {
+      "id": "mh40_walkway_data_team_synthesis",
+      "relation_edges": 2,
+      "attribute_lookups": 1,
+      "reasoning_hops": 3,
+      "question": "Alice Smith walks from her office in Building A through the covered walkway to Building B. Which team's workspace does she reach?",
+      "reference_answer": "Alice Smith reaches the data engineering team's workspace on the second floor of Building B.",
+      "answer_keyword_groups": [["data engineering"], ["second floor", "2nd floor", "second level", "2nd level"]],
+      "answerable": true,
+      "required_page_ids": ["alice", "building_a", "building_b"],
+      "alternative_evidence_sets": [["building_a", "building_b"]],
+      "hops": 3,
+      "question_type": "cross_topic_synthesis",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "alice: Alice Smith's office is on the second floor of Building A.",
+        "building_b: a covered walkway on the second floor connects Building B to Building A.",
+        "building_b: the second floor of Building B contains workspace for the data engineering team.",
+        "synthesis: entering Building B on the second floor leads to the data engineering workspace."
+      ],
+      "evidence_note": "building_a also states Alice's second-floor office, so building_a + building_b is a complete legal alternative path."
+    },
+    {
+      "id": "mh41_orion_tech_match",
+      "relation_edges": 2,
+      "attribute_lookups": 1,
+      "reasoning_hops": 3,
+      "question": "A new engineer wants to work on real-time business intelligence dashboards built with a columnar database, a stream processing engine, and a React frontend. Which project matches, who leads it, and on which floor of which building is that leader's office?",
+      "reference_answer": "Project Orion matches. It is led by David Kim, whose office is on the fourth floor of Building B.",
+      "answer_keyword_groups": [["orion"], ["david"], ["fourth", "4"], ["building b"]],
+      "answerable": true,
+      "required_page_ids": ["project_orion", "david"],
+      "hops": 2,
+      "question_type": "cross_topic_synthesis",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "project_orion: the project provides real-time business intelligence dashboards and uses a columnar database, a stream processing engine, and a React frontend.",
+        "david: David Kim is the technical lead for Project Orion, with an office on the fourth floor of Building B.",
+        "synthesis: match the described work to Orion, then resolve its lead and the lead's office."
+      ],
+      "evidence_note": "Combines project scope and technology with the organizational and facilities facts for its lead."
+    },
+    {
+      "id": "mh42_bob_eve_tenure_office",
+      "relation_edges": 2,
+      "attribute_lookups": 2,
+      "reasoning_hops": 4,
+      "question": "Compare Bob Jones and Eve Martinez: who has held their current role longer, and which building is each person's office in?",
+      "reference_answer": "Eve Martinez has held her role since 2018, longer than Bob Jones, who has been Director of Engineering since 2019. Bob Jones's office is in Building A, and Eve Martinez's office is in Building B.",
+      "answer_keyword_groups": [["longer", "since 2018", "2018"], ["building a"], ["building b"]],
+      "binding_entities": [["bob", "bob jones"], ["eve", "eve martinez"]],
+      "answer_bindings": [
+        {
+          "subject_aliases": ["eve", "eve martinez"],
+          "require_groups": [["longer", "since 2018", "2018"]],
+          "forbid_groups": [["shorter"]]
+        },
+        {
+          "subject_aliases": ["bob", "bob jones"],
+          "forbid_groups": [["has held longer", "has served longer", "held his role longer", "been in his role longer"]]
+        },
+        {
+          "subject_aliases": ["bob", "bob jones"],
+          "require_groups": [["building a"]],
+          "forbid_groups": [["building b"]]
+        },
+        {
+          "subject_aliases": ["eve", "eve martinez"],
+          "require_groups": [["building b"]],
+          "forbid_groups": [["building a"]]
+        }
+      ],
+      "answerable": true,
+      "required_page_ids": ["bob", "eve"],
+      "hops": 2,
+      "question_type": "multi_entity_comparison",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "bob: Bob Jones has been Director of Engineering since 2019 and has an office in Building A.",
+        "eve: Eve Martinez has been VP of Engineering since 2018 and has an office in Building B.",
+        "comparison: Eve's tenure (2018) is longer than Bob's (2019); their offices are in different buildings."
+      ],
+      "evidence_note": "Explicit dimensions are role tenure and office building; both values come directly from the two pages."
+    },
+    {
+      "id": "mh43_alice_david_join_degree_building",
+      "relation_edges": 2,
+      "attribute_lookups": 4,
+      "reasoning_hops": 6,
+      "question": "Compare Alice Smith and David Kim: who joined Acme first, whose academic degree is higher, and which building is each person's office in?",
+      "reference_answer": "David Kim joined Acme in 2020, before Alice Smith in 2021. David holds a PhD in distributed systems, while Alice holds a master's degree in computer science. Alice's office is in Building A, and David's office is in Building B.",
+      "answer_keyword_groups": [["joined first", "joined before", "joined in 2020", "joined acme in 2020", "joined acme first", "joined the company before", "joined acme before", "joined the company before alice", "joined acme before alice", "joined the company first"], ["higher degree", "phd", "doctor", "more advanced degree"], ["building a"], ["building b"]],
+      "binding_entities": [["alice", "alice smith"], ["david", "david kim"]],
+      "answer_bindings": [
+        {
+          "subject_aliases": ["david", "david kim"],
+          "require_groups": [["joined first", "joined before", "joined in 2020", "joined acme in 2020", "joined acme first", "joined the company before", "joined acme before", "joined the company before alice", "joined acme before alice", "joined the company first"]],
+          "forbid_groups": [["joined after alice", "joined in 2021", "joined acme in 2021"]]
+        },
+        {
+          "subject_aliases": ["david", "david kim"],
+          "forbid_groups": [["after alice"]],
+          "forbid_scope": "sentence"
+        },
+        {
+          "subject_aliases": ["alice", "alice smith"],
+          "forbid_groups": [["joined first", "joined before david", "joined in 2020", "joined acme in 2020"]]
+        },
+        {
+          "subject_aliases": ["david", "david kim"],
+          "require_groups": [["higher degree", "phd", "doctor", "more advanced degree"]],
+          "forbid_groups": [["master", "masters", "lower degree"]]
+        },
+        {
+          "subject_aliases": ["alice", "alice smith"],
+          "forbid_groups": [["higher degree", "more advanced degree", "phd", "doctor"]]
+        },
+        {
+          "subject_aliases": ["alice", "alice smith"],
+          "require_groups": [["building a"]],
+          "forbid_groups": [["building b"]]
+        },
+        {
+          "subject_aliases": ["david", "david kim"],
+          "require_groups": [["building b"]],
+          "forbid_groups": [["building a"]]
+        }
+      ],
+      "answerable": true,
+      "required_page_ids": ["alice", "david"],
+      "hops": 2,
+      "question_type": "multi_entity_comparison",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "alice: Alice Smith joined in 2021, holds a master's degree, and has an office in Building A.",
+        "david: David Kim joined in 2020, holds a PhD in distributed systems, and has an office in Building B.",
+        "comparison: David joined first and holds the higher degree; their offices are in different buildings."
+      ],
+      "evidence_note": "Explicit dimensions are join year, academic degree, and office building."
+    },
+    {
+      "id": "mh44_project_budget_timing_comparison",
+      "relation_edges": 0,
+      "attribute_lookups": 4,
+      "reasoning_hops": 4,
+      "question": "Compare Project Phoenix and Project Orion on budget and completion timing. Which project has the larger budget, and which project is expected to finish or launch later?",
+      "reference_answer": "Project Phoenix has the larger budget at $500,000, compared with Project Orion's $300,000. Project Orion is expected to launch later, in Q2 2027, while Project Phoenix targets completion on December 31, 2026.",
+      "answer_keyword_groups": [["larger budget", "higher budget", "bigger budget"], ["later", "after", "launch later", "finish later"]],
+      "binding_entities": [["project phoenix", "phoenix"], ["project orion", "orion"]],
+      "answer_bindings": [
+        {
+          "subject_aliases": ["project phoenix", "phoenix"],
+          "require_groups": [["larger budget", "higher budget", "bigger budget"]],
+          "forbid_groups": [["smaller budget", "lower budget", "300000", "300,000", "three hundred thousand"]]
+        },
+        {
+          "subject_aliases": ["project orion", "orion"],
+          "require_groups": [["later", "after", "launch later", "finish later"]],
+          "forbid_groups": [["earlier", "sooner", "before", "500000", "500,000", "five hundred thousand"]]
+        }
+      ],
+      "answerable": true,
+      "required_page_ids": ["project_phoenix", "project_orion"],
+      "hops": 2,
+      "question_type": "multi_entity_comparison",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "project_phoenix: budget $500,000; target completion December 31, 2026.",
+        "project_orion: budget $300,000; expected launch Q2 2027.",
+        "comparison: Phoenix has the larger budget; Orion has the later completion or launch timing."
+      ],
+      "evidence_note": "Explicit dimensions are budget size and completion or launch timing."
+    },
+    {
+      "id": "mh45_carol_david_role_office_project",
+      "relation_edges": 4,
+      "attribute_lookups": 2,
+      "reasoning_hops": 6,
+      "question": "Compare Carol Chen and David Kim: what is each person's role, which building is each office in, and which project do they share?",
+      "reference_answer": "Carol Chen is a staff engineer whose office is on the first floor of Building A. David Kim is a principal engineer whose office is on the fourth floor of Building B. Both work on Project Orion: David leads it, and Carol contributes to its backend integration layer.",
+      "answer_keyword_groups": [["staff engineer"], ["principal engineer"], ["building a"], ["building b"], ["orion"]],
+      "binding_entities": [["carol", "carol chen"], ["david", "david kim"]],
+      "answer_bindings": [
+        {
+          "subject_aliases": ["carol", "carol chen"],
+          "require_groups": [["staff engineer"]],
+          "forbid_groups": [["principal engineer"]]
+        },
+        {
+          "subject_aliases": ["david", "david kim"],
+          "require_groups": [["principal engineer"]],
+          "forbid_groups": [["staff engineer"]]
+        },
+        {
+          "subject_aliases": ["carol", "carol chen"],
+          "require_groups": [["building a"]],
+          "forbid_groups": [["building b"]]
+        },
+        {
+          "subject_aliases": ["david", "david kim"],
+          "require_groups": [["building b"]],
+          "forbid_groups": [["building a", "phoenix"]]
+        }
+      ],
+      "shared_entities": [
+        {
+          "entities": [["carol", "carol chen"], ["david", "david kim"]],
+          "require": ["orion"]
+        }
+      ],
+      "answerable": true,
+      "required_page_ids": ["carol", "david", "project_orion"],
+      "alternative_evidence_sets": [["carol", "david"]],
+      "hops": 3,
+      "question_type": "multi_entity_comparison",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "carol: Carol Chen is a staff engineer with an office on the first floor of Building A; she contributes to Project Orion.",
+        "david: David Kim is a principal engineer with an office on the fourth floor of Building B; he leads Project Orion.",
+        "project_orion: confirms both the project leadership and Carol's backend integration contribution.",
+        "comparison: different roles and buildings, shared project Orion."
+      ],
+      "evidence_note": "carol and david each state their role, office, and Orion involvement, so carol + david is a complete legal alternative path."
+    },
+    {
+      "id": "mh46_phoenix_reporting_chain",
+      "relation_edges": 3,
+      "attribute_lookups": 0,
+      "reasoning_hops": 3,
+      "question": "Starting from Project Phoenix, trace the chain from the project lead to that person's direct manager, and then to that manager's direct manager. List the three people in order, state which adjacent links are direct reporting relationships, and state whether the relationship between the first and last person is direct or indirect.",
+      "reference_answer": "Project Phoenix is led by Alice Smith. Alice Smith directly reports to Bob Jones, and Bob Jones directly reports to Eve Martinez. The chain is Alice Smith, then Bob Jones, then Eve Martinez. Eve Martinez is two reporting levels above Alice Smith, so their connection is indirect.",
+      "answer_keyword_groups": [["alice"], ["bob"], ["eve"], ["direct"], ["indirect", "indirectly", "two levels", "through bob"]],
+      "manual_review": true,
+      "relation_chain": {
+        "entities": [["alice", "alice smith"], ["bob", "bob jones"], ["eve", "eve martinez"]],
+        "order": [["alice", "alice smith"], ["bob", "bob jones"], ["eve", "eve martinez"]],
+        "leadership_pairs": [
+          {"from": ["alice", "alice smith"], "to": ["project phoenix", "phoenix"], "markers": ["leads", "led", "leader"]}
+        ],
+        "direct_pairs": [
+          {"from": ["alice", "alice smith"], "to": ["bob", "bob jones"], "markers": ["direct", "directly"]},
+          {"from": ["bob", "bob jones"], "to": ["eve", "eve martinez"], "markers": ["direct", "directly"]}
+        ],
+        "indirect_pairs": [
+          {"from": ["alice", "alice smith"], "to": ["eve", "eve martinez"], "markers": ["indirect", "indirectly", "two levels", "through bob"]}
+        ],
+        "forbidden_direct_pairs": [
+          {"from": ["alice", "alice smith"], "to": ["eve", "eve martinez"], "markers": ["direct", "directly"]}
+        ]
+      },
+      "answerable": true,
+      "required_page_ids": ["project_phoenix", "alice", "bob", "eve"],
+      "alternative_evidence_sets": [["alice", "bob"]],
+      "hops": 4,
+      "question_type": "complex_relation_tracking",
+      "difficulty": "high",
+      "reasoning_chain": [
+        "project_phoenix -> alice: Alice Smith leads Project Phoenix (direct leadership relationship).",
+        "alice -> bob: Alice Smith directly reports to Bob Jones (direct reporting relationship).",
+        "bob -> eve: Bob Jones directly reports to Eve Martinez (direct reporting relationship).",
+        "distinction: Eve is two reporting levels above Alice, so their connection is indirect even though each adjacent link is direct."
+      ],
+      "evidence_note": "alice names both her Phoenix leadership and her manager, and bob names his manager, so alice + bob is a complete legal alternative path."
+    },
+    {
+      "id": "mh47_exec_level_to_phoenix_chain",
+      "relation_edges": 4,
+      "attribute_lookups": 0,
+      "reasoning_hops": 4,
+      "manual_review": true,
+      "question": "Starting from the executive level of Building B, trace the relationships to the engineer who leads Project Phoenix: identify the VP whose office is on that floor, the director she manages who leads the platform engineering group, and the engineer who reports to that director and leads Project Phoenix. List the chain and state which relationship is indirect.",
+      "reference_answer": "Building B's fifth floor is the executive level, where Eve Martinez, the VP of Engineering, has her office. Eve directly manages Bob Jones, who leads the platform engineering group. Bob directly manages Alice Smith, and Alice leads Project Phoenix. Eve's relationship to Alice is indirect, because it passes through Bob Jones.",
+      "answer_keyword_groups": [["eve"], ["bob"], ["alice"], ["phoenix"], ["platform engineering"], ["indirect", "indirectly", "through bob", "two levels"]],
+      "relation_chain": {
+        "entities": [["eve", "eve martinez"], ["bob", "bob jones"], ["alice", "alice smith"]],
+        "order": [["eve", "eve martinez"], ["bob", "bob jones"], ["alice", "alice smith"]],
+        "direct_pairs": [
+          {"from": ["eve", "eve martinez"], "to": ["bob", "bob jones"], "markers": ["direct", "directly"]},
+          {"from": ["bob", "bob jones"], "to": ["alice", "alice smith"], "markers": ["direct", "directly"]}
+        ],
+        "leadership_pairs": [
+          {"from": ["alice", "alice smith"], "to": ["project phoenix", "phoenix"], "markers": ["leads", "led", "leader"]}
+        ],
+        "indirect_pairs": [
+          {"from": ["eve", "eve martinez"], "to": ["alice", "alice smith"], "markers": ["indirect", "indirectly", "through bob", "two levels"]}
+        ],
+        "forbidden_direct_pairs": [
+          {"from": ["eve", "eve martinez"], "to": ["alice", "alice smith"], "markers": ["direct", "directly"]}
+        ]
+      },
+      "answerable": true,
+      "required_page_ids": ["building_b", "eve", "bob", "alice", "project_phoenix"],
+      "alternative_evidence_sets": [["eve", "bob", "alice"]],
+      "hops": 5,
+      "question_type": "complex_relation_tracking",
+      "difficulty": "high",
+      "reasoning_chain": [
+        "building_b -> eve: the fifth floor is the executive level with Eve Martinez's office.",
+        "eve -> bob: Eve Martinez manages Bob Jones, who leads the platform engineering group (direct management).",
+        "bob -> alice: Bob Jones manages Alice Smith (direct management).",
+        "alice -> project_phoenix: Alice Smith leads Project Phoenix (direct leadership).",
+        "distinction: Eve's link to Alice is indirect, passing through Bob; Eve's link to the platform group is direct through Bob."
+      ],
+      "evidence_note": "eve states her office, her management of Bob, and Bob's group; bob states his management of Alice; alice states her project. eve + bob + alice is a complete legal alternative path because eve also gives her fifth-floor Building B office."
+    },
+    {
+      "id": "mh48_building_a_carol_manager_chain",
+      "relation_edges": 4,
+      "attribute_lookups": 0,
+      "reasoning_hops": 4,
+      "question": "Starting from Building A's first floor, which contains Carol Chen's desk, trace Carol's direct manager and then that manager's direct manager. Who are the two managers, and where is the second manager's office?",
+      "reference_answer": "Carol Chen reports to Bob Jones, who reports to Eve Martinez. Eve Martinez's office is on the fifth floor of Building B.",
+      "answer_keyword_groups": [["bob"], ["eve"], ["fifth", "5"], ["building b"]],
+      "answerable": true,
+      "required_page_ids": ["building_a", "carol", "bob", "eve"],
+      "alternative_evidence_sets": [["carol", "bob", "eve"]],
+      "hops": 4,
+      "question_type": "complex_relation_tracking",
+      "difficulty": "high",
+      "reasoning_chain": [
+        "building_a -> carol: Carol Chen's desk is on the first floor of Building A.",
+        "carol -> bob: Carol Chen reports to Bob Jones (direct manager).",
+        "bob -> eve: Bob Jones reports to Eve Martinez (direct manager).",
+        "eve -> office: Eve Martinez's office is on the fifth floor of Building B."
+      ],
+      "evidence_note": "carol states her own office floor and her manager, so carol + bob + eve is a complete legal alternative path."
+    },
+    {
+      "id": "mh49_orion_upward_chain_ceo",
+      "relation_edges": 3,
+      "attribute_lookups": 0,
+      "reasoning_hops": 3,
+      "question": "Starting from Project Orion, trace upward through its technical lead and that lead's manager. Who is the highest person in this chain that the corpus names, and to whom does that person report?",
+      "reference_answer": "Project Orion's technical lead is David Kim, who reports to Eve Martinez, the VP of Engineering. Eve Martinez is the highest named person in the chain; she reports directly to the CEO, whose name is not provided in the corpus.",
+      "answer_keyword_groups": [["eve"], ["ceo"]],
+      "answerable": true,
+      "required_page_ids": ["project_orion", "david", "eve"],
+      "alternative_evidence_sets": [["david", "eve"]],
+      "hops": 3,
+      "question_type": "complex_relation_tracking",
+      "difficulty": "high",
+      "reasoning_chain": [
+        "project_orion -> david: David Kim is the technical lead for Project Orion.",
+        "david -> eve: David Kim reports to Eve Martinez (direct reporting).",
+        "eve -> ceo: Eve Martinez reports directly to the CEO, whose identity is not named (direct reporting to an unnamed person).",
+        "distinction: David and Eve are named; the CEO is the next level but remains unnamed in the corpus."
+      ],
+      "evidence_note": "david names both his Orion leadership and his manager, so david + eve is a complete legal alternative path; eve supplies the CEO reporting line."
+    },
+    {
+      "id": "mh50_orion_exact_completion_date",
+      "relation_edges": 0,
+      "attribute_lookups": 1,
+      "reasoning_hops": 1,
+      "manual_review": true,
+      "fabrication_patterns": [
+        "\\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\\s+\\d{1,2}(?:\\s*,?\\s*\\d{4})?\\b",
+        "\\b\\d{4}-\\d{2}-\\d{2}\\b",
+        "\\b\\d{1,2}/\\d{1,2}/\\d{2,4}\\b"
+      ],
+      "question": "What is the exact completion date of Project Orion?",
+      "reference_answer": "The corpus does not provide an exact completion date for Project Orion. It only states that Project Orion is expected to launch in Q2 2027; no specific day or month is given.",
+      "answer_keyword_groups": [],
+      "refusal_keywords": ["not stated", "not provided", "does not provide", "does not state", "no exact", "not specified", "no specific", "not given", "unknown", "cannot", "don't know", "not mentioned", "no information", "unclear", "could not find", "not found", "does not mention", "no data", "does not specify", "not specify", "no date is given", "not available", "does not list"],
+      "fabrication_keywords": ["on december", "on january", "on february", "on march", "on april", "on may", "on june", "on july", "on august", "on september", "on october", "on november"],
+      "answerable": false,
+      "required_page_ids": [],
+      "hops": 0,
+      "question_type": "unanswerable",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "project_orion: states only that the project is expected to launch in Q2 2027.",
+        "corpus-wide check: no page gives an exact day or month for Project Orion's completion."
+      ],
+      "evidence_note": "The corpus has a quarter-level launch estimate but no exact completion date; the answer must not convert Q2 2027 into a specific date."
+    },
+    {
+      "id": "mh51_total_employee_count",
+      "relation_edges": 0,
+      "attribute_lookups": 1,
+      "reasoning_hops": 1,
+      "manual_review": true,
+      "fabrication_patterns": [
+        "\\b(?:about|approximately|around|roughly|over|more than|nearly|exactly|probably)\\s+(?!12\\b)\\d[\\d,]*\\s*(?:employees|people|staff|workers|headcount)\\b",
+        "\\b(?!12\\b)\\d[\\d,]*\\s*(?:employees|people|staff|workers)\\b",
+        "\\bheadcount\\s+(?:is|of)\\s+(?!12\\b)\\d[\\d,]*\\b",
+        "\\b(?:company|total|acme)\\b[^.]{0,60}\\b12\\s*(?:employees|people|staff|workers)\\b"
+      ],
+      "question": "How many employees work at Acme Corp in total?",
+      "reference_answer": "The corpus does not state Acme Corp's total employee count. It only says that Bob Jones manages a team of twelve engineers, which is not the same as the company total.",
+      "answer_keyword_groups": [],
+      "refusal_keywords": ["not stated", "does not state", "not provided", "does not provide", "no information", "unknown", "not specified", "no total", "not given", "cannot", "don't know", "not mentioned", "unclear", "could not find", "not found", "does not mention", "no data", "no headcount", "no companywide", "headcount is given", "not available", "does not list", "does not give"],
+      "fabrication_keywords": ["total employee count is 12", "total employee count is 50", "total employee count is 100", "total employee count is 500", "total employee count is 1000", "headcount is 12", "headcount is 50", "headcount is 100", "headcount is 500", "headcount is 1000", "the company has 12", "the company has 50", "the company has 100", "the company has 500", "the company has 1000", "employs 12", "employs 50", "employs 100", "employs 500", "employs 1000", "workforce of 12", "workforce of 50", "workforce of 100", "workforce of 500", "workforce of 1000"],
+      "answerable": false,
+      "required_page_ids": [],
+      "hops": 0,
+      "question_type": "unanswerable",
+      "difficulty": "low",
+      "reasoning_chain": [
+        "bob: states that Bob Jones manages a team of twelve engineers, not a company-wide headcount.",
+        "corpus-wide check: no page gives Acme Corp's total number of employees."
+      ],
+      "evidence_note": "A team size of twelve is explicitly not a company total; the answer must not treat it as one."
+    },
+    {
+      "id": "mh52_alice_previous_startup_name",
+      "relation_edges": 0,
+      "attribute_lookups": 1,
+      "reasoning_hops": 1,
+      "manual_review": true,
+      "fabrication_patterns": [
+        "\\b(?:google|microsoft|amazon|ibm|oracle|meta|apple|stripe|databricks|snowflake|confluent|mongodb|salesforce|adobe|netflix|uber|airbnb)\\b"
+      ],
+      "fabrication_patterns_cs": [
+        "\\b(?:called|named)\\s+(?:the\\s+)?(?:startup\\s+)?[A-Z][A-Za-z0-9&.\\-]+"
+      ],
+      "question": "What is the name of the startup where Alice Smith previously worked?",
+      "reference_answer": "The corpus does not name the startup. Alice Smith's page only says she previously worked at a startup focused on distributed systems; no company name is given.",
+      "answer_keyword_groups": [],
+      "refusal_keywords": ["not named", "does not name", "not provided", "does not provide", "not stated", "no company name", "not specified", "unknown", "no information", "not given", "cannot", "don't know", "not mentioned", "unclear", "could not find", "not found", "does not mention", "no data", "not available", "does not list", "does not give"],
+      "fabrication_keywords": ["startup is called", "startup was called", "company is called", "company was called", "named google", "google", "microsoft", "amazon", "ibm", "oracle", "meta"],
+      "answerable": false,
+      "required_page_ids": [],
+      "hops": 0,
+      "question_type": "unanswerable",
+      "difficulty": "low",
+      "reasoning_chain": [
+        "alice: states only that Alice previously worked at a startup focused on distributed systems.",
+        "corpus-wide check: no page names the startup."
+      ],
+      "evidence_note": "The startup's focus is stated, but its name is absent; the answer must not invent a company name."
+    },
+    {
+      "id": "mh53_bob_david_office_disambiguation",
+      "relation_edges": 3,
+      "attribute_lookups": 0,
+      "reasoning_hops": 3,
+      "question": "Eve Martinez manages both Bob Jones and David Kim. One of them has an office on the third floor of Building A; the other has an office on the fourth floor of Building B. Which manager is in Building A, and which is in Building B?",
+      "reference_answer": "Bob Jones has an office on the third floor of Building A, while David Kim has an office on the fourth floor of Building B.",
+      "answer_keyword_groups": [["bob"], ["david"], ["building a"], ["building b"]],
+      "binding_entities": [["bob", "bob jones"], ["david", "david kim"]],
+      "answer_bindings": [
+        {
+          "subject_aliases": ["bob", "bob jones"],
+          "require_groups": [["building a", "third floor", "3rd floor"]],
+          "forbid_groups": [["building b", "fourth floor", "4th floor"]]
+        },
+        {
+          "subject_aliases": ["david", "david kim"],
+          "require_groups": [["building b", "fourth floor", "4th floor"]],
+          "forbid_groups": [["building a", "third floor", "3rd floor"]]
+        }
+      ],
+      "answerable": true,
+      "required_page_ids": ["eve", "bob", "david"],
+      "alternative_evidence_sets": [["bob", "david"]],
+      "hops": 3,
+      "question_type": "distractor_disambiguation",
+      "difficulty": "medium",
+      "reasoning_chain": [
+        "eve: Eve Martinez manages both Bob Jones and David Kim, but does not assign their office floors.",
+        "bob: Bob Jones's office is on the third floor of Building A.",
+        "david: David Kim's office is on the fourth floor of Building B.",
+        "disambiguation: the shared management context in eve is not evidence for either office; bob and david pages resolve the mapping."
+      ],
+      "distractor_page_ids": ["eve"],
+      "correct_evidence_page_ids": ["bob", "david"],
+      "evidence_note": "Distractor: eve groups both managers as people she manages, which can conflate them. Correct evidence: bob and david each state their own building and floor; building_a and building_b confirm."
+    },
+    {
+      "id": "mh54_alice_carol_role_office_disambiguation",
+      "relation_edges": 4,
+      "attribute_lookups": 0,
+      "reasoning_hops": 4,
+      "manual_review": true,
+      "question": "Alice Smith and Carol Chen both work in Building A and both have roles in Project Phoenix. One leads the project and has an office on the second floor; the other is a core team member with a desk on the first floor. Which engineer leads Project Phoenix, and which floor is each engineer on?",
+      "reference_answer": "Alice Smith leads Project Phoenix and has an office on the second floor of Building A. Carol Chen is a core team member of Project Phoenix and has a desk on the first floor of Building A.",
+      "answer_keyword_groups": [["alice"], ["leads project phoenix", "leads phoenix", "project phoenix is led by alice", "alice smith leads"], ["second", "2"], ["carol"], ["core team member", "core member"], ["first", "1"]],
+      "binding_entities": [["alice", "alice smith"], ["carol", "carol chen"]],
+      "answer_bindings": [
+        {
+          "subject_aliases": ["alice", "alice smith"],
+          "require_groups": [["leads project phoenix", "leads phoenix", "project phoenix is led by alice", "alice smith leads"]],
+          "forbid_groups": [["core team member", "core member"]]
+        },
+        {
+          "subject_aliases": ["alice", "alice smith"],
+          "require_groups": [["second floor", "2nd floor", "second"]],
+          "forbid_groups": [["first floor", "1st floor", "first"]]
+        },
+        {
+          "subject_aliases": ["carol", "carol chen"],
+          "require_groups": [["core team member", "core member"]],
+          "forbid_groups": [["leads project phoenix", "leads phoenix", "alice smith leads"]]
+        },
+        {
+          "subject_aliases": ["carol", "carol chen"],
+          "require_groups": [["first floor", "1st floor", "first"]],
+          "forbid_groups": [["second floor", "2nd floor", "second"]]
+        }
+      ],
+      "answerable": true,
+      "required_page_ids": ["project_phoenix", "alice", "carol", "building_a"],
+      "alternative_evidence_sets": [["project_phoenix", "alice", "carol"]],
+      "hops": 4,
+      "question_type": "distractor_disambiguation",
+      "difficulty": "high",
+      "reasoning_chain": [
+        "project_phoenix: Alice Smith leads the project; Carol Chen is a core team member.",
+        "alice: Alice Smith's office is on the second floor of Building A.",
+        "carol: Carol Chen's office is on the first floor of Building A.",
+        "building_a: the first floor includes Carol Chen's desk; the second floor includes Alice Smith's office.",
+        "disambiguation: the shared Project Phoenix membership does not distinguish the two engineers; role and floor evidence must be mapped separately."
+      ],
+      "distractor_page_ids": ["project_phoenix"],
+      "correct_evidence_page_ids": ["alice", "carol", "building_a"],
+      "evidence_note": "Distractor: project_phoenix names both engineers but gives no office locations, so using it alone risks swapping their roles or floors. Correct evidence: project_phoenix assigns the roles; alice, carol, and building_a assign the floors."
     }
   ]
 }

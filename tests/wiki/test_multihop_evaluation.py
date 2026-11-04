@@ -6,6 +6,7 @@ NOT run a real LLM — the WikiAgent experiment path is validated via
 infrastructure checks only.
 """
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -19,6 +20,7 @@ sys.path.insert(0, str(_BENCHMARK_DIR))
 
 import run_multihop_evaluation as m4  # noqa: E402
 from zmwiki.wiki.wiki_index import WikiIndex  # noqa: E402
+from zmwiki.wiki.wiki_retriever import wiki_read  # noqa: E402
 from zmwiki.wiki.wiki_schema import WikiPage  # noqa: E402
 
 
@@ -28,9 +30,9 @@ from zmwiki.wiki.wiki_schema import WikiPage  # noqa: E402
 
 
 class TestDatasetLoading:
-    def test_loads_26_cases(self):
+    def test_loads_50_cases(self):
         dataset = m4.load_dataset()
-        assert len(dataset["cases"]) == 26
+        assert len(dataset["cases"]) == 50
 
     def test_all_cases_have_required_fields(self):
         dataset = m4.load_dataset()
@@ -55,13 +57,19 @@ class TestDatasetLoading:
         multi = [c for c in dataset["cases"] if c["hops"] >= 2]
         assert len(multi) >= 5
 
-    def test_answerable_cases_have_keyword_groups(self):
+    def test_answerable_cases_have_keyword_groups_or_structured_checks(self):
         dataset = m4.load_dataset()
+        structured = (
+            "answer_bindings",
+            "shared_entities",
+            "relation_chain",
+            "ratio_checks",
+        )
         for case in dataset["cases"]:
             if case["answerable"]:
-                assert case["answer_keyword_groups"], (
-                    f"answerable case {case['id']} has no keyword groups"
-                )
+                assert case["answer_keyword_groups"] or any(
+                    key in case for key in structured
+                ), f"answerable case {case['id']} has no scoring checks"
 
 
 # ---------------------------------------------------------------------------
@@ -112,6 +120,29 @@ class TestCorpusAndIndex:
                 assert page.id in pages[target_id].links_from, (
                     f"page {page.id} links_to {target_id} but {target_id} missing links_from {page.id}"
                 )
+
+
+class TestReadToolCompatibility:
+    def test_mh35_mh46_mh47_required_ids_readable_by_bare_id(self):
+        docs = m4.load_documents()
+        index = m4.build_wiki_index(m4.build_wiki_pages(docs))
+        cases = {c["id"]: c for c in m4.load_dataset()["cases"]}
+        for case_id in (
+            "mh35_phoenix_carol_bob_eve_groups",
+            "mh46_phoenix_reporting_chain",
+            "mh47_exec_level_to_phoenix_chain",
+        ):
+            required = cases[case_id]["required_page_ids"]
+            pages = wiki_read(index, required)
+            assert {p.id for p in pages} == set(required), case_id
+
+    def test_required_ids_still_readable_by_canonical_paths(self):
+        docs = m4.load_documents()
+        index = m4.build_wiki_index(m4.build_wiki_pages(docs))
+        cases = {c["id"]: c for c in m4.load_dataset()["cases"]}
+        required = cases["mh46_phoenix_reporting_chain"]["required_page_ids"]
+        pages = wiki_read(index, [f"wiki/{page_id}" for page_id in required])
+        assert {p.id for p in pages} == set(required)
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +218,35 @@ class TestM431ScoringFixes:
             "floor of Building A."
         )
         assert m4.score_answer(answer, case) is True
+
+    def test_mh20_whose_office_is_located_phrase(self):
+        case = self._case("mh20_phoenix_deadline_office")
+        positives = [
+            "Project Phoenix has a target completion date of December 31, 2026. "
+            "The project is led by Alice Smith, whose office is located on the "
+            "second floor of Building A.",
+            "Project Phoenix has a target completion date of December 31, 2026. "
+            "Project Phoenix is led by Alice Smith, whose office is located on "
+            "the 2nd floor of Building A.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "Project Phoenix has a target completion date of December 31, 2026. "
+            "Project Phoenix is led by Alice Smith, whose office is located on "
+            "the third floor of Building A.",
+            "Project Phoenix has a target completion date of December 31, 2026. "
+            "Project Phoenix is led by Alice Smith, whose office is located on "
+            "the second floor of Building B.",
+            "Project Phoenix has a target completion date of December 31, 2026. "
+            "Project Phoenix is led by Bob Jones, whose office is located on "
+            "the second floor of Building A.",
+            "Project Phoenix has a target completion date of December 30, 2026. "
+            "Project Phoenix is led by Alice Smith, whose office is located on "
+            "the second floor of Building A.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
 
     def test_clean_refusals_still_score(self):
         answers = {
@@ -268,7 +328,8 @@ class TestMetrics:
                       status="answered", steps=1, pages_read=1):
         return m4.CaseResult(
             id=case_id, question="q", answer="a" if correct else "",
-            answer_correct=correct, status=status, sources=sources,
+            answer_correct=correct, lexical_match=correct,
+            status=status, sources=sources,
             accessed_pages=accessed, required_pages=required,
             evidence_recall=(len(set(accessed) & set(required)) / len(required)
                               if required else None),
@@ -383,7 +444,7 @@ class TestBaselineIntegration:
         docs = m4.load_documents()
         pipeline = m4.build_baseline_pipeline(docs)
         results = m4.run_baseline(dataset["cases"], pipeline)
-        assert len(results) == 26
+        assert len(results) == 50
         for r in results:
             assert r.id
             assert r.status in ("answered", "no_answer", "error")
@@ -488,7 +549,7 @@ class TestSerialization:
         m4.serialize_results(dataset, results, None, live=False, model=None, output_path=output)
         payload = json.loads(output.read_text(encoding="utf-8"))
         per_case = payload["results"]["baseline"]["per_case"]
-        assert len(per_case) == 26
+        assert len(per_case) == 50
         for row in per_case:
             for key in ("id", "answer_correct", "status", "evidence_recall",
                         "source_precision", "steps", "pages_read"):
@@ -587,7 +648,7 @@ class TestEvidenceRecallSeparation:
         pipeline = m4.build_baseline_pipeline(docs)
         results = m4.run_baseline(dataset["cases"], pipeline)
         unanswerable = [r for r, c in zip(results, dataset["cases"]) if not c["answerable"]]
-        assert len(unanswerable) == 4
+        assert len(unanswerable) == 7
         for result in unanswerable:
             assert result.evidence_recall is None
             assert result.evidence_recall_denominator == 0
@@ -889,7 +950,7 @@ class TestOutputOverwriteProtection:
                              output_path=output)
         assert output.exists()
         payload = json.loads(output.read_text(encoding="utf-8"))
-        assert payload["results"]["baseline"]["aggregate"]["total_cases"] == 26
+        assert payload["results"]["baseline"]["aggregate"]["total_cases"] == 50
 
     def test_existing_file_raises_file_exists_error(self, tmp_path):
         dataset = m4.load_dataset()
@@ -913,7 +974,8 @@ class TestCheckpointPersistence:
     def _make_case_result(self, case_id: str) -> m4.CaseResult:
         return m4.CaseResult(
             id=case_id, question=f"q-{case_id}", answer="a",
-            answer_correct=True, status="answered", sources=[],
+            answer_correct=True, lexical_match=True,
+            status="answered", sources=[],
             accessed_pages=["p1"], required_pages=["p1"],
             evidence_recall=1.0, evidence_recall_numerator=1,
             evidence_recall_denominator=1, source_precision=0.0,
@@ -1156,7 +1218,7 @@ class TestLimitParameter:
     """M4.3 P3-Task2: --limit restricts evaluation to first N cases."""
 
     def test_limit_three_runs_only_three_cases(self, tmp_path, monkeypatch):
-        """--limit 3 must produce exactly 3 baseline results, not 26."""
+        """--limit 3 must produce exactly 3 baseline results, not 50."""
         output = tmp_path / "limit3.json"
         monkeypatch.setattr(sys, "argv", [
             "run_multihop_evaluation.py",
@@ -1185,7 +1247,7 @@ class TestLimitParameter:
         assert payload["config"]["limit"] == 2
 
     def test_no_limit_runs_all_cases(self, tmp_path, monkeypatch):
-        """Without --limit, all 26 cases are evaluated."""
+        """Without --limit, all 50 cases are evaluated."""
         output = tmp_path / "nolimit.json"
         monkeypatch.setattr(sys, "argv", [
             "run_multihop_evaluation.py",
@@ -1193,7 +1255,7 @@ class TestLimitParameter:
         ])
         m4.main()
         payload = json.loads(output.read_text(encoding="utf-8"))
-        assert len(payload["results"]["baseline"]["per_case"]) == 26
+        assert len(payload["results"]["baseline"]["per_case"]) == 50
         assert payload["config"]["limit"] is None
 
     def test_limit_zero_rejected(self, tmp_path, monkeypatch):
@@ -1300,6 +1362,7 @@ class TestStepDiagnostics:
     CASE = {
         "id": "mh_diag", "question": "q", "answerable": True,
         "required_page_ids": ["a"], "hops": 1,
+        "answer_keyword_groups": [["x"]],
     }
 
     @staticmethod
@@ -1359,6 +1422,23 @@ class TestStepDiagnostics:
         assert payload["step_details"][1]["error"] == "missing 'action' field"
         assert payload["step_details"][1]["raw_output"] == '{"action": "search"}{"action": "read"}'
         assert payload["step_details"][2]["action"] == "read"
+
+    def test_insufficient_evidence_matching_answer_is_not_formal(self, monkeypatch):
+        from zmwiki.wiki.wiki_agent import AgentResult
+
+        def fake_answer(question):
+            return AgentResult(
+                answer="x", sources=(), status="insufficient_evidence",
+                steps=(),
+            )
+
+        results = self._run_with_fake_agent(monkeypatch, fake_answer)
+        result = results[0]
+
+        assert result.lexical_match is True
+        assert result.answer_correct is False
+        assert result.grounded_correct is False
+        assert result.unsupported_correct is True
 
     def test_exception_yields_empty_step_details(self, monkeypatch):
         def boom(question):
@@ -1497,3 +1577,441 @@ class TestReadEvidenceAudit:
 
         raw = json.dumps(payload)
         assert "sk-secret-not-in-logs" not in raw
+
+
+# ---------------------------------------------------------------------------
+# P0/P1 structured scoring fixes
+# ---------------------------------------------------------------------------
+
+
+class TestStructuredScoringFixes:
+    @staticmethod
+    def _case(case_id: str) -> dict:
+        dataset = m4.load_dataset()
+        return next(c for c in dataset["cases"] if c["id"] == case_id)
+
+    def test_mh37_ratio_exact_and_wrong(self):
+        case = self._case("mh37_budget_ratio_synthesis")
+        positives = [
+            "5",
+            "five",
+            "5:1",
+            "5 to 1",
+            "five to one",
+            "5 / 1",
+            "4,000,000 : 800,000 = 5:1",
+            "The ratio is five to one.",
+            "The ratio is 5 to 1.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "4:1",
+            "6:1",
+            "5:2",
+            "1:5",
+            "The budgets are 5 million and 1 million, but the ratio is 4:1.",
+            "The number 5 appears in this answer, but no ratio is given.",
+            "not 5:1",
+            "5:10",
+            "15:1",
+            "5:1,000",
+            "5:1:0",
+            "5x",
+            "five times",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh37_stage8_long_answer_with_5_1(self):
+        case = self._case("mh37_budget_ratio_synthesis")
+        answer = (
+            "Acme's annual engineering budget is four million dollars ($4,000,000). "
+            "Project Phoenix has a budget of five hundred thousand dollars ($500,000) "
+            "and Project Orion has a budget of three hundred thousand dollars "
+            "($300,000), for a combined total of eight hundred thousand dollars "
+            "($800,000). The ratio of Acme's annual engineering budget to the "
+            "combined budgets of Project Phoenix and Project Orion is therefore "
+            "4,000,000 : 800,000 = 5:1."
+        )
+        assert m4.score_answer(answer, case) is True
+
+    def test_mh24_directed_budget_comparison(self):
+        case = self._case("mh24_engineering_budget_vs_projects")
+        positives = [
+            case["reference_answer"],
+            "Combined project budgets total $800,000, well below the $4,000,000 engineering budget.",
+            "The combined project budgets of $800,000 are less than the annual engineering budget of $4,000,000.",
+            "The combined project budgets of $800,000 are lower than the annual engineering budget of $4,000,000.",
+            "The annual engineering budget of $4,000,000 is larger than the combined project budgets of $800,000.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "The annual engineering budget of $4,000,000 is well below the combined project budgets of $800,000.",
+            "The annual engineering budget of $4,000,000 is lower than the combined project budgets of $800,000.",
+            "The combined project budgets of $800,000 are greater than the annual engineering budget of $4,000,000.",
+            "The annual engineering budget of $4,000,000 is not greater than the combined project budgets of $800,000.",
+            "The annual engineering budget is $4,000,000 and the combined project budgets are $800,000.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh28_true_context_allowed_fabricated_office_rejected(self):
+        case = self._case("mh28_first_floor_office_premise")
+        positives = [
+            case["reference_answer"],
+            "Building B's first floor is a gym with locker rooms and showers, not an office. "
+            "David Kim is the principal engineer and technical lead for Project Orion; "
+            "his office is on the fourth floor. No one uses a first-floor office.",
+            "The first-floor office is not used by anyone because the first floor is a gym. "
+            "There is no office on the first floor.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "The first-floor office is used by David Kim, who leads Project Orion.",
+            "The office on the first floor is Office 12-01, used by Eve Martinez.",
+            "The first-floor office belongs to Alice Smith.",
+            "Office 12-01 is on the first floor and is used by David Kim.",
+            "I cannot find the first-floor office; maybe it belongs to David Kim, who leads Project Orion.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh42_tenure_and_building_binding(self):
+        case = self._case("mh42_bob_eve_tenure_office")
+        positive = (
+            "Eve Martinez has held her role longer than Bob Jones. "
+            "Bob Jones is in Building A and Eve Martinez is in Building B."
+        )
+        assert m4.score_answer(positive, case) is True
+        negatives = [
+            "Bob Jones has held his role longer than Eve Martinez. Bob is in Building A and Eve is in Building B.",
+            "Eve has held her role longer. Bob is in Building B and Eve is in Building A.",
+            "Bob Jones has held his role since 2018, longer than Eve Martinez since 2019. Bob is in Building A and Eve is in Building B.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh43_join_degree_building_binding(self):
+        case = self._case("mh43_alice_david_join_degree_building")
+        positives = [
+            "David Kim joined first and has the higher degree. Alice Smith is in Building A and David Kim is in Building B.",
+            "David Kim joined in 2020. David has a PhD. Alice is in Building A and David is in Building B.",
+            "David Kim joined Acme first (2020, versus Alice Smith in 2021). "
+            "David holds a PhD and Alice holds a master's degree. "
+            "Alice is in Building A and David is in Building B.",
+            "David Kim joined the company before Alice Smith. David holds a PhD. "
+            "Alice is in Building A and David is in Building B.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "Alice Smith joined first and has the higher degree. Alice is in Building A and David is in Building B.",
+            "David joined first. Alice has the higher degree. Alice is in Building A and David is in Building B.",
+            "David Kim joined first and has the higher degree. Alice is in Building B and David is in Building A.",
+            "Alice Smith joined Acme first (2020, versus David Kim in 2021). "
+            "David holds a PhD and Alice holds a master's degree. "
+            "Alice is in Building A and David is in Building B.",
+            "David Kim joined Acme in 2021, before Alice Smith in 2020. "
+            "David holds a PhD and Alice holds a master's degree. "
+            "Alice is in Building A and David is in Building B.",
+            "David Kim joined Acme in 2020, after Alice Smith in 2021. "
+            "David holds a PhD and Alice holds a master's degree. "
+            "Alice is in Building A and David is in Building B.",
+            "David Kim joined first, but Alice Smith joined in 2020. "
+            "David holds a PhD and Alice holds a master's degree. "
+            "Alice is in Building A and David is in Building B.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh44_budget_timing_binding(self):
+        case = self._case("mh44_project_budget_timing_comparison")
+        positives = [
+            "Project Phoenix has the larger budget, and Project Orion is expected to launch later.",
+            "Project Phoenix has a larger budget of $500,000. Project Orion is later, in Q2 2027.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "Project Orion has the larger budget, and Project Phoenix is expected to launch later.",
+            "Project Phoenix has the larger budget, and Project Phoenix is expected to launch later.",
+            "Project Phoenix has the larger budget of $300,000, while Project Orion has $500,000. Project Orion is later.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh45_role_office_shared_project_binding(self):
+        case = self._case("mh45_carol_david_role_office_project")
+        positives = [
+            "Carol Chen is a staff engineer in Building A; David Kim is a principal engineer in Building B. They share Project Orion.",
+            "Carol Chen is a staff engineer in Building A and David Kim is a principal engineer in Building B. Both work on Project Orion.",
+            "Carol Chen is a staff engineer in Building A; David Kim is a principal engineer in Building B. Carol contributes to Orion; David leads Orion.",
+            "Carol Chen is a staff engineer in Building A; David Kim is a principal engineer in Building B. The shared project is Orion.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "Carol Chen is a principal engineer in Building A; David Kim is a staff engineer in Building B. They share Project Orion.",
+            "Carol Chen is a staff engineer in Building B; David Kim is a principal engineer in Building A. They share Project Orion.",
+            "Carol Chen is a staff engineer in Building A; David Kim is a principal engineer in Building B. They share Project Phoenix.",
+            "Carol Chen is a staff engineer in Building A; David Kim is a principal engineer in Building B. Carol works on Orion and David works on Phoenix.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh53_office_disambiguation(self):
+        case = self._case("mh53_bob_david_office_disambiguation")
+        positives = [
+            "Bob Jones is in Building A; David Kim is in Building B.",
+            "Bob Jones has an office on the third floor of Building A, while David Kim has an office on the fourth floor of Building B.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "Bob Jones is in Building B; David Kim is in Building A.",
+            "Bob Jones is on the fourth floor of Building B; David Kim is on the third floor of Building A.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh54_role_office_disambiguation(self):
+        case = self._case("mh54_alice_carol_role_office_disambiguation")
+        assert case.get("manual_review") is True
+        positives = [
+            "Alice Smith leads Project Phoenix on the second floor; Carol Chen is a core team member on the first floor.",
+            "Alice Smith leads Project Phoenix. Her office is on the second floor of Building A. "
+            "Carol Chen is a core team member of Project Phoenix. Her office is on the first floor of Building A.",
+            "Alice Smith, a senior engineer, leads Project Phoenix. Her office is on the second floor "
+            "of Building A (she reports to Bob Jones). Carol Chen, a staff engineer, is a core team "
+            "member of Project Phoenix. Her office is on the first floor of Building A.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "Carol Chen leads Project Phoenix on the second floor; Alice Smith is a core team member on the first floor.",
+            "Alice Smith leads Project Phoenix on the first floor; Carol Chen is a core team member on the second floor.",
+            "Alice Smith leads Project Phoenix and Carol Chen is a core team member. "
+            "Her office is on the second floor and her office is on the first floor.",
+            "Alice Smith leads Project Phoenix. Carol Chen is a core team member. "
+            "Her office is on the second floor. Her office is on the first floor.",
+            "Carol Chen leads Project Phoenix. Her office is on the second floor. "
+            "Alice Smith is a core team member. Her office is on the first floor.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh46_chain_order_direction_and_indirect(self):
+        case = self._case("mh46_phoenix_reporting_chain")
+        positive = (
+            "Alice Smith leads Project Phoenix and directly reports to Bob Jones; "
+            "Bob Jones directly reports to Eve Martinez. The chain is Alice, Bob, Eve. "
+            "Eve is two levels above Alice, so the relationship is indirect."
+        )
+        assert m4.score_answer(positive, case) is True
+        negatives = [
+            "The chain is Eve Martinez, then Bob Jones, then Alice Smith. Alice directly reports to Bob Jones, and Bob Jones directly reports to Eve Martinez. Eve is two levels above Alice, so their link is indirect.",
+            "Alice Smith leads Project Phoenix. Eve Martinez directly reports to Bob Jones, and Bob Jones directly reports to Alice Smith. The chain is Alice, Bob, Eve. Eve is two levels above Alice, so their link is indirect.",
+            "Alice Smith leads Project Phoenix. Alice Smith directly reports to Bob Jones, and Bob Jones directly reports to Eve Martinez. The chain is Alice, Bob, Eve. Alice directly reports to Eve Martinez; their link is also indirect.",
+            "The chain is Alice Smith, Bob Jones, Eve Martinez. Alice directly reports to Bob Jones, and Bob directly reports to Eve Martinez. Both relationships are direct reporting relationships.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh46_question_requires_indirect_distinction(self):
+        question = self._case("mh46_phoenix_reporting_chain")["question"].lower()
+        assert "adjacent links" in question
+        assert "direct" in question
+        assert "indirect" in question
+        assert "first and last person" in question
+
+    def test_mh46_reversed_relative_clause_and_negated_direct(self):
+        case = self._case("mh46_phoenix_reporting_chain")
+        positives = [
+            "Alice Smith leads Project Phoenix. The chain is Alice Smith, Bob Jones, "
+            "Eve Martinez. Bob Jones is the person to whom Alice Smith reports directly, "
+            "and Eve Martinez is the person to whom Bob Jones reports directly. "
+            "Alice and Eve are not a direct reporting line, and their relationship is indirect.",
+            "Alice Smith leads Project Phoenix. The chain is Alice Smith, Bob Jones, "
+            "Eve Martinez. Alice Smith reports directly to Bob Jones, and Bob Jones "
+            "reports directly to Eve Martinez. Eve directly manages Bob; Alice and Eve "
+            "are indirect through Bob.",
+            "The chain starting from Project Phoenix's lead: (1) Alice Smith, a senior "
+            "engineer who leads Project Phoenix; (2) Bob Jones, Director of Engineering, "
+            "to whom Alice reports directly; (3) Eve Martinez, VP of Engineering, to whom "
+            "Bob Jones reports directly. The Alice-Bob link is a direct reporting "
+            "relationship, and the Bob-Eve link is also direct. The relationship between "
+            "Alice (first) and Eve (last) is indirect: Eve is Alice's manager's manager "
+            "(second-level manager), not a direct reporting line.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "Alice Smith leads Project Phoenix. The chain is Alice, Bob, Eve. "
+            "Bob Jones reports directly to Alice Smith, and Eve Martinez reports "
+            "directly to Bob Jones. Alice and Eve are indirect through Bob.",
+            "Alice Smith leads Project Phoenix. The chain is Alice, Bob, Eve. "
+            "Alice Smith reports directly to Bob Jones, and Alice Smith reports "
+            "directly to Eve Martinez. Bob and Eve are indirect through Alice.",
+            "Alice Smith leads Project Phoenix. The chain is Alice, Bob, Eve. "
+            "Alice directly reports to Bob Jones, and Bob directly reports to "
+            "Eve Martinez. Alice directly reports to Eve Martinez; their link is indirect.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh47_chain_order_direction_and_indirect(self):
+        case = self._case("mh47_exec_level_to_phoenix_chain")
+        positive = (
+            "Building B's fifth floor is the executive level, where Eve Martinez has her office. "
+            "Eve directly manages Bob Jones, who leads the platform engineering group. "
+            "Bob directly manages Alice Smith, and Alice leads Project Phoenix. "
+            "Eve's relationship to Alice is indirect, because it passes through Bob Jones."
+        )
+        assert m4.score_answer(positive, case) is True
+        negatives = [
+            "The chain is Alice Smith, then Bob Jones, then Eve Martinez. Eve Martinez has her office on the fifth floor of Building B. Eve directly manages Bob, Bob directly manages Alice, and Alice leads Project Phoenix. Eve is indirectly connected to Alice.",
+            "Eve Martinez has her office on the fifth floor of Building B. Alice Smith directly manages Bob Jones, and Bob Jones directly manages Eve Martinez. Alice leads Project Phoenix. Eve is indirectly connected to Alice.",
+            "Eve Martinez has her office on the fifth floor of Building B. Eve directly manages Bob Jones, who leads the platform engineering group. Bob directly manages Alice Smith, who leads Project Phoenix. Eve directly manages Alice Smith, so the relationship is indirect.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh47_unrelated_direct_clause_does_not_taint_pair(self):
+        case = self._case("mh47_exec_level_to_phoenix_chain")
+        positives = [
+            "Chain: Building B's executive level (fifth floor) -> Eve Martinez, "
+            "VP of Engineering -> Bob Jones, Director of Engineering who leads "
+            "the platform engineering group -> Alice Smith, the engineer who leads "
+            "Project Phoenix and is managed by Bob. The indirect relationship is "
+            "Eve Martinez -> Alice Smith: Eve directly manages Bob, and Bob directly "
+            "manages Alice, so Eve's relationship to Alice is indirect through Bob.",
+            "Building B's fifth floor is the executive level, where Eve Martinez has "
+            "her office. Eve directly manages Bob Jones, who leads the platform "
+            "engineering group. Bob directly manages Alice Smith, and Alice leads "
+            "Project Phoenix. Eve's relationship with Alice is indirect through Bob.",
+        ]
+        for answer in positives:
+            assert m4.score_answer(answer, case) is True, answer
+        negatives = [
+            "The chain is Eve, Bob, Alice. Bob directly manages Eve, and Alice "
+            "directly manages Bob. Alice leads Project Phoenix. Eve's relationship "
+            "to Alice is indirect through Bob.",
+            "The chain is Eve, Bob, Alice. Eve directly manages Alice, and Alice "
+            "directly manages Bob. Alice leads Project Phoenix. Eve's relationship "
+            "to Bob is indirect through Alice.",
+            "The chain is Eve, Bob, Alice. Eve directly manages Bob, and Bob directly "
+            "manages Alice. Alice leads Project Phoenix. Eve directly manages Alice; "
+            "her relationship to Alice is also indirect.",
+            "The chain is Eve, Bob, Alice. Eve directly manages Bob, and Bob directly "
+            "manages Alice. Alice leads Project Phoenix. Eve's relationship to Alice "
+            "is direct because Eve directly manages Bob.",
+        ]
+        for answer in negatives:
+            assert m4.score_answer(answer, case) is False, answer
+
+    def test_mh50_mh52_refusal_and_fabrication(self):
+        clean = {
+            "mh50_orion_exact_completion_date":
+                "The exact completion date is not stated; only Q2 2027 is given.",
+            "mh51_total_employee_count":
+                "The total employee count is not provided.",
+            "mh52_alice_previous_startup_name":
+                "The startup is not named.",
+        }
+        fabricated = {
+            "mh50_orion_exact_completion_date":
+                "The exact completion date is not stated, but it will likely be March 15, 2028.",
+            "mh51_total_employee_count":
+                "The total employee count is not provided, but the company probably has about 200 employees.",
+            "mh52_alice_previous_startup_name":
+                "The startup is not named in the corpus, but I believe it was Stripe.",
+        }
+        for case_id, answer in clean.items():
+            assert m4.score_answer(answer, self._case(case_id)) is True, case_id
+        for case_id, answer in fabricated.items():
+            assert m4.score_answer(answer, self._case(case_id)) is False, case_id
+
+    def test_reasoning_hop_fields_are_consistent(self):
+        dataset = m4.load_dataset()
+        for case in dataset["cases"]:
+            if "reasoning_hops" not in case:
+                continue
+            assert case["reasoning_hops"] == (
+                case["relation_edges"] + case["attribute_lookups"]
+            ), case["id"]
+            assert case["hops"] == len(case["required_page_ids"]), case["id"]
+
+    def test_reasoning_hop_counts_match_expected(self):
+        expected = {
+            "mh31_carol_manager_chain_tenure": (2, 2),
+            "mh32_director_report_kubernetes": (2, 1),
+            "mh33_gym_data_team_lead": (3, 0),
+            "mh34_vp_office_bob_team_size": (2, 1),
+            "mh35_phoenix_carol_bob_eve_groups": (4, 0),
+            "mh36_phoenix_carol_bob_responsibilities": (2, 1),
+            "mh37_budget_ratio_synthesis": (0, 3),
+            "mh38_responsibility_synthesis": (0, 2),
+            "mh39_project_purpose_synthesis": (0, 2),
+            "mh40_walkway_data_team_synthesis": (2, 1),
+            "mh41_orion_tech_match": (2, 1),
+            "mh42_bob_eve_tenure_office": (2, 2),
+            "mh43_alice_david_join_degree_building": (2, 4),
+            "mh44_project_budget_timing_comparison": (0, 4),
+            "mh45_carol_david_role_office_project": (4, 2),
+            "mh46_phoenix_reporting_chain": (3, 0),
+            "mh47_exec_level_to_phoenix_chain": (4, 0),
+            "mh48_building_a_carol_manager_chain": (4, 0),
+            "mh49_orion_upward_chain_ceo": (3, 0),
+            "mh50_orion_exact_completion_date": (0, 1),
+            "mh51_total_employee_count": (0, 1),
+            "mh52_alice_previous_startup_name": (0, 1),
+            "mh53_bob_david_office_disambiguation": (3, 0),
+            "mh54_alice_carol_role_office_disambiguation": (4, 0),
+        }
+        by_id = {c["id"]: c for c in m4.load_dataset()["cases"]}
+        for case_id, (relation_edges, attribute_lookups) in expected.items():
+            case = by_id[case_id]
+            assert case["relation_edges"] == relation_edges, case_id
+            assert case["attribute_lookups"] == attribute_lookups, case_id
+            assert case["reasoning_hops"] == (
+                relation_edges + attribute_lookups
+            ), case_id
+
+    def test_manual_review_flags(self):
+        for case_id in (
+            "mh46_phoenix_reporting_chain",
+            "mh47_exec_level_to_phoenix_chain",
+            "mh50_orion_exact_completion_date",
+            "mh51_total_employee_count",
+            "mh52_alice_previous_startup_name",
+        ):
+            assert self._case(case_id).get("manual_review") is True, case_id
+
+    def test_original_26_factual_content_unchanged(self):
+        # Scoring metadata may change with scoring fixes; the case facts must not.
+        fact_fields = (
+            "id",
+            "question",
+            "reference_answer",
+            "answerable",
+            "required_page_ids",
+            "alternative_evidence_sets",
+            "hops",
+            "question_type",
+        )
+        dataset = m4.load_dataset()
+        original = sorted(
+            (c for c in dataset["cases"] if int(c["id"][2:4]) <= 30),
+            key=lambda c: c["id"],
+        )
+        assert len(original) == 26
+        facts = [{key: case.get(key) for key in fact_fields} for case in original]
+        canonical = json.dumps(
+            facts, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+        )
+        assert hashlib.sha256(canonical.encode("utf-8")).hexdigest() == (
+            "252d54441572de97c102f3268111be8a9b4bef8862415e626b3c66e9fd067073"
+        )

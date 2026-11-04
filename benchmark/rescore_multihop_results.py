@@ -1,9 +1,10 @@
 """Re-score an existing multi-hop benchmark result file without rerunning models.
 
-Only answer correctness (keyword/refusal matching) and the aggregates derived
-from it are recomputed, using the current dataset annotations. Retrieved-page
-and evidence metrics stored in the input file are preserved verbatim. Metric
-definitions are unchanged; see the ``rescoring`` block written to the output.
+Only answer correctness (lexical match, status-aware formal correctness) and
+the aggregates derived from it are recomputed, using the current dataset
+annotations. Retrieved-page and evidence metrics stored in the input file are
+preserved verbatim. Metric definitions are recorded in the ``rescoring`` block
+written to the output.
 
 Usage:
     python benchmark/rescore_multihop_results.py \
@@ -44,14 +45,16 @@ def _rescore_system(
         result = m4.CaseResult(**raw)
         before = (result.answer_correct, result.grounded_correct,
                   result.unsupported_correct)
-        result.answer_correct = m4.score_answer(result.answer, case)
+        lexical_match = m4.score_answer(result.answer, case)
+        result.lexical_match = lexical_match
+        result.answer_correct = bool(
+            lexical_match and result.status == m4.AgentStatus.ANSWERED
+        )
         result.grounded_correct = bool(
-            result.answer_correct
-            and result.status == m4.AgentStatus.ANSWERED
-            and result.sources
+            result.answer_correct and result.sources
         )
         result.unsupported_correct = (
-            result.answer_correct and not result.grounded_correct
+            lexical_match and not result.grounded_correct
         )
         after = (result.answer_correct, result.grounded_correct,
                  result.unsupported_correct)
@@ -89,18 +92,20 @@ def rescore_payload(payload: dict, dataset: dict) -> dict:
         "tool": "benchmark/rescore_multihop_results.py",
         "rescored_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "model_rerun": False,
-        "note": "Only answer_correct / grounded_correct / unsupported_correct and "
-                "aggregates derived from them were recomputed. Retrieval and "
-                "evidence metrics are preserved from the source file.",
+        "note": "Only lexical_match / answer_correct / grounded_correct / "
+                "unsupported_correct and aggregates derived from them were "
+                "recomputed. Retrieval and evidence metrics are preserved from "
+                "the source file.",
         "source_dataset_sha256_16": payload.get("dataset_sha256_16"),
         "dataset_sha256_16": current_hash,
         "scoring_rule": dataset.get("scoring_rule", "unknown"),
         "metric_definitions": {
-            "answer_correct": "answerable: every answer_keyword_group matched; "
-                              "unanswerable: at least one refusal_keyword matched",
-            "grounded_correct": "answer_correct AND status=='answered' AND at "
-                                "least one cited source",
-            "unsupported_correct": "answer_correct AND NOT grounded_correct",
+            "lexical_match": "answerable: every answer_keyword_group matched; "
+                             "unanswerable: at least one refusal_keyword matched; "
+                             "ignores status and sources (diagnostic only)",
+            "answer_correct": "lexical_match AND status=='answered' (formal)",
+            "grounded_correct": "answer_correct AND at least one cited source",
+            "unsupported_correct": "lexical_match AND NOT grounded_correct",
         },
         "changes": changes,
     }

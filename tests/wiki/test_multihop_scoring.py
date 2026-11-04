@@ -37,11 +37,14 @@ def _case(case_id, *, answerable=True, hops=2, required=("a",)):
 def _result(
     case_id, *, correct, grounded, status, recall=1.0, sources=("a",),
 ):
+    formal = correct and status == "answered"
+    grounded_flag = grounded and formal
     return m4.CaseResult(
         id=case_id,
         question="q",
         answer="x" if correct else "wrong",
-        answer_correct=correct,
+        answer_correct=formal,
+        lexical_match=correct,
         status=status,
         sources=list(sources),
         accessed_pages=["a"],
@@ -50,8 +53,8 @@ def _result(
         source_precision=1.0 if sources else 0.0,
         steps=1,
         pages_read=1 if recall else 0,
-        grounded_correct=grounded,
-        unsupported_correct=correct and not grounded,
+        grounded_correct=grounded_flag,
+        unsupported_correct=correct and not grounded_flag,
     )
 
 
@@ -72,7 +75,9 @@ def test_aggregate_separates_grounded_keyword_and_terminal_failures():
 
     agg = m4.aggregate_results(cases, results)
 
-    assert agg["answer_accuracy"] == pytest.approx(2 / 6)  # legacy keyword score
+    assert agg["answer_accuracy"] == pytest.approx(1 / 6)  # formal, status-aware
+    assert agg["lexical_match_rate"] == pytest.approx(2 / 6)
+    assert agg["lexical_match_count"] == 2
     assert agg["verified_answer_accuracy"] == pytest.approx(1 / 6)
     assert agg["unsupported_correct_count"] == 1
     assert agg["status_counts"] == {
@@ -92,8 +97,29 @@ def test_aggregate_separates_grounded_keyword_and_terminal_failures():
     legacy_support = agg["retrieval_evidence_metrics"][
         "evidence_support_rate_answerable"
     ]
-    assert legacy_support["value"] == pytest.approx(2 / 6)
+    assert legacy_support["value"] == pytest.approx(1 / 6)
+    assert agg["multi_hop_success_rate"] == pytest.approx(1 / 6)
     assert agg["verified_multi_hop_success_rate"] == pytest.approx(1 / 6)
+
+
+def test_insufficient_evidence_lexical_match_is_not_formal_correct():
+    case = _case("c0")
+    result = _result(
+        "c0", correct=True, grounded=False,
+        status="insufficient_evidence", sources=(),
+    )
+
+    agg = m4.aggregate_results([case], [result])
+
+    assert result.lexical_match is True
+    assert result.answer_correct is False
+    assert agg["lexical_match_count"] == 1
+    assert agg["lexical_match_rate"] == 1.0
+    assert agg["answer_accuracy"] == 0.0
+    assert agg["correct_count"] == 0
+    assert agg["answerable_accuracy"] == 0.0
+    assert agg["verified_answer_accuracy"] == 0.0
+    assert agg["unsupported_correct_count"] == 1
 
 
 def test_grounding_flags_are_serialized():
@@ -101,6 +127,8 @@ def test_grounding_flags_are_serialized():
                      status="insufficient_evidence", sources=())
     payload = result.to_dict()
 
+    assert payload["lexical_match"] is True
+    assert payload["answer_correct"] is False
     assert payload["grounded_correct"] is False
     assert payload["unsupported_correct"] is True
 

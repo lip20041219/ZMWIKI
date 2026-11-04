@@ -1,0 +1,117 @@
+{
+  "dataset": "evidence_audit_v0",
+  "version": "0.1",
+  "description": "Offline cited-but-unsupported audit cases. This is a separate fixture, not part of multihop_wiki.json and not used by the main benchmark scorer.",
+  "cases": [
+    {
+      "id": "ea01_cited_responsibility_swap",
+      "category": "wrong_person_attribution",
+      "question": "Which manager is responsible for technical roadmap planning and quarterly performance reviews, and which manager owns the annual engineering budget?",
+      "reference_answer": "Bob Jones is responsible for technical roadmap planning and quarterly performance reviews. Eve Martinez is responsible for the annual engineering budget.",
+      "answer": "Technical roadmap planning is owned by Eve Martinez. Quarterly performance reviews are run by Bob Jones. The annual engineering budget is also owned by Bob Jones.",
+      "sources": ["bob", "eve"],
+      "read_page_ids": ["bob", "eve"],
+      "expected_verdict": "contradicted",
+      "expected_claim_verdicts": ["contradicted", "supported", "contradicted"]
+    },
+    {
+      "id": "ea02_cited_fabricated_direct_reports",
+      "category": "fabricated_relation",
+      "question": "List all people who report to Bob Jones.",
+      "reference_answer": "Alice Smith and Carol Chen report to Bob Jones.",
+      "answer": "Bob Jones has five direct reports: Alice Smith, Carol Chen, David Kim, Frank Osei, and Grace Liu.",
+      "sources": ["bob", "alice", "carol", "david"],
+      "read_page_ids": ["bob", "alice", "carol", "david"],
+      "expected_verdict": "contradicted",
+      "expected_claim_verdicts": ["unverifiable", "supported", "supported", "contradicted"]
+    },
+    {
+      "id": "ea03_cited_inserted_cto",
+      "category": "multi_hop_wrong_connection",
+      "question": "Starting from Project Orion, trace upward through its technical lead and that lead's manager. Who is the highest person in this chain that the corpus names, and to whom does that person report?",
+      "reference_answer": "Project Orion's technical lead is David Kim, who reports to Eve Martinez. Eve Martinez is the highest named person; she reports directly to the CEO, whose name is not provided.",
+      "answer": "Project Orion's technical lead is David Kim, who reports to Eve Martinez. Eve Martinez reports to the Chief Technology Officer (CTO), who reports to the CEO.",
+      "sources": ["project_orion", "david", "eve"],
+      "read_page_ids": ["project_orion", "david", "eve"],
+      "expected_verdict": "contradicted",
+      "expected_claim_verdicts": ["supported", "supported", "contradicted"]
+    },
+    {
+      "id": "ea04_cited_relation_reversal",
+      "category": "relation_reversal",
+      "question": "Who does Bob Jones report to?",
+      "reference_answer": "Bob Jones reports to Eve Martinez.",
+      "answer": "Bob Jones reports directly to Alice Smith.",
+      "sources": ["bob", "alice", "eve"],
+      "read_page_ids": ["bob", "alice", "eve"],
+      "expected_verdict": "contradicted",
+      "expected_claim_verdicts": ["contradicted"]
+    },
+    {
+      "id": "ea05_cited_wrong_budget",
+      "category": "wrong_number",
+      "question": "What is the budget of Project Phoenix?",
+      "reference_answer": "Project Phoenix has an allocated budget of five hundred thousand dollars ($500,000).",
+      "answer": "Project Phoenix has a budget of $900,000.",
+      "sources": ["project_phoenix"],
+      "read_page_ids": ["project_phoenix"],
+      "expected_verdict": "contradicted",
+      "expected_claim_verdicts": ["contradicted"]
+    },
+    {
+      "id": "ea06_cited_negation_flip",
+      "category": "negation_conflict",
+      "question": "Who owns the annual engineering budget?",
+      "reference_answer": "Eve Martinez is responsible for the annual engineering budget.",
+      "answer": "Eve Martinez does not own the annual engineering budget.",
+      "sources": ["eve"],
+      "read_page_ids": ["eve"],
+      "expected_verdict": "contradicted",
+      "expected_claim_verdicts": ["contradicted"]
+    },
+    {
+      "id": "ea07_cited_irrelevant_page",
+      "category": "irrelevant_citation",
+      "question": "Who does Alice Smith report to?",
+      "reference_answer": "Alice Smith reports directly to Bob Jones.",
+      "answer": "Alice Smith reports directly to Bob Jones.",
+      "sources": ["david"],
+      "read_page_ids": ["david"],
+      "expected_verdict": "unverifiable",
+      "expected_claim_verdicts": ["unverifiable"]
+    },
+    {
+      "id": "ea08_multi_page_support",
+      "category": "multi_page_support",
+      "question": "Who leads Project Phoenix and who does that person report to?",
+      "reference_answer": "Alice Smith leads Project Phoenix and directly reports to Bob Jones.",
+      "answer": "Alice Smith leads Project Phoenix. Alice Smith reports directly to Bob Jones.",
+      "sources": ["project_phoenix", "alice", "bob"],
+      "read_page_ids": ["project_phoenix", "alice", "bob"],
+      "expected_verdict": "supported",
+      "expected_claim_verdicts": ["supported", "supported"]
+    },
+    {
+      "id": "ea09_complex_unverifiable",
+      "category": "unverifiable_claim",
+      "question": "Who is the CEO of Acme Corp?",
+      "reference_answer": "The CEO is not named in any page.",
+      "answer": "The CEO's name is John Smith.",
+      "sources": ["building_b", "eve"],
+      "read_page_ids": ["building_b", "eve"],
+      "expected_verdict": "unverifiable",
+      "expected_claim_verdicts": ["unverifiable"]
+    },
+    {
+      "id": "ea10_duplicate_claim_and_source",
+      "category": "duplicate",
+      "question": "Who does Alice Smith report to?",
+      "reference_answer": "Alice Smith reports directly to Bob Jones.",
+      "answer": "Alice Smith reports directly to Bob Jones. Alice Smith reports directly to Bob Jones.",
+      "sources": ["alice", "bob", "alice"],
+      "read_page_ids": ["alice", "bob"],
+      "expected_verdict": "supported",
+      "expected_claim_verdicts": ["supported"]
+    }
+  ]
+}
