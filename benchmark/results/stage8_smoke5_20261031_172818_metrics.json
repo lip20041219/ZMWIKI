@@ -1,0 +1,1291 @@
+{
+  "smoke_test": "stage8",
+  "model": "deepseek-flash",
+  "base_url": "https://api.deepseek.com",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "temperature": 0.0,
+  "max_steps": 8,
+  "search_top_k": 5,
+  "link_source": "manual",
+  "dataset_version": "1.4",
+  "selected_case_ids": [
+    "mh37_budget_ratio_synthesis",
+    "mh46_phoenix_reporting_chain",
+    "mh47_exec_level_to_phoenix_chain",
+    "mh50_orion_exact_completion_date",
+    "mh52_alice_previous_startup_name"
+  ],
+  "total_requests": 30,
+  "total_elapsed_seconds": 37.89,
+  "total_usage": {
+    "completion_tokens": 2841,
+    "prompt_cache_hit_tokens": 17408,
+    "prompt_cache_miss_tokens": 8161,
+    "prompt_tokens": 25569,
+    "total_tokens": 28410
+  },
+  "per_case": [
+    {
+      "id": "mh37_budget_ratio_synthesis",
+      "question": "What is the ratio of Acme's annual engineering budget to the combined budgets of Project Phoenix and Project Orion?",
+      "final_answer": "Acme's annual engineering budget is four million dollars ($4,000,000). Project Phoenix has a budget of five hundred thousand dollars ($500,000) and Project Orion has a budget of three hundred thousand dollars ($300,000), for a combined total of eight hundred thousand dollars ($800,000).\n\nThe ratio of Acme's annual engineering budget to the combined budgets of Project Phoenix and Project Orion is therefore 4,000,000 : 800,000 = 5:1.",
+      "raw_model_output": "{\"action\": \"answer\", \"text\": \"Acme's annual engineering budget is four million dollars ($4,000,000). Project Phoenix has a budget of five hundred thousand dollars ($500,000) and Project Orion has a budget of three hundred thousand dollars ($300,000), for a combined total of eight hundred thousand dollars ($800,000).\\n\\nThe ratio of Acme's annual engineering budget to the combined budgets of Project Phoenix and Project Orion is therefore 4,000,000 : 800,000 = 5:1.\", \"sources\": [\"eve\", \"project_phoenix\", \"project_orion\"]}",
+      "raw_model_outputs": [
+        "{\"action\": \"search\", \"query\": \"Acme annual engineering budget Project Phoenix Project Orion budgets\"}",
+        "{\"action\": \"read\", \"paths\": [\"project_orion\", \"project_phoenix\", \"eve\"]}",
+        "{\"action\": \"read\", \"paths\": [\"wiki/project_orion\", \"wiki/project_phoenix\", \"wiki/eve\"]}",
+        "{\"action\": \"answer\", \"text\": \"Acme's annual engineering budget is four million dollars ($4,000,000). Project Phoenix has a budget of five hundred thousand dollars ($500,000) and Project Orion has a budget of three hundred thousand dollars ($300,000), for a combined total of eight hundred thousand dollars ($800,000).\\n\\nThe ratio of Acme's annual engineering budget to the combined budgets of Project Phoenix and Project Orion is therefore 4,000,000 : 800,000 = 5:1.\", \"sources\": [\"eve\", \"project_phoenix\", \"project_orion\"]}"
+      ],
+      "score_answer": false,
+      "grounded_correct": false,
+      "status": "answered",
+      "steps": 4,
+      "requests": 4,
+      "elapsed_seconds": 4.562,
+      "usage": [
+        {
+          "prompt_tokens": 368,
+          "completion_tokens": 43,
+          "total_tokens": 411,
+          "prompt_tokens_details": {
+            "cached_tokens": 128
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 21
+          },
+          "prompt_cache_hit_tokens": 128,
+          "prompt_cache_miss_tokens": 240
+        },
+        {
+          "prompt_tokens": 595,
+          "completion_tokens": 34,
+          "total_tokens": 629,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 7
+          },
+          "prompt_cache_hit_tokens": 256,
+          "prompt_cache_miss_tokens": 339
+        },
+        {
+          "prompt_tokens": 653,
+          "completion_tokens": 49,
+          "total_tokens": 702,
+          "prompt_tokens_details": {
+            "cached_tokens": 512
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 17
+          },
+          "prompt_cache_hit_tokens": 512,
+          "prompt_cache_miss_tokens": 141
+        },
+        {
+          "prompt_tokens": 1136,
+          "completion_tokens": 192,
+          "total_tokens": 1328,
+          "prompt_tokens_details": {
+            "cached_tokens": 640
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 58
+          },
+          "prompt_cache_hit_tokens": 640,
+          "prompt_cache_miss_tokens": 496
+        }
+      ],
+      "usage_totals": {
+        "prompt_tokens": 2752,
+        "completion_tokens": 318,
+        "total_tokens": 3070,
+        "prompt_cache_hit_tokens": 1536,
+        "prompt_cache_miss_tokens": 1216
+      },
+      "sources": [
+        "eve",
+        "project_phoenix",
+        "project_orion"
+      ],
+      "read_page_ids": [
+        "eve",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "required_pages": [
+        "eve",
+        "project_phoenix",
+        "project_orion"
+      ],
+      "accessed_pages": [
+        "alice",
+        "bob",
+        "building_a",
+        "building_b",
+        "carol",
+        "david",
+        "eve",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "search_hit_page_ids": [
+        "bob",
+        "carol",
+        "eve",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "actions": [
+        "search",
+        "read",
+        "read",
+        "answer"
+      ],
+      "step_details": [
+        {
+          "step": 0,
+          "action": "search",
+          "params": {
+            "query": "Acme annual engineering budget Project Phoenix Project Orion budgets",
+            "top_k": 5
+          },
+          "error": null,
+          "result_summary": "search returned 5 candidates (5 new)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": [
+            "project_orion",
+            "project_phoenix",
+            "eve",
+            "carol",
+            "bob"
+          ]
+        },
+        {
+          "step": 1,
+          "action": "read",
+          "params": {
+            "paths": [
+              "project_orion",
+              "project_phoenix",
+              "eve"
+            ]
+          },
+          "error": "\"paths not found in wiki index: ['project_orion', 'project_phoenix', 'eve']\"",
+          "result_summary": "read failed: paths not found",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 2,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/project_orion",
+              "wiki/project_phoenix",
+              "wiki/eve"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 3 pages (3 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "project_orion",
+            "project_phoenix",
+            "eve"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 3,
+          "action": "answer",
+          "params": {
+            "text": "Acme's annual engineering budget is four million dollars ($4,000,000). Project Phoenix has a budget of five hundred thousand dollars ($500,000) and Project Orion has a budget of three hundred thousand",
+            "sources": [
+              "eve",
+              "project_phoenix",
+              "project_orion"
+            ]
+          },
+          "error": null,
+          "result_summary": "answer produced (3 sources)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": []
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "mh46_phoenix_reporting_chain",
+      "question": "Starting from Project Phoenix, trace the chain from the project lead to that person's direct manager, and then to that manager's direct manager. List the three people in order and state which relationships are direct reporting relationships.",
+      "final_answer": "The chain is: Alice Smith → Bob Jones → Eve Martinez.\n\n1. Alice Smith is a senior engineer at Acme Corp and leads Project Phoenix (the internal platform migration initiative). She reports directly to Bob Jones, Director of Engineering — this is a direct reporting relationship (the page states she \"reports directly to Bob Jones\").\n\n2. Bob Jones is the Director of Engineering who manages a team of twelve engineers, including Alice Smith and Carol Chen. He reports to Eve Martinez, the VP of Engineering — this is also a direct reporting relationship (Eve \"manages two directors: Bob Jones... and David Kim,\" and Bob \"reports to Eve Martinez\").\n\n3. Eve Martinez is the VP of Engineering, overseeing all technical teams, and she reports directly to the CEO (the CEO relationship is stated but the CEO is not named).\n\nSo both relationships in the traced chain — Alice→Bob and Bob→Eve — are direct reporting relationships.",
+      "raw_model_output": "{\"action\": \"answer\", \"text\": \"The chain is: Alice Smith → Bob Jones → Eve Martinez.\\n\\n1. Alice Smith is a senior engineer at Acme Corp and leads Project Phoenix (the internal platform migration initiative). She reports directly to Bob Jones, Director of Engineering — this is a direct reporting relationship (the page states she \\\"reports directly to Bob Jones\\\").\\n\\n2. Bob Jones is the Director of Engineering who manages a team of twelve engineers, including Alice Smith and Carol Chen. He reports to Eve Martinez, the VP of Engineering — this is also a direct reporting relationship (Eve \\\"manages two directors: Bob Jones... and David Kim,\\\" and Bob \\\"reports to Eve Martinez\\\").\\n\\n3. Eve Martinez is the VP of Engineering, overseeing all technical teams, and she reports directly to the CEO (the CEO relationship is stated but the CEO is not named).\\n\\nSo both relationships in the traced chain — Alice→Bob and Bob→Eve — are direct reporting relationships.\", \"sources\": [\"project_phoenix\", \"alice\", \"bob\", \"eve\"]}",
+      "raw_model_outputs": [
+        "{\"action\": \"search\", \"query\": \"Project Phoenix\"}\n\n",
+        "{\"action\": \"read\", \"paths\": [\"project_phoenix\"]}",
+        "{\"action\": \"read\", \"paths\": [\"wiki/project_phoenix\"]}",
+        "{\"action\": \"read\", \"paths\": [\"alice\"]}",
+        "{\"action\": \"read\", \"paths\": [\"wiki/alice\"]}",
+        "{\"action\": \"read\", \"paths\": [\"wiki/bob\"]}",
+        "{\"action\": \"read\", \"paths\": [\"wiki/eve\"]}",
+        "{\"action\": \"answer\", \"text\": \"The chain is: Alice Smith → Bob Jones → Eve Martinez.\\n\\n1. Alice Smith is a senior engineer at Acme Corp and leads Project Phoenix (the internal platform migration initiative). She reports directly to Bob Jones, Director of Engineering — this is a direct reporting relationship (the page states she \\\"reports directly to Bob Jones\\\").\\n\\n2. Bob Jones is the Director of Engineering who manages a team of twelve engineers, including Alice Smith and Carol Chen. He reports to Eve Martinez, the VP of Engineering — this is also a direct reporting relationship (Eve \\\"manages two directors: Bob Jones... and David Kim,\\\" and Bob \\\"reports to Eve Martinez\\\").\\n\\n3. Eve Martinez is the VP of Engineering, overseeing all technical teams, and she reports directly to the CEO (the CEO relationship is stated but the CEO is not named).\\n\\nSo both relationships in the traced chain — Alice→Bob and Bob→Eve — are direct reporting relationships.\", \"sources\": [\"project_phoenix\", \"alice\", \"bob\", \"eve\"]}"
+      ],
+      "score_answer": false,
+      "grounded_correct": false,
+      "status": "answered",
+      "steps": 8,
+      "requests": 8,
+      "elapsed_seconds": 9.38,
+      "usage": [
+        {
+          "prompt_tokens": 389,
+          "completion_tokens": 57,
+          "total_tokens": 446,
+          "prompt_tokens_details": {
+            "cached_tokens": 128
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 42
+          },
+          "prompt_cache_hit_tokens": 128,
+          "prompt_cache_miss_tokens": 261
+        },
+        {
+          "prompt_tokens": 602,
+          "completion_tokens": 18,
+          "total_tokens": 620,
+          "prompt_tokens_details": {
+            "cached_tokens": 384
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "prompt_cache_hit_tokens": 384,
+          "prompt_cache_miss_tokens": 218
+        },
+        {
+          "prompt_tokens": 642,
+          "completion_tokens": 40,
+          "total_tokens": 682,
+          "prompt_tokens_details": {
+            "cached_tokens": 384
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 20
+          },
+          "prompt_cache_hit_tokens": 384,
+          "prompt_cache_miss_tokens": 258
+        },
+        {
+          "prompt_tokens": 809,
+          "completion_tokens": 33,
+          "total_tokens": 842,
+          "prompt_tokens_details": {
+            "cached_tokens": 640
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 18
+          },
+          "prompt_cache_hit_tokens": 640,
+          "prompt_cache_miss_tokens": 169
+        },
+        {
+          "prompt_tokens": 843,
+          "completion_tokens": 31,
+          "total_tokens": 874,
+          "prompt_tokens_details": {
+            "cached_tokens": 640
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 15
+          },
+          "prompt_cache_hit_tokens": 640,
+          "prompt_cache_miss_tokens": 203
+        },
+        {
+          "prompt_tokens": 991,
+          "completion_tokens": 35,
+          "total_tokens": 1026,
+          "prompt_tokens_details": {
+            "cached_tokens": 768
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 19
+          },
+          "prompt_cache_hit_tokens": 768,
+          "prompt_cache_miss_tokens": 223
+        },
+        {
+          "prompt_tokens": 1153,
+          "completion_tokens": 51,
+          "total_tokens": 1204,
+          "prompt_tokens_details": {
+            "cached_tokens": 896
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 35
+          },
+          "prompt_cache_hit_tokens": 896,
+          "prompt_cache_miss_tokens": 257
+        },
+        {
+          "prompt_tokens": 1414,
+          "completion_tokens": 388,
+          "total_tokens": 1802,
+          "prompt_tokens_details": {
+            "cached_tokens": 1152
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 149
+          },
+          "prompt_cache_hit_tokens": 1152,
+          "prompt_cache_miss_tokens": 262
+        }
+      ],
+      "usage_totals": {
+        "prompt_tokens": 6843,
+        "completion_tokens": 653,
+        "total_tokens": 7496,
+        "prompt_cache_hit_tokens": 4992,
+        "prompt_cache_miss_tokens": 1851
+      },
+      "sources": [
+        "project_phoenix",
+        "alice",
+        "bob",
+        "eve"
+      ],
+      "read_page_ids": [
+        "alice",
+        "bob",
+        "eve",
+        "project_phoenix"
+      ],
+      "required_pages": [
+        "project_phoenix",
+        "alice",
+        "bob",
+        "eve"
+      ],
+      "accessed_pages": [
+        "alice",
+        "bob",
+        "carol",
+        "david",
+        "eve",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "search_hit_page_ids": [
+        "alice",
+        "carol",
+        "david",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "actions": [
+        "search",
+        "read",
+        "read",
+        "read",
+        "read",
+        "read",
+        "read",
+        "answer"
+      ],
+      "step_details": [
+        {
+          "step": 0,
+          "action": "search",
+          "params": {
+            "query": "Project Phoenix",
+            "top_k": 5
+          },
+          "error": null,
+          "result_summary": "search returned 5 candidates (5 new)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": [
+            "project_phoenix",
+            "project_orion",
+            "carol",
+            "alice",
+            "david"
+          ]
+        },
+        {
+          "step": 1,
+          "action": "read",
+          "params": {
+            "paths": [
+              "project_phoenix"
+            ]
+          },
+          "error": "\"paths not found in wiki index: ['project_phoenix']\"",
+          "result_summary": "read failed: paths not found",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 2,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/project_phoenix"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 1 pages (1 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "project_phoenix"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 3,
+          "action": "read",
+          "params": {
+            "paths": [
+              "alice"
+            ]
+          },
+          "error": "\"paths not found in wiki index: ['alice']\"",
+          "result_summary": "read failed: paths not found",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 4,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/alice"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 1 pages (1 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "alice"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 5,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/bob"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 1 pages (1 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "bob"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 6,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/eve"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 1 pages (1 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "eve"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 7,
+          "action": "answer",
+          "params": {
+            "text": "The chain is: Alice Smith → Bob Jones → Eve Martinez.\n\n1. Alice Smith is a senior engineer at Acme Corp and leads Project Phoenix (the internal platform migration initiative). She reports directly to ",
+            "sources": [
+              "project_phoenix",
+              "alice",
+              "bob",
+              "eve"
+            ]
+          },
+          "error": null,
+          "result_summary": "answer produced (4 sources)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": []
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "mh47_exec_level_to_phoenix_chain",
+      "question": "Starting from the executive level of Building B, trace the relationships to the engineer who leads Project Phoenix: identify the VP whose office is on that floor, the director she manages who leads the platform engineering group, and the engineer who reports to that director and leads Project Phoenix. List the chain and state which relationship is indirect.",
+      "final_answer": "Chain from the executive level of Building B:\n\n1. Building B, fifth floor — the executive level houses the office of Eve Martinez, VP of Engineering (the building page notes the fifth floor contains \"the VP of Engineering's office (currently Eve Martinez), the CEO's office, and a boardroom\").\n2. Eve Martinez (VP of Engineering) directly manages Bob Jones, the Director of Engineering who leads the platform engineering group (she \"manages two directors: Bob Jones, who leads the platform engineering group, and David Kim, who leads the data engineering group\").\n3. Bob Jones (Director of Engineering) directly manages Alice Smith; Alice \"reports directly to Bob Jones, the Director of Engineering.\"\n4. Alice Smith (senior engineer) leads Project Phoenix — \"she... currently leads Project Phoenix, an internal platform migration initiative,\" with Carol Chen as a core team member.\n\nIndirect relationship: The connection between Building B's executive level and Alice Smith / Project Phoenix is indirect — the floor only houses Eve's office, and the path to Alice (and thus to Project Phoenix) runs through Eve → Bob Jones → Alice Smith. Notably, Bob's office is in Building A (third floor), not Building B, so the executive floor's association with the platform engineering group and Project Phoenix is a chain of management relationships rather than a direct co-location. All the management links themselves (Eve manages Bob; Bob manages Alice; Alice leads Project Phoenix) are stated directly on the pages.",
+      "raw_model_output": "{\"action\": \"answer\", \"text\": \"Chain from the executive level of Building B:\\n\\n1. Building B, fifth floor — the executive level houses the office of Eve Martinez, VP of Engineering (the building page notes the fifth floor contains \\\"the VP of Engineering's office (currently Eve Martinez), the CEO's office, and a boardroom\\\").\\n2. Eve Martinez (VP of Engineering) directly manages Bob Jones, the Director of Engineering who leads the platform engineering group (she \\\"manages two directors: Bob Jones, who leads the platform engineering group, and David Kim, who leads the data engineering group\\\").\\n3. Bob Jones (Director of Engineering) directly manages Alice Smith; Alice \\\"reports directly to Bob Jones, the Director of Engineering.\\\"\\n4. Alice Smith (senior engineer) leads Project Phoenix — \\\"she... currently leads Project Phoenix, an internal platform migration initiative,\\\" with Carol Chen as a core team member.\\n\\nIndirect relationship: The connection between Building B's executive level and Alice Smith / Project Phoenix is indirect — the floor only houses Eve's office, and the path to Alice (and thus to Project Phoenix) runs through Eve → Bob Jones → Alice Smith. Notably, Bob's office is in Building A (third floor), not Building B, so the executive floor's association with the platform engineering group and Project Phoenix is a chain of management relationships rather than a direct co-location. All the management links themselves (Eve manages Bob; Bob manages Alice; Alice leads Project Phoenix) are stated directly on the pages.\", \"sources\": [\"building_b\", \"eve\", \"bob\", \"alice\", \"project_phoenix\"]}",
+      "raw_model_outputs": [
+        "{\"action\": \"search\", \"query\": \"Building B executive level VP office director platform engineering Project Phoenix engineer\"}",
+        "{\"action\": \"read\", \"paths\": [\"wiki/building_b\", \"wiki/project_phoenix\", \"wiki/eve\", \"wiki/bob\"]}",
+        "{\"action\": \"read\", \"paths\": [\"wiki/alice\"]}",
+        "{\"action\": \"answer\", \"text\": \"Chain from the executive level of Building B:\\n\\n1. Building B, fifth floor — the executive level houses the office of Eve Martinez, VP of Engineering (the building page notes the fifth floor contains \\\"the VP of Engineering's office (currently Eve Martinez), the CEO's office, and a boardroom\\\").\\n2. Eve Martinez (VP of Engineering) directly manages Bob Jones, the Director of Engineering who leads the platform engineering group (she \\\"manages two directors: Bob Jones, who leads the platform engineering group, and David Kim, who leads the data engineering group\\\").\\n3. Bob Jones (Director of Engineering) directly manages Alice Smith; Alice \\\"reports directly to Bob Jones, the Director of Engineering.\\\"\\n4. Alice Smith (senior engineer) leads Project Phoenix — \\\"she... currently leads Project Phoenix, an internal platform migration initiative,\\\" with Carol Chen as a core team member.\\n\\nIndirect relationship: The connection between Building B's executive level and Alice Smith / Project Phoenix is indirect — the floor only houses Eve's office, and the path to Alice (and thus to Project Phoenix) runs through Eve → Bob Jones → Alice Smith. Notably, Bob's office is in Building A (third floor), not Building B, so the executive floor's association with the platform engineering group and Project Phoenix is a chain of management relationships rather than a direct co-location. All the management links themselves (Eve manages Bob; Bob manages Alice; Alice leads Project Phoenix) are stated directly on the pages.\", \"sources\": [\"building_b\", \"eve\", \"bob\", \"alice\", \"project_phoenix\"]}"
+      ],
+      "score_answer": true,
+      "grounded_correct": true,
+      "status": "answered",
+      "steps": 4,
+      "requests": 4,
+      "elapsed_seconds": 7.168,
+      "usage": [
+        {
+          "prompt_tokens": 410,
+          "completion_tokens": 37,
+          "total_tokens": 447,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 13
+          },
+          "prompt_cache_hit_tokens": 256,
+          "prompt_cache_miss_tokens": 154
+        },
+        {
+          "prompt_tokens": 639,
+          "completion_tokens": 42,
+          "total_tokens": 681,
+          "prompt_tokens_details": {
+            "cached_tokens": 384
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 6
+          },
+          "prompt_cache_hit_tokens": 384,
+          "prompt_cache_miss_tokens": 255
+        },
+        {
+          "prompt_tokens": 1275,
+          "completion_tokens": 38,
+          "total_tokens": 1313,
+          "prompt_tokens_details": {
+            "cached_tokens": 512
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 22
+          },
+          "prompt_cache_hit_tokens": 512,
+          "prompt_cache_miss_tokens": 763
+        },
+        {
+          "prompt_tokens": 1423,
+          "completion_tokens": 701,
+          "total_tokens": 2124,
+          "prompt_tokens_details": {
+            "cached_tokens": 1152
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 348
+          },
+          "prompt_cache_hit_tokens": 1152,
+          "prompt_cache_miss_tokens": 271
+        }
+      ],
+      "usage_totals": {
+        "prompt_tokens": 3747,
+        "completion_tokens": 818,
+        "total_tokens": 4565,
+        "prompt_cache_hit_tokens": 2304,
+        "prompt_cache_miss_tokens": 1443
+      },
+      "sources": [
+        "building_b",
+        "eve",
+        "bob",
+        "alice",
+        "project_phoenix"
+      ],
+      "read_page_ids": [
+        "alice",
+        "bob",
+        "building_b",
+        "eve",
+        "project_phoenix"
+      ],
+      "required_pages": [
+        "building_b",
+        "eve",
+        "bob",
+        "alice",
+        "project_phoenix"
+      ],
+      "accessed_pages": [
+        "alice",
+        "bob",
+        "building_a",
+        "building_b",
+        "carol",
+        "david",
+        "eve",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "search_hit_page_ids": [
+        "bob",
+        "building_b",
+        "eve",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "actions": [
+        "search",
+        "read",
+        "read",
+        "answer"
+      ],
+      "step_details": [
+        {
+          "step": 0,
+          "action": "search",
+          "params": {
+            "query": "Building B executive level VP office director platform engineering Project Phoenix engineer",
+            "top_k": 5
+          },
+          "error": null,
+          "result_summary": "search returned 5 candidates (5 new)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": [
+            "building_b",
+            "project_phoenix",
+            "eve",
+            "bob",
+            "project_orion"
+          ]
+        },
+        {
+          "step": 1,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/building_b",
+              "wiki/project_phoenix",
+              "wiki/eve",
+              "wiki/bob"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 4 pages (4 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "building_b",
+            "project_phoenix",
+            "eve",
+            "bob"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 2,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/alice"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 1 pages (1 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "alice"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 3,
+          "action": "answer",
+          "params": {
+            "text": "Chain from the executive level of Building B:\n\n1. Building B, fifth floor — the executive level houses the office of Eve Martinez, VP of Engineering (the building page notes the fifth floor contains \"",
+            "sources": [
+              "building_b",
+              "eve",
+              "bob",
+              "alice",
+              "project_phoenix"
+            ]
+          },
+          "error": null,
+          "result_summary": "answer produced (5 sources)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": []
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "mh50_orion_exact_completion_date",
+      "question": "What is the exact completion date of Project Orion?",
+      "final_answer": "I could not confirm an exact completion date for Project Orion. The Project Orion page states the project was initiated in mid-2025, has a budget of $300,000, and is \"expected to launch in Q2 2027\" — but it gives no specific day or month within that quarter, and no explicit completion date. The related pages on David Kim (technical lead) and Carol Chen (backend contributor) likewise contain no completion date. So the only timeline information available is the expected Q2 2027 launch; an exact completion date is not documented in the pages I read.",
+      "raw_model_output": "{\"action\": \"answer\", \"text\": \"I could not confirm an exact completion date for Project Orion. The Project Orion page states the project was initiated in mid-2025, has a budget of $300,000, and is \\\"expected to launch in Q2 2027\\\" — but it gives no specific day or month within that quarter, and no explicit completion date. The related pages on David Kim (technical lead) and Carol Chen (backend contributor) likewise contain no completion date. So the only timeline information available is the expected Q2 2027 launch; an exact completion date is not documented in the pages I read.\", \"sources\": [\"project_orion\", \"david\", \"carol\"]}",
+      "raw_model_outputs": [
+        "{\"action\": \"search\", \"query\": \"Project Orion completion date\"}",
+        "{\"action\": \"read\", \"paths\": [\"project_orion\"]}",
+        "{\"action\": \"read\", \"paths\": [\"wiki/project_orion\"]}",
+        "{\"action\": \"follow_links\", \"from_page\": \"project_orion\"}",
+        "{\"action\": \"search\", \"query\": \"Project Orion launch Q2 2027 completion exact date\"}",
+        "{\"action\": \"answer\", \"text\": \"I could not confirm an exact completion date for Project Orion. The Project Orion page states the project was initiated in mid-2025, has a budget of $300,000, and is \\\"expected to launch in Q2 2027\\\" — but it gives no specific day or month within that quarter, and no explicit completion date. The related pages on David Kim (technical lead) and Carol Chen (backend contributor) likewise contain no completion date. So the only timeline information available is the expected Q2 2027 launch; an exact completion date is not documented in the pages I read.\", \"sources\": [\"project_orion\", \"david\", \"carol\"]}"
+      ],
+      "score_answer": true,
+      "grounded_correct": true,
+      "status": "answered",
+      "steps": 6,
+      "requests": 6,
+      "elapsed_seconds": 7.522,
+      "usage": [
+        {
+          "prompt_tokens": 356,
+          "completion_tokens": 34,
+          "total_tokens": 390,
+          "prompt_tokens_details": {
+            "cached_tokens": 128
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 18
+          },
+          "prompt_cache_hit_tokens": 128,
+          "prompt_cache_miss_tokens": 228
+        },
+        {
+          "prompt_tokens": 570,
+          "completion_tokens": 16,
+          "total_tokens": 586,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "prompt_cache_hit_tokens": 256,
+          "prompt_cache_miss_tokens": 314
+        },
+        {
+          "prompt_tokens": 606,
+          "completion_tokens": 48,
+          "total_tokens": 654,
+          "prompt_tokens_details": {
+            "cached_tokens": 384
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 30
+          },
+          "prompt_cache_hit_tokens": 384,
+          "prompt_cache_miss_tokens": 222
+        },
+        {
+          "prompt_tokens": 776,
+          "completion_tokens": 52,
+          "total_tokens": 828,
+          "prompt_tokens_details": {
+            "cached_tokens": 512
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 34
+          },
+          "prompt_cache_hit_tokens": 512,
+          "prompt_cache_miss_tokens": 264
+        },
+        {
+          "prompt_tokens": 1083,
+          "completion_tokens": 105,
+          "total_tokens": 1188,
+          "prompt_tokens_details": {
+            "cached_tokens": 768
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 82
+          },
+          "prompt_cache_hit_tokens": 768,
+          "prompt_cache_miss_tokens": 315
+        },
+        {
+          "prompt_tokens": 1304,
+          "completion_tokens": 274,
+          "total_tokens": 1578,
+          "prompt_tokens_details": {
+            "cached_tokens": 1024
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 125
+          },
+          "prompt_cache_hit_tokens": 1024,
+          "prompt_cache_miss_tokens": 280
+        }
+      ],
+      "usage_totals": {
+        "prompt_tokens": 4695,
+        "completion_tokens": 529,
+        "total_tokens": 5224,
+        "prompt_cache_hit_tokens": 3072,
+        "prompt_cache_miss_tokens": 1623
+      },
+      "sources": [
+        "project_orion",
+        "david",
+        "carol"
+      ],
+      "read_page_ids": [
+        "carol",
+        "david",
+        "project_orion"
+      ],
+      "required_pages": [],
+      "accessed_pages": [
+        "alice",
+        "carol",
+        "david",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "search_hit_page_ids": [
+        "alice",
+        "carol",
+        "david",
+        "project_orion",
+        "project_phoenix"
+      ],
+      "actions": [
+        "search",
+        "read",
+        "read",
+        "follow_links",
+        "search",
+        "answer"
+      ],
+      "step_details": [
+        {
+          "step": 0,
+          "action": "search",
+          "params": {
+            "query": "Project Orion completion date",
+            "top_k": 5
+          },
+          "error": null,
+          "result_summary": "search returned 5 candidates (5 new)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": [
+            "project_orion",
+            "project_phoenix",
+            "carol",
+            "david",
+            "alice"
+          ]
+        },
+        {
+          "step": 1,
+          "action": "read",
+          "params": {
+            "paths": [
+              "project_orion"
+            ]
+          },
+          "error": "\"paths not found in wiki index: ['project_orion']\"",
+          "result_summary": "read failed: paths not found",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 2,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/project_orion"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 1 pages (1 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "project_orion"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 3,
+          "action": "follow_links",
+          "params": {
+            "from_page": "project_orion"
+          },
+          "error": null,
+          "result_summary": "followed 2 links: read 2 new pages, 0 missing",
+          "raw_output": null,
+          "read_page_ids": [
+            "david",
+            "carol"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 4,
+          "action": "search",
+          "params": {
+            "query": "Project Orion launch Q2 2027 completion exact date",
+            "top_k": 5
+          },
+          "error": null,
+          "result_summary": "search returned 5 candidates (2 new)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": [
+            "project_orion",
+            "project_phoenix",
+            "carol",
+            "david",
+            "alice"
+          ]
+        },
+        {
+          "step": 5,
+          "action": "answer",
+          "params": {
+            "text": "I could not confirm an exact completion date for Project Orion. The Project Orion page states the project was initiated in mid-2025, has a budget of $300,000, and is \"expected to launch in Q2 2027\" — ",
+            "sources": [
+              "project_orion",
+              "david",
+              "carol"
+            ]
+          },
+          "error": null,
+          "result_summary": "answer produced (3 sources)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": []
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "mh52_alice_previous_startup_name",
+      "question": "What is the name of the startup where Alice Smith previously worked?",
+      "final_answer": "The name of the startup is not stated. The page about Alice Smith only says she \"previously worked at a startup focused on distributed systems\" — it does not give the startup's name. None of the other pages I read mention Alice's former employer's name.",
+      "raw_model_output": "{\"action\": \"answer\", \"text\": \"The name of the startup is not stated. The page about Alice Smith only says she \\\"previously worked at a startup focused on distributed systems\\\" — it does not give the startup's name. None of the other pages I read mention Alice's former employer's name.\", \"sources\": [\"alice\", \"bob\", \"carol\", \"david\", \"project_phoenix\"]}",
+      "raw_model_outputs": [
+        "{\"action\": \"search\", \"query\": \"Alice Smith\"}\n\nLet me search for relevant pages.",
+        "{\"action\": \"read\", \"paths\": [\"alice\"]}",
+        "{\"action\": \"read\", \"paths\": [\"wiki/alice\"]}",
+        "{\"action\": \"follow_links\", \"from_page\": \"alice\"}",
+        "{\"action\": \"read\", \"paths\": [\"wiki/carol\"]}",
+        "{\"action\": \"search\", \"query\": \"distributed systems startup Alice previous employer name\"}\n\nLet me check other pages that might name the startup.",
+        "{\"action\": \"read\", \"paths\": [\"wiki/david\"]}",
+        "{\"action\": \"answer\", \"text\": \"The name of the startup is not stated. The page about Alice Smith only says she \\\"previously worked at a startup focused on distributed systems\\\" — it does not give the startup's name. None of the other pages I read mention Alice's former employer's name.\", \"sources\": [\"alice\", \"bob\", \"carol\", \"david\", \"project_phoenix\"]}"
+      ],
+      "score_answer": true,
+      "grounded_correct": true,
+      "status": "answered",
+      "steps": 8,
+      "requests": 8,
+      "elapsed_seconds": 9.258,
+      "usage": [
+        {
+          "prompt_tokens": 359,
+          "completion_tokens": 29,
+          "total_tokens": 388,
+          "prompt_tokens_details": {
+            "cached_tokens": 128
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 7
+          },
+          "prompt_cache_hit_tokens": 128,
+          "prompt_cache_miss_tokens": 231
+        },
+        {
+          "prompt_tokens": 541,
+          "completion_tokens": 15,
+          "total_tokens": 556,
+          "prompt_tokens_details": {
+            "cached_tokens": 256
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "prompt_cache_hit_tokens": 256,
+          "prompt_cache_miss_tokens": 285
+        },
+        {
+          "prompt_tokens": 575,
+          "completion_tokens": 23,
+          "total_tokens": 598,
+          "prompt_tokens_details": {
+            "cached_tokens": 384
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 7
+          },
+          "prompt_cache_hit_tokens": 384,
+          "prompt_cache_miss_tokens": 191
+        },
+        {
+          "prompt_tokens": 723,
+          "completion_tokens": 54,
+          "total_tokens": 777,
+          "prompt_tokens_details": {
+            "cached_tokens": 512
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 37
+          },
+          "prompt_cache_hit_tokens": 512,
+          "prompt_cache_miss_tokens": 211
+        },
+        {
+          "prompt_tokens": 1030,
+          "completion_tokens": 124,
+          "total_tokens": 1154,
+          "prompt_tokens_details": {
+            "cached_tokens": 640
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 107
+          },
+          "prompt_cache_hit_tokens": 640,
+          "prompt_cache_miss_tokens": 390
+        },
+        {
+          "prompt_tokens": 1199,
+          "completion_tokens": 102,
+          "total_tokens": 1301,
+          "prompt_tokens_details": {
+            "cached_tokens": 1024
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 70
+          },
+          "prompt_cache_hit_tokens": 1024,
+          "prompt_cache_miss_tokens": 175
+        },
+        {
+          "prompt_tokens": 1429,
+          "completion_tokens": 54,
+          "total_tokens": 1483,
+          "prompt_tokens_details": {
+            "cached_tokens": 1152
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 38
+          },
+          "prompt_cache_hit_tokens": 1152,
+          "prompt_cache_miss_tokens": 277
+        },
+        {
+          "prompt_tokens": 1676,
+          "completion_tokens": 122,
+          "total_tokens": 1798,
+          "prompt_tokens_details": {
+            "cached_tokens": 1408
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 29
+          },
+          "prompt_cache_hit_tokens": 1408,
+          "prompt_cache_miss_tokens": 268
+        }
+      ],
+      "usage_totals": {
+        "prompt_tokens": 7532,
+        "completion_tokens": 523,
+        "total_tokens": 8055,
+        "prompt_cache_hit_tokens": 5504,
+        "prompt_cache_miss_tokens": 2028
+      },
+      "sources": [
+        "alice",
+        "bob",
+        "carol",
+        "david",
+        "project_phoenix"
+      ],
+      "read_page_ids": [
+        "alice",
+        "bob",
+        "carol",
+        "david",
+        "project_phoenix"
+      ],
+      "required_pages": [],
+      "accessed_pages": [
+        "alice",
+        "bob",
+        "building_a",
+        "carol",
+        "david",
+        "project_phoenix"
+      ],
+      "search_hit_page_ids": [
+        "alice",
+        "bob",
+        "building_a",
+        "carol",
+        "david",
+        "project_phoenix"
+      ],
+      "actions": [
+        "search",
+        "read",
+        "read",
+        "follow_links",
+        "read",
+        "search",
+        "read",
+        "answer"
+      ],
+      "step_details": [
+        {
+          "step": 0,
+          "action": "search",
+          "params": {
+            "query": "Alice Smith",
+            "top_k": 5
+          },
+          "error": null,
+          "result_summary": "search returned 4 candidates (4 new)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": [
+            "alice",
+            "bob",
+            "project_phoenix",
+            "building_a"
+          ]
+        },
+        {
+          "step": 1,
+          "action": "read",
+          "params": {
+            "paths": [
+              "alice"
+            ]
+          },
+          "error": "\"paths not found in wiki index: ['alice']\"",
+          "result_summary": "read failed: paths not found",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 2,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/alice"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 1 pages (1 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "alice"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 3,
+          "action": "follow_links",
+          "params": {
+            "from_page": "alice"
+          },
+          "error": null,
+          "result_summary": "followed 2 links: read 2 new pages, 0 missing",
+          "raw_output": null,
+          "read_page_ids": [
+            "bob",
+            "project_phoenix"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 4,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/carol"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 1 pages (1 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "carol"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 5,
+          "action": "search",
+          "params": {
+            "query": "distributed systems startup Alice previous employer name",
+            "top_k": 5
+          },
+          "error": null,
+          "result_summary": "search returned 5 candidates (1 new)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": [
+            "alice",
+            "david",
+            "carol",
+            "bob",
+            "project_phoenix"
+          ]
+        },
+        {
+          "step": 6,
+          "action": "read",
+          "params": {
+            "paths": [
+              "wiki/david"
+            ]
+          },
+          "error": null,
+          "result_summary": "read 1 pages (1 new)",
+          "raw_output": null,
+          "read_page_ids": [
+            "david"
+          ],
+          "search_hit_page_ids": []
+        },
+        {
+          "step": 7,
+          "action": "answer",
+          "params": {
+            "text": "The name of the startup is not stated. The page about Alice Smith only says she \"previously worked at a startup focused on distributed systems\" — it does not give the startup's name. None of the other",
+            "sources": [
+              "alice",
+              "bob",
+              "carol",
+              "david",
+              "project_phoenix"
+            ]
+          },
+          "error": null,
+          "result_summary": "answer produced (5 sources)",
+          "raw_output": null,
+          "read_page_ids": [],
+          "search_hit_page_ids": []
+        }
+      ],
+      "error": null
+    }
+  ]
+}

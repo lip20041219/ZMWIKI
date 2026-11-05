@@ -1,0 +1,1447 @@
+{
+  "experiment_id": "multihop_wiki_comparison",
+  "dataset": "benchmark/datasets/multihop_wiki.json",
+  "dataset_version": "1.4",
+  "dataset_sha256_16": "e92d4d1c060aa050",
+  "git_sha": "1cdd718481c03772867cd924b9f0ebfeb30d71e1",
+  "python_version": "3.11.9",
+  "timestamp": "2026-10-31T17:28:57+0800",
+  "scoring_rule": "answer_correct = for every group in answer_keyword_groups, at least one keyword appears in the normalized answer. For unanswerable cases, answer_correct = at least one refusal_keyword appears and no case-specific fabrication_keyword appears. All matching is case-insensitive after stripping punctuation. The fabrication guard is a lexical heuristic for refusal-plus-invention; it does not replace manual audit of unanswerable cases.",
+  "link_construction": "WikiPage links_to/links_from are manually verified from source document content, NOT produced by WikiCompiler. WikiCompiler currently leaves links_to empty; this dataset uses hand-built linked pages to evaluate follow_links capability. This is explicitly recorded as a capability gap of the current compiler.",
+  "link_source": "manual",
+  "comparability_notes": {
+    "retrieval_evidence_metrics": "COMPARABLE across Baseline and Experiment. Both measure whether required pages were found (evidence_recall, source_precision, multi_hop_success), independent of the answer generator. evidence_recall is the legacy name for access_recall (accessed_pages also includes search candidate lookups). read_evidence_recall uses only pages actually read by the Agent; for the baseline, read_page_ids is its retrieved context set.",
+    "answer_quality_metrics": "NOT directly comparable. Baseline uses DeterministicGenerator (offline extractive, copies text from retrieved chunks). Experiment uses a real LLM. Differences in answer_accuracy may come from retrieval, evidence organization, OR the generator itself. Report as independent system results, not a head-to-head comparison.",
+    "scoring_caveat": "Answer scoring uses keyword_group_match (lexical heuristic). A semantically correct paraphrase may score 0; a verbatim copy may score 1. This is not an LLM-as-judge evaluation.",
+    "unanswerable_caveat": "2 unanswerable case(s). Keyword-only refusal scoring can accept a refusal followed by a fabricated answer; unanswerable results require manual audit.",
+    "metric_update_phase_08": "New verified_* metrics require status=='answered' AND at least one cited source. The legacy answer_accuracy, evidence_support_rate_answerable and multi_hop_success_rate keys keep their original keyword/recall definitions so older result files stay comparable. unsupported_correct exposes keyword-correct answers without a cited, successfully-answered basis.",
+    "source_deduplication": "Cited source lists are deduplicated before source_precision is computed. Earlier result files may count the same document twice, so mean_source_precision is not directly comparable across that change."
+  },
+  "config": {
+    "baseline": {
+      "pipeline": "DeterministicRAGPipeline",
+      "retriever": "HybridRetriever(dense + bm25)",
+      "chunk_size": 120,
+      "overlap": 20,
+      "top_k": 5,
+      "generator": "DeterministicGenerator (offline, no LLM)"
+    },
+    "experiment": {
+      "agent": "WikiAgent",
+      "live": true,
+      "base_url": "https://api.deepseek.com",
+      "model": "deepseek-flash",
+      "max_steps": 8,
+      "search_top_k": 5,
+      "link_source": "manual",
+      "api_key_recorded": false
+    },
+    "limit": null
+  },
+  "working_tree_status": {
+    "dirty": true,
+    "file_count": 10
+  },
+  "source_file_sha256_16": {
+    "benchmark/run_multihop_evaluation.py": "0a3c64962a2cbd11",
+    "src/zmwiki/wiki/wiki_agent.py": "9a5c662dc622331f",
+    "src/zmwiki/wiki/wiki_compiler.py": "73c3adcd02f1daa7",
+    "src/zmwiki/wiki/wiki_index.py": "1da07287d408f463",
+    "src/zmwiki/wiki/wiki_retriever.py": "9de57fe1a528109e",
+    "src/zmwiki/wiki/wiki_schema.py": "e82f9d666830f9bf",
+    "src/zmwiki/wiki/wiki_link_resolver.py": "5a18b38f59be549b",
+    "src/zmwiki/llm_generators.py": "06bbc9396917cc87"
+  },
+  "results": {
+    "baseline": {
+      "per_case": [
+        {
+          "id": "mh37_budget_ratio_synthesis",
+          "question": "What is the ratio of Acme's annual engineering budget to the combined budgets of Project Phoenix and Project Orion?",
+          "answer": " on the fifth floor of Building B. Eve is responsible for the company's annual engineering budget of four million dollar",
+          "answer_correct": false,
+          "grounded_correct": false,
+          "unsupported_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "none",
+          "status": "answered",
+          "sources": [
+            "eve",
+            "project_orion",
+            "carol"
+          ],
+          "accessed_pages": [
+            "carol",
+            "eve",
+            "project_orion"
+          ],
+          "required_pages": [
+            "eve",
+            "project_phoenix",
+            "project_orion"
+          ],
+          "evidence_recall": 0.6666666666666666,
+          "evidence_recall_numerator": 2,
+          "evidence_recall_denominator": 3,
+          "source_precision": 0.6666666666666666,
+          "steps": 1,
+          "pages_read": 3,
+          "error": null,
+          "step_details": [],
+          "search_hit_page_ids": [
+            "carol",
+            "eve",
+            "project_orion"
+          ],
+          "read_page_ids": [
+            "carol",
+            "eve",
+            "project_orion"
+          ],
+          "access_recall": 0.6666666666666666,
+          "access_recall_numerator": 2,
+          "access_recall_denominator": 3,
+          "read_evidence_recall": 0.6666666666666666,
+          "read_evidence_recall_numerator": 2,
+          "read_evidence_recall_denominator": 3
+        },
+        {
+          "id": "mh46_phoenix_reporting_chain",
+          "question": "Starting from Project Phoenix, trace the chain from the project lead to that person's direct manager, and then to that manager's direct manager. List the three people in order and state which relationships are direct reporting relationships.",
+          "answer": "ined the company in 2022 and currently contributes to two active projects: Project Phoenix and Project Orion. Carol repo",
+          "answer_correct": false,
+          "grounded_correct": false,
+          "unsupported_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "none",
+          "status": "answered",
+          "sources": [
+            "carol",
+            "alice",
+            "building_b",
+            "david"
+          ],
+          "accessed_pages": [
+            "alice",
+            "building_b",
+            "carol",
+            "david"
+          ],
+          "required_pages": [
+            "project_phoenix",
+            "alice",
+            "bob",
+            "eve"
+          ],
+          "evidence_recall": 0.5,
+          "evidence_recall_numerator": 1,
+          "evidence_recall_denominator": 2,
+          "source_precision": 0.25,
+          "steps": 1,
+          "pages_read": 4,
+          "error": null,
+          "step_details": [],
+          "search_hit_page_ids": [
+            "alice",
+            "building_b",
+            "carol",
+            "david"
+          ],
+          "read_page_ids": [
+            "alice",
+            "building_b",
+            "carol",
+            "david"
+          ],
+          "access_recall": 0.5,
+          "access_recall_numerator": 1,
+          "access_recall_denominator": 2,
+          "read_evidence_recall": 0.5,
+          "read_evidence_recall_numerator": 1,
+          "read_evidence_recall_denominator": 2
+        },
+        {
+          "id": "mh47_exec_level_to_phoenix_chain",
+          "question": "Starting from the executive level of Building B, trace the relationships to the engineer who leads Project Phoenix: identify the VP whose office is on that floor, the director she manages who leads the platform engineering group, and the engineer who reports to that director and leads Project Phoenix. List the chain and state which relationship is indirect.",
+          "answer": "s the platform engineering group, and David Kim, who leads the data engineering group. Her office is on the fifth floor ",
+          "answer_correct": false,
+          "grounded_correct": false,
+          "unsupported_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "none",
+          "status": "answered",
+          "sources": [
+            "eve",
+            "carol",
+            "david",
+            "building_a",
+            "building_b"
+          ],
+          "accessed_pages": [
+            "building_a",
+            "building_b",
+            "carol",
+            "david",
+            "eve"
+          ],
+          "required_pages": [
+            "building_b",
+            "eve",
+            "bob",
+            "alice",
+            "project_phoenix"
+          ],
+          "evidence_recall": 0.4,
+          "evidence_recall_numerator": 2,
+          "evidence_recall_denominator": 5,
+          "source_precision": 0.4,
+          "steps": 1,
+          "pages_read": 5,
+          "error": null,
+          "step_details": [],
+          "search_hit_page_ids": [
+            "building_a",
+            "building_b",
+            "carol",
+            "david",
+            "eve"
+          ],
+          "read_page_ids": [
+            "building_a",
+            "building_b",
+            "carol",
+            "david",
+            "eve"
+          ],
+          "access_recall": 0.4,
+          "access_recall_numerator": 2,
+          "access_recall_denominator": 5,
+          "read_evidence_recall": 0.4,
+          "read_evidence_recall_numerator": 2,
+          "read_evidence_recall_denominator": 5
+        },
+        {
+          "id": "mh50_orion_exact_completion_date",
+          "question": "What is the exact completion date of Project Orion?",
+          "answer": "Project Orion is Acme Corp's data analytics platform project, initiated in mid-2025. The project is led by David Kim, a ",
+          "answer_correct": false,
+          "grounded_correct": false,
+          "unsupported_correct": false,
+          "answerable": false,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "none",
+          "status": "answered",
+          "sources": [
+            "project_orion",
+            "project_phoenix",
+            "carol",
+            "david"
+          ],
+          "accessed_pages": [
+            "carol",
+            "david",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "required_pages": [],
+          "evidence_recall": null,
+          "evidence_recall_numerator": 0,
+          "evidence_recall_denominator": 0,
+          "source_precision": 0.0,
+          "steps": 1,
+          "pages_read": 4,
+          "error": null,
+          "step_details": [],
+          "search_hit_page_ids": [
+            "carol",
+            "david",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "read_page_ids": [
+            "carol",
+            "david",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "access_recall": null,
+          "access_recall_numerator": 0,
+          "access_recall_denominator": 0,
+          "read_evidence_recall": null,
+          "read_evidence_recall_numerator": 0,
+          "read_evidence_recall_denominator": 0
+        },
+        {
+          "id": "mh52_alice_previous_startup_name",
+          "question": "What is the name of the startup where Alice Smith previously worked?",
+          "answer": "irector of Engineering. Her office is located on the second floor of Building A. Alice holds a master's degree in comput",
+          "answer_correct": false,
+          "grounded_correct": false,
+          "unsupported_correct": false,
+          "answerable": false,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "none",
+          "status": "answered",
+          "sources": [
+            "alice",
+            "bob",
+            "building_a",
+            "carol",
+            "david"
+          ],
+          "accessed_pages": [
+            "alice",
+            "bob",
+            "building_a",
+            "carol",
+            "david"
+          ],
+          "required_pages": [],
+          "evidence_recall": null,
+          "evidence_recall_numerator": 0,
+          "evidence_recall_denominator": 0,
+          "source_precision": 0.0,
+          "steps": 1,
+          "pages_read": 5,
+          "error": null,
+          "step_details": [],
+          "search_hit_page_ids": [
+            "alice",
+            "bob",
+            "building_a",
+            "carol",
+            "david"
+          ],
+          "read_page_ids": [
+            "alice",
+            "bob",
+            "building_a",
+            "carol",
+            "david"
+          ],
+          "access_recall": null,
+          "access_recall_numerator": 0,
+          "access_recall_denominator": 0,
+          "read_evidence_recall": null,
+          "read_evidence_recall_numerator": 0,
+          "read_evidence_recall_denominator": 0
+        }
+      ],
+      "aggregate": {
+        "total_cases": 5,
+        "answerable_cases": 3,
+        "unanswerable_cases": 2,
+        "multi_hop_cases": 3,
+        "retrieval_evidence_metrics": {
+          "note": "Comparable across Baseline and Experiment: both measure whether required pages were found, independent of the answer generator.",
+          "mean_evidence_recall_answerable": {
+            "value": 0.5222222222222221,
+            "numerator_sum": 5,
+            "denominator_sum": 10,
+            "scope": "answerable cases only (unanswerable excluded; evidence_recall=None)",
+            "definition": "LEGACY: |accessed_pages ∩ required| / |required|. accessed_pages includes search candidate accesses."
+          },
+          "mean_access_recall_answerable": {
+            "value": 0.5222222222222221,
+            "numerator_sum": 5,
+            "denominator_sum": 10,
+            "cases_with_access_data": 3,
+            "scope": "answerable cases only (unanswerable excluded; access_recall=None)",
+            "definition": "|accessed_pages ∩ required| / |required|. accessed_pages records every get/get_by_path lookup, including search candidates; it is not read-only."
+          },
+          "mean_read_evidence_recall_answerable": {
+            "value": 0.5222222222222221,
+            "numerator_sum": 5,
+            "denominator_sum": 10,
+            "cases_with_read_data": 3,
+            "scope": "answerable cases only (unanswerable excluded; read_evidence_recall=None)",
+            "definition": "|read_page_ids ∩ required| / |required|. read_page_ids comes from AgentResult.read_page_ids (actual read/follow_links results), not search candidates. Baseline maps read_page_ids to its retrieved context set."
+          },
+          "mean_source_precision": {
+            "value": 0.2633333333333333,
+            "scope": "all cases"
+          },
+          "evidence_support_rate_answerable": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 3,
+            "definition": "LEGACY: answer_correct AND evidence_recall==1.0, among answerable cases. Does NOT require cited sources or a successful terminal status; use verified_evidence_support_rate_answerable."
+          },
+          "verified_evidence_support_rate_answerable": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 3,
+            "definition": "grounded_correct AND evidence_recall==1.0, among answerable cases. grounded_correct requires a successful answer status and at least one cited source."
+          },
+          "multi_hop_success_rate": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 3,
+            "definition": "LEGACY: answer_correct AND evidence_recall==1.0, among answerable multi-hop cases. See verified_multi_hop_success_rate."
+          },
+          "verified_multi_hop_success_rate": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 3,
+            "definition": "grounded_correct AND evidence_recall==1.0, among answerable multi-hop cases."
+          },
+          "unanswerable_cases": {
+            "count": 2,
+            "evidence_recall_treatment": "excluded from mean (evidence_recall=None, not 1.0)"
+          }
+        },
+        "answer_quality_metrics": {
+          "note": "NOT directly comparable across systems: Baseline uses DeterministicGenerator (offline extractive), Experiment uses a real LLM. Report as independent results.",
+          "answer_accuracy": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 5,
+            "scope": "all cases",
+            "grounding_note": "LEGACY metric: keyword_group_match only. It can count an answer with no cited evidence as correct. See verified_answer_accuracy."
+          },
+          "verified_answer_accuracy": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 5,
+            "scope": "all cases",
+            "definition": "answer_correct AND status=='answered' AND at least one cited source"
+          },
+          "unsupported_correct": {
+            "count": 0,
+            "rate": 0.0,
+            "definition": "keyword-correct but NOT grounded: no cited source, or a non-answered terminal status (insufficient_evidence / budget / protocol / model error)",
+            "interpretation": "Candidate false positives from the lexical scorer or answers produced without evidence."
+          },
+          "answerable_accuracy": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 3,
+            "scope": "answerable cases only"
+          },
+          "unanswerable_handling": {
+            "value": 0.0,
+            "numerator": 0,
+            "denominator": 2,
+            "scope": "unanswerable cases only",
+            "caveat": "2 unanswerable case(s); keyword-only refusal scoring can accept a refusal followed by a fabricated answer. Treat as a manual-audit metric."
+          },
+          "scoring_rule": "keyword_group_match (lexical heuristic, NOT semantic correctness; paraphrases may score low even when correct)"
+        },
+        "efficiency_metrics": {
+          "mean_steps": 1.0,
+          "mean_pages_read": 4.2,
+          "failure_rate": 0.0,
+          "failure_rate_definition": "cases with a terminal error or status in (model_error, protocol_error); budget_exhausted also carries an error string, so it is included",
+          "budget_exhausted_rate": 0.0,
+          "status_counts": {
+            "answered": 5
+          },
+          "status_rates": {
+            "insufficient_evidence": 0.0,
+            "budget_exhausted": 0.0,
+            "protocol_error": 0.0,
+            "model_error": 0.0
+          }
+        },
+        "answer_accuracy": 0.0,
+        "verified_answer_accuracy": 0.0,
+        "unsupported_correct_count": 0,
+        "answerable_accuracy": 0.0,
+        "unanswerable_handling": 0.0,
+        "mean_evidence_recall": 0.5222222222222221,
+        "mean_access_recall": 0.5222222222222221,
+        "mean_read_evidence_recall": 0.5222222222222221,
+        "mean_source_precision": 0.2633333333333333,
+        "multi_hop_success_rate": 0.0,
+        "verified_multi_hop_success_rate": 0.0,
+        "mean_steps": 1.0,
+        "mean_pages_read": 4.2,
+        "failure_rate": 0.0,
+        "budget_exhausted_rate": 0.0,
+        "status_counts": {
+          "answered": 5
+        },
+        "status_rates": {
+          "insufficient_evidence": 0.0,
+          "budget_exhausted": 0.0,
+          "protocol_error": 0.0,
+          "model_error": 0.0
+        },
+        "correct_count": 0,
+        "answerable_correct_count": 0
+      }
+    },
+    "experiment": {
+      "per_case": [
+        {
+          "id": "mh37_budget_ratio_synthesis",
+          "question": "What is the ratio of Acme's annual engineering budget to the combined budgets of Project Phoenix and Project Orion?",
+          "answer": "Acme's annual engineering budget is four million dollars ($4,000,000). Project Phoenix has a budget of five hundred thousand dollars ($500,000) and Project Orion has a budget of three hundred thousand dollars ($300,000), for a combined total of eight hundred thousand dollars ($800,000).\n\nThe ratio of Acme's annual engineering budget to the combined budgets of Project Phoenix and Project Orion is therefore 4,000,000 : 800,000 = 5:1.",
+          "answer_correct": false,
+          "grounded_correct": false,
+          "unsupported_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "manual",
+          "status": "answered",
+          "sources": [
+            "eve",
+            "project_phoenix",
+            "project_orion"
+          ],
+          "accessed_pages": [
+            "alice",
+            "bob",
+            "building_a",
+            "building_b",
+            "carol",
+            "david",
+            "eve",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "required_pages": [
+            "eve",
+            "project_phoenix",
+            "project_orion"
+          ],
+          "evidence_recall": 1.0,
+          "evidence_recall_numerator": 3,
+          "evidence_recall_denominator": 3,
+          "source_precision": 1.0,
+          "steps": 4,
+          "pages_read": 3,
+          "error": null,
+          "step_details": [
+            {
+              "step": 0,
+              "action": "search",
+              "params": {
+                "query": "Acme annual engineering budget Project Phoenix Project Orion budgets",
+                "top_k": 5
+              },
+              "error": null,
+              "result_summary": "search returned 5 candidates (5 new)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": [
+                "project_orion",
+                "project_phoenix",
+                "eve",
+                "carol",
+                "bob"
+              ]
+            },
+            {
+              "step": 1,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "project_orion",
+                  "project_phoenix",
+                  "eve"
+                ]
+              },
+              "error": "\"paths not found in wiki index: ['project_orion', 'project_phoenix', 'eve']\"",
+              "result_summary": "read failed: paths not found",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 2,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/project_orion",
+                  "wiki/project_phoenix",
+                  "wiki/eve"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 3 pages (3 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "project_orion",
+                "project_phoenix",
+                "eve"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 3,
+              "action": "answer",
+              "params": {
+                "text": "Acme's annual engineering budget is four million dollars ($4,000,000). Project Phoenix has a budget of five hundred thousand dollars ($500,000) and Project Orion has a budget of three hundred thousand",
+                "sources": [
+                  "eve",
+                  "project_phoenix",
+                  "project_orion"
+                ]
+              },
+              "error": null,
+              "result_summary": "answer produced (3 sources)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": []
+            }
+          ],
+          "search_hit_page_ids": [
+            "bob",
+            "carol",
+            "eve",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "read_page_ids": [
+            "eve",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "access_recall": 1.0,
+          "access_recall_numerator": 3,
+          "access_recall_denominator": 3,
+          "read_evidence_recall": 1.0,
+          "read_evidence_recall_numerator": 3,
+          "read_evidence_recall_denominator": 3
+        },
+        {
+          "id": "mh46_phoenix_reporting_chain",
+          "question": "Starting from Project Phoenix, trace the chain from the project lead to that person's direct manager, and then to that manager's direct manager. List the three people in order and state which relationships are direct reporting relationships.",
+          "answer": "The chain is: Alice Smith → Bob Jones → Eve Martinez.\n\n1. Alice Smith is a senior engineer at Acme Corp and leads Project Phoenix (the internal platform migration initiative). She reports directly to Bob Jones, Director of Engineering — this is a direct reporting relationship (the page states she \"reports directly to Bob Jones\").\n\n2. Bob Jones is the Director of Engineering who manages a team of twelve engineers, including Alice Smith and Carol Chen. He reports to Eve Martinez, the VP of Engineering — this is also a direct reporting relationship (Eve \"manages two directors: Bob Jones... and David Kim,\" and Bob \"reports to Eve Martinez\").\n\n3. Eve Martinez is the VP of Engineering, overseeing all technical teams, and she reports directly to the CEO (the CEO relationship is stated but the CEO is not named).\n\nSo both relationships in the traced chain — Alice→Bob and Bob→Eve — are direct reporting relationships.",
+          "answer_correct": false,
+          "grounded_correct": false,
+          "unsupported_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "manual",
+          "status": "answered",
+          "sources": [
+            "project_phoenix",
+            "alice",
+            "bob",
+            "eve"
+          ],
+          "accessed_pages": [
+            "alice",
+            "bob",
+            "carol",
+            "david",
+            "eve",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "required_pages": [
+            "project_phoenix",
+            "alice",
+            "bob",
+            "eve"
+          ],
+          "evidence_recall": 1.0,
+          "evidence_recall_numerator": 4,
+          "evidence_recall_denominator": 4,
+          "source_precision": 1.0,
+          "steps": 8,
+          "pages_read": 4,
+          "error": null,
+          "step_details": [
+            {
+              "step": 0,
+              "action": "search",
+              "params": {
+                "query": "Project Phoenix",
+                "top_k": 5
+              },
+              "error": null,
+              "result_summary": "search returned 5 candidates (5 new)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": [
+                "project_phoenix",
+                "project_orion",
+                "carol",
+                "alice",
+                "david"
+              ]
+            },
+            {
+              "step": 1,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "project_phoenix"
+                ]
+              },
+              "error": "\"paths not found in wiki index: ['project_phoenix']\"",
+              "result_summary": "read failed: paths not found",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 2,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/project_phoenix"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 1 pages (1 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "project_phoenix"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 3,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "alice"
+                ]
+              },
+              "error": "\"paths not found in wiki index: ['alice']\"",
+              "result_summary": "read failed: paths not found",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 4,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/alice"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 1 pages (1 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "alice"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 5,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/bob"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 1 pages (1 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "bob"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 6,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/eve"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 1 pages (1 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "eve"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 7,
+              "action": "answer",
+              "params": {
+                "text": "The chain is: Alice Smith → Bob Jones → Eve Martinez.\n\n1. Alice Smith is a senior engineer at Acme Corp and leads Project Phoenix (the internal platform migration initiative). She reports directly to ",
+                "sources": [
+                  "project_phoenix",
+                  "alice",
+                  "bob",
+                  "eve"
+                ]
+              },
+              "error": null,
+              "result_summary": "answer produced (4 sources)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": []
+            }
+          ],
+          "search_hit_page_ids": [
+            "alice",
+            "carol",
+            "david",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "read_page_ids": [
+            "alice",
+            "bob",
+            "eve",
+            "project_phoenix"
+          ],
+          "access_recall": 1.0,
+          "access_recall_numerator": 4,
+          "access_recall_denominator": 4,
+          "read_evidence_recall": 1.0,
+          "read_evidence_recall_numerator": 4,
+          "read_evidence_recall_denominator": 4
+        },
+        {
+          "id": "mh47_exec_level_to_phoenix_chain",
+          "question": "Starting from the executive level of Building B, trace the relationships to the engineer who leads Project Phoenix: identify the VP whose office is on that floor, the director she manages who leads the platform engineering group, and the engineer who reports to that director and leads Project Phoenix. List the chain and state which relationship is indirect.",
+          "answer": "Chain from the executive level of Building B:\n\n1. Building B, fifth floor — the executive level houses the office of Eve Martinez, VP of Engineering (the building page notes the fifth floor contains \"the VP of Engineering's office (currently Eve Martinez), the CEO's office, and a boardroom\").\n2. Eve Martinez (VP of Engineering) directly manages Bob Jones, the Director of Engineering who leads the platform engineering group (she \"manages two directors: Bob Jones, who leads the platform engineering group, and David Kim, who leads the data engineering group\").\n3. Bob Jones (Director of Engineering) directly manages Alice Smith; Alice \"reports directly to Bob Jones, the Director of Engineering.\"\n4. Alice Smith (senior engineer) leads Project Phoenix — \"she... currently leads Project Phoenix, an internal platform migration initiative,\" with Carol Chen as a core team member.\n\nIndirect relationship: The connection between Building B's executive level and Alice Smith / Project Phoenix is indirect — the floor only houses Eve's office, and the path to Alice (and thus to Project Phoenix) runs through Eve → Bob Jones → Alice Smith. Notably, Bob's office is in Building A (third floor), not Building B, so the executive floor's association with the platform engineering group and Project Phoenix is a chain of management relationships rather than a direct co-location. All the management links themselves (Eve manages Bob; Bob manages Alice; Alice leads Project Phoenix) are stated directly on the pages.",
+          "answer_correct": true,
+          "grounded_correct": true,
+          "unsupported_correct": false,
+          "answerable": true,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "manual",
+          "status": "answered",
+          "sources": [
+            "building_b",
+            "eve",
+            "bob",
+            "alice",
+            "project_phoenix"
+          ],
+          "accessed_pages": [
+            "alice",
+            "bob",
+            "building_a",
+            "building_b",
+            "carol",
+            "david",
+            "eve",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "required_pages": [
+            "building_b",
+            "eve",
+            "bob",
+            "alice",
+            "project_phoenix"
+          ],
+          "evidence_recall": 1.0,
+          "evidence_recall_numerator": 5,
+          "evidence_recall_denominator": 5,
+          "source_precision": 1.0,
+          "steps": 4,
+          "pages_read": 5,
+          "error": null,
+          "step_details": [
+            {
+              "step": 0,
+              "action": "search",
+              "params": {
+                "query": "Building B executive level VP office director platform engineering Project Phoenix engineer",
+                "top_k": 5
+              },
+              "error": null,
+              "result_summary": "search returned 5 candidates (5 new)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": [
+                "building_b",
+                "project_phoenix",
+                "eve",
+                "bob",
+                "project_orion"
+              ]
+            },
+            {
+              "step": 1,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/building_b",
+                  "wiki/project_phoenix",
+                  "wiki/eve",
+                  "wiki/bob"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 4 pages (4 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "building_b",
+                "project_phoenix",
+                "eve",
+                "bob"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 2,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/alice"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 1 pages (1 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "alice"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 3,
+              "action": "answer",
+              "params": {
+                "text": "Chain from the executive level of Building B:\n\n1. Building B, fifth floor — the executive level houses the office of Eve Martinez, VP of Engineering (the building page notes the fifth floor contains \"",
+                "sources": [
+                  "building_b",
+                  "eve",
+                  "bob",
+                  "alice",
+                  "project_phoenix"
+                ]
+              },
+              "error": null,
+              "result_summary": "answer produced (5 sources)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": []
+            }
+          ],
+          "search_hit_page_ids": [
+            "bob",
+            "building_b",
+            "eve",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "read_page_ids": [
+            "alice",
+            "bob",
+            "building_b",
+            "eve",
+            "project_phoenix"
+          ],
+          "access_recall": 1.0,
+          "access_recall_numerator": 5,
+          "access_recall_denominator": 5,
+          "read_evidence_recall": 1.0,
+          "read_evidence_recall_numerator": 5,
+          "read_evidence_recall_denominator": 5
+        },
+        {
+          "id": "mh50_orion_exact_completion_date",
+          "question": "What is the exact completion date of Project Orion?",
+          "answer": "I could not confirm an exact completion date for Project Orion. The Project Orion page states the project was initiated in mid-2025, has a budget of $300,000, and is \"expected to launch in Q2 2027\" — but it gives no specific day or month within that quarter, and no explicit completion date. The related pages on David Kim (technical lead) and Carol Chen (backend contributor) likewise contain no completion date. So the only timeline information available is the expected Q2 2027 launch; an exact completion date is not documented in the pages I read.",
+          "answer_correct": true,
+          "grounded_correct": true,
+          "unsupported_correct": false,
+          "answerable": false,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "manual",
+          "status": "answered",
+          "sources": [
+            "project_orion",
+            "david",
+            "carol"
+          ],
+          "accessed_pages": [
+            "alice",
+            "carol",
+            "david",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "required_pages": [],
+          "evidence_recall": null,
+          "evidence_recall_numerator": 0,
+          "evidence_recall_denominator": 0,
+          "source_precision": 0.0,
+          "steps": 6,
+          "pages_read": 3,
+          "error": null,
+          "step_details": [
+            {
+              "step": 0,
+              "action": "search",
+              "params": {
+                "query": "Project Orion completion date",
+                "top_k": 5
+              },
+              "error": null,
+              "result_summary": "search returned 5 candidates (5 new)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": [
+                "project_orion",
+                "project_phoenix",
+                "carol",
+                "david",
+                "alice"
+              ]
+            },
+            {
+              "step": 1,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "project_orion"
+                ]
+              },
+              "error": "\"paths not found in wiki index: ['project_orion']\"",
+              "result_summary": "read failed: paths not found",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 2,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/project_orion"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 1 pages (1 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "project_orion"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 3,
+              "action": "follow_links",
+              "params": {
+                "from_page": "project_orion"
+              },
+              "error": null,
+              "result_summary": "followed 2 links: read 2 new pages, 0 missing",
+              "raw_output": null,
+              "read_page_ids": [
+                "david",
+                "carol"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 4,
+              "action": "search",
+              "params": {
+                "query": "Project Orion launch Q2 2027 completion exact date",
+                "top_k": 5
+              },
+              "error": null,
+              "result_summary": "search returned 5 candidates (2 new)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": [
+                "project_orion",
+                "project_phoenix",
+                "carol",
+                "david",
+                "alice"
+              ]
+            },
+            {
+              "step": 5,
+              "action": "answer",
+              "params": {
+                "text": "I could not confirm an exact completion date for Project Orion. The Project Orion page states the project was initiated in mid-2025, has a budget of $300,000, and is \"expected to launch in Q2 2027\" — ",
+                "sources": [
+                  "project_orion",
+                  "david",
+                  "carol"
+                ]
+              },
+              "error": null,
+              "result_summary": "answer produced (3 sources)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": []
+            }
+          ],
+          "search_hit_page_ids": [
+            "alice",
+            "carol",
+            "david",
+            "project_orion",
+            "project_phoenix"
+          ],
+          "read_page_ids": [
+            "carol",
+            "david",
+            "project_orion"
+          ],
+          "access_recall": null,
+          "access_recall_numerator": 0,
+          "access_recall_denominator": 0,
+          "read_evidence_recall": null,
+          "read_evidence_recall_numerator": 0,
+          "read_evidence_recall_denominator": 0
+        },
+        {
+          "id": "mh52_alice_previous_startup_name",
+          "question": "What is the name of the startup where Alice Smith previously worked?",
+          "answer": "The name of the startup is not stated. The page about Alice Smith only says she \"previously worked at a startup focused on distributed systems\" — it does not give the startup's name. None of the other pages I read mention Alice's former employer's name.",
+          "answer_correct": true,
+          "grounded_correct": true,
+          "unsupported_correct": false,
+          "answerable": false,
+          "scoring_rule": "keyword_group_match",
+          "link_source": "manual",
+          "status": "answered",
+          "sources": [
+            "alice",
+            "bob",
+            "carol",
+            "david",
+            "project_phoenix"
+          ],
+          "accessed_pages": [
+            "alice",
+            "bob",
+            "building_a",
+            "carol",
+            "david",
+            "project_phoenix"
+          ],
+          "required_pages": [],
+          "evidence_recall": null,
+          "evidence_recall_numerator": 0,
+          "evidence_recall_denominator": 0,
+          "source_precision": 0.0,
+          "steps": 8,
+          "pages_read": 5,
+          "error": null,
+          "step_details": [
+            {
+              "step": 0,
+              "action": "search",
+              "params": {
+                "query": "Alice Smith",
+                "top_k": 5
+              },
+              "error": null,
+              "result_summary": "search returned 4 candidates (4 new)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": [
+                "alice",
+                "bob",
+                "project_phoenix",
+                "building_a"
+              ]
+            },
+            {
+              "step": 1,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "alice"
+                ]
+              },
+              "error": "\"paths not found in wiki index: ['alice']\"",
+              "result_summary": "read failed: paths not found",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 2,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/alice"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 1 pages (1 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "alice"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 3,
+              "action": "follow_links",
+              "params": {
+                "from_page": "alice"
+              },
+              "error": null,
+              "result_summary": "followed 2 links: read 2 new pages, 0 missing",
+              "raw_output": null,
+              "read_page_ids": [
+                "bob",
+                "project_phoenix"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 4,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/carol"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 1 pages (1 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "carol"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 5,
+              "action": "search",
+              "params": {
+                "query": "distributed systems startup Alice previous employer name",
+                "top_k": 5
+              },
+              "error": null,
+              "result_summary": "search returned 5 candidates (1 new)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": [
+                "alice",
+                "david",
+                "carol",
+                "bob",
+                "project_phoenix"
+              ]
+            },
+            {
+              "step": 6,
+              "action": "read",
+              "params": {
+                "paths": [
+                  "wiki/david"
+                ]
+              },
+              "error": null,
+              "result_summary": "read 1 pages (1 new)",
+              "raw_output": null,
+              "read_page_ids": [
+                "david"
+              ],
+              "search_hit_page_ids": []
+            },
+            {
+              "step": 7,
+              "action": "answer",
+              "params": {
+                "text": "The name of the startup is not stated. The page about Alice Smith only says she \"previously worked at a startup focused on distributed systems\" — it does not give the startup's name. None of the other",
+                "sources": [
+                  "alice",
+                  "bob",
+                  "carol",
+                  "david",
+                  "project_phoenix"
+                ]
+              },
+              "error": null,
+              "result_summary": "answer produced (5 sources)",
+              "raw_output": null,
+              "read_page_ids": [],
+              "search_hit_page_ids": []
+            }
+          ],
+          "search_hit_page_ids": [
+            "alice",
+            "bob",
+            "building_a",
+            "carol",
+            "david",
+            "project_phoenix"
+          ],
+          "read_page_ids": [
+            "alice",
+            "bob",
+            "carol",
+            "david",
+            "project_phoenix"
+          ],
+          "access_recall": null,
+          "access_recall_numerator": 0,
+          "access_recall_denominator": 0,
+          "read_evidence_recall": null,
+          "read_evidence_recall_numerator": 0,
+          "read_evidence_recall_denominator": 0
+        }
+      ],
+      "aggregate": {
+        "total_cases": 5,
+        "answerable_cases": 3,
+        "unanswerable_cases": 2,
+        "multi_hop_cases": 3,
+        "retrieval_evidence_metrics": {
+          "note": "Comparable across Baseline and Experiment: both measure whether required pages were found, independent of the answer generator.",
+          "mean_evidence_recall_answerable": {
+            "value": 1.0,
+            "numerator_sum": 12,
+            "denominator_sum": 12,
+            "scope": "answerable cases only (unanswerable excluded; evidence_recall=None)",
+            "definition": "LEGACY: |accessed_pages ∩ required| / |required|. accessed_pages includes search candidate accesses."
+          },
+          "mean_access_recall_answerable": {
+            "value": 1.0,
+            "numerator_sum": 12,
+            "denominator_sum": 12,
+            "cases_with_access_data": 3,
+            "scope": "answerable cases only (unanswerable excluded; access_recall=None)",
+            "definition": "|accessed_pages ∩ required| / |required|. accessed_pages records every get/get_by_path lookup, including search candidates; it is not read-only."
+          },
+          "mean_read_evidence_recall_answerable": {
+            "value": 1.0,
+            "numerator_sum": 12,
+            "denominator_sum": 12,
+            "cases_with_read_data": 3,
+            "scope": "answerable cases only (unanswerable excluded; read_evidence_recall=None)",
+            "definition": "|read_page_ids ∩ required| / |required|. read_page_ids comes from AgentResult.read_page_ids (actual read/follow_links results), not search candidates. Baseline maps read_page_ids to its retrieved context set."
+          },
+          "mean_source_precision": {
+            "value": 0.6,
+            "scope": "all cases"
+          },
+          "evidence_support_rate_answerable": {
+            "value": 0.3333333333333333,
+            "numerator": 1,
+            "denominator": 3,
+            "definition": "LEGACY: answer_correct AND evidence_recall==1.0, among answerable cases. Does NOT require cited sources or a successful terminal status; use verified_evidence_support_rate_answerable."
+          },
+          "verified_evidence_support_rate_answerable": {
+            "value": 0.3333333333333333,
+            "numerator": 1,
+            "denominator": 3,
+            "definition": "grounded_correct AND evidence_recall==1.0, among answerable cases. grounded_correct requires a successful answer status and at least one cited source."
+          },
+          "multi_hop_success_rate": {
+            "value": 0.3333333333333333,
+            "numerator": 1,
+            "denominator": 3,
+            "definition": "LEGACY: answer_correct AND evidence_recall==1.0, among answerable multi-hop cases. See verified_multi_hop_success_rate."
+          },
+          "verified_multi_hop_success_rate": {
+            "value": 0.3333333333333333,
+            "numerator": 1,
+            "denominator": 3,
+            "definition": "grounded_correct AND evidence_recall==1.0, among answerable multi-hop cases."
+          },
+          "unanswerable_cases": {
+            "count": 2,
+            "evidence_recall_treatment": "excluded from mean (evidence_recall=None, not 1.0)"
+          }
+        },
+        "answer_quality_metrics": {
+          "note": "NOT directly comparable across systems: Baseline uses DeterministicGenerator (offline extractive), Experiment uses a real LLM. Report as independent results.",
+          "answer_accuracy": {
+            "value": 0.6,
+            "numerator": 3,
+            "denominator": 5,
+            "scope": "all cases",
+            "grounding_note": "LEGACY metric: keyword_group_match only. It can count an answer with no cited evidence as correct. See verified_answer_accuracy."
+          },
+          "verified_answer_accuracy": {
+            "value": 0.6,
+            "numerator": 3,
+            "denominator": 5,
+            "scope": "all cases",
+            "definition": "answer_correct AND status=='answered' AND at least one cited source"
+          },
+          "unsupported_correct": {
+            "count": 0,
+            "rate": 0.0,
+            "definition": "keyword-correct but NOT grounded: no cited source, or a non-answered terminal status (insufficient_evidence / budget / protocol / model error)",
+            "interpretation": "Candidate false positives from the lexical scorer or answers produced without evidence."
+          },
+          "answerable_accuracy": {
+            "value": 0.3333333333333333,
+            "numerator": 1,
+            "denominator": 3,
+            "scope": "answerable cases only"
+          },
+          "unanswerable_handling": {
+            "value": 1.0,
+            "numerator": 2,
+            "denominator": 2,
+            "scope": "unanswerable cases only",
+            "caveat": "2 unanswerable case(s); keyword-only refusal scoring can accept a refusal followed by a fabricated answer. Treat as a manual-audit metric."
+          },
+          "scoring_rule": "keyword_group_match (lexical heuristic, NOT semantic correctness; paraphrases may score low even when correct)"
+        },
+        "efficiency_metrics": {
+          "mean_steps": 6.0,
+          "mean_pages_read": 4.0,
+          "failure_rate": 0.0,
+          "failure_rate_definition": "cases with a terminal error or status in (model_error, protocol_error); budget_exhausted also carries an error string, so it is included",
+          "budget_exhausted_rate": 0.0,
+          "status_counts": {
+            "answered": 5
+          },
+          "status_rates": {
+            "insufficient_evidence": 0.0,
+            "budget_exhausted": 0.0,
+            "protocol_error": 0.0,
+            "model_error": 0.0
+          }
+        },
+        "answer_accuracy": 0.6,
+        "verified_answer_accuracy": 0.6,
+        "unsupported_correct_count": 0,
+        "answerable_accuracy": 0.3333333333333333,
+        "unanswerable_handling": 1.0,
+        "mean_evidence_recall": 1.0,
+        "mean_access_recall": 1.0,
+        "mean_read_evidence_recall": 1.0,
+        "mean_source_precision": 0.6,
+        "multi_hop_success_rate": 0.3333333333333333,
+        "verified_multi_hop_success_rate": 0.3333333333333333,
+        "mean_steps": 6.0,
+        "mean_pages_read": 4.0,
+        "failure_rate": 0.0,
+        "budget_exhausted_rate": 0.0,
+        "status_counts": {
+          "answered": 5
+        },
+        "status_rates": {
+          "insufficient_evidence": 0.0,
+          "budget_exhausted": 0.0,
+          "protocol_error": 0.0,
+          "model_error": 0.0
+        },
+        "correct_count": 3,
+        "answerable_correct_count": 1
+      }
+    }
+  },
+  "smoke_test": {
+    "selected_case_ids": [
+      "mh37_budget_ratio_synthesis",
+      "mh46_phoenix_reporting_chain",
+      "mh47_exec_level_to_phoenix_chain",
+      "mh50_orion_exact_completion_date",
+      "mh52_alice_previous_startup_name"
+    ],
+    "execution_path": "benchmark/run_multihop_evaluation.run_experiment with an explicit case filter; the CLI only supports --limit (first N cases).",
+    "metrics_file": "stage8_smoke5_20261031_172818_metrics.json",
+    "temperature": 0.0,
+    "max_steps": 8,
+    "search_top_k": 5,
+    "link_source": "manual"
+  }
+}

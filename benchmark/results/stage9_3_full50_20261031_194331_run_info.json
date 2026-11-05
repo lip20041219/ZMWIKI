@@ -1,0 +1,87 @@
+{
+  "status": "completed",
+  "stem": "stage9_3_full50_20261031_194331",
+  "expected_config": {
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-flash",
+    "temperature": 0.0,
+    "max_steps": 8,
+    "search_top_k": 5,
+    "link_source": "manual",
+    "dataset_version": "1.4"
+  },
+  "output": "D:\\desk\\ZMWiki\\benchmark\\results\\stage9_3_full50_20261031_194331.json",
+  "checkpoint": "D:\\desk\\ZMWiki\\benchmark\\results\\stage9_3_full50_20261031_194331.checkpoint.jsonl",
+  "metrics": "D:\\desk\\ZMWiki\\benchmark\\results\\stage9_3_full50_20261031_194331_metrics.json",
+  "dataset": {
+    "path": "D:\\desk\\ZMWiki\\benchmark\\datasets\\multihop_wiki.json",
+    "version": "1.4",
+    "case_count": 50,
+    "unique_ids": 50,
+    "sha256_full": "4d77bae1519941b63ee551123b12d2f49fcf6b4544aaa9b6822ac698ae6ca821",
+    "sha256_16": "4d77bae1519941b6"
+  },
+  "stage8_1_checks": {
+    "mh37_stage8_long_answer_scores": true,
+    "mh37_reference_scores": true,
+    "mh46_missing_indirect_is_rejected": true,
+    "mh46_reference_scores": true
+  },
+  "api_key_present": true,
+  "configured": {
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-flash"
+  },
+  "git": {
+    "head": "1cdd718481c03772867cd924b9f0ebfeb30d71e1",
+    "status_short": " M README.md\n M benchmark/datasets/multihop_wiki.json\n M benchmark/datasets/multihop_wiki_authoring.md\n M benchmark/run_multihop_evaluation.py\n M src/zmwiki/wiki/wiki_agent.py\n M src/zmwiki/wiki/wiki_retriever.py\n M tests/wiki/test_multihop_evaluation.py\n M tests/wiki/test_wiki_agent.py\n M tests/wiki/test_wiki_index.py\n?? benchmark/results/stage6_multihop_15_20261029.checkpoint.jsonl\n?? benchmark/results/stage6_multihop_15_20261029.json\n?? benchmark/results/stage7_multihop_15_20261029.checkpoint.jsonl\n?? benchmark/results/stage8_smoke5_20261031_172818.checkpoint.jsonl\n?? benchmark/results/stage8_smoke5_20261031_172818.json\n?? benchmark/results/stage8_smoke5_20261031_172818_metrics.json\n?? benchmark/results/stage9_full50_20261031_185801.checkpoint.jsonl\n?? benchmark/results/stage9_full50_20261031_185801.json\n?? benchmark/results/stage9_full50_20261031_185801_metrics.json\n?? benchmark/results/stage9_full50_20261031_185801_run_info.json\n?? \"tatus --short\"\n",
+    "working_tree": {
+      "dirty": true,
+      "file_count": 20
+    }
+  },
+  "wall_clock_seconds": 241.587,
+  "exit_code": 0,
+  "error": null,
+  "completed_at": "2026-10-31T19:47:40+0800",
+  "computed_summary": {
+    "answer_correct_count": 45,
+    "answer_correct_rate": 0.9,
+    "grounded_correct_count": 45,
+    "grounded_correct_rate": 0.9,
+    "model_requests": 202,
+    "model_requests_unavailable_cases": [],
+    "total_tokens": {
+      "completion_tokens": 18665,
+      "prompt_cache_hit_tokens": 111998,
+      "prompt_cache_miss_tokens": 66056,
+      "prompt_tokens": 178054,
+      "total_tokens": 196719
+    },
+    "total_latency_seconds": 241.208,
+    "latency_unavailable_cases": [],
+    "status_counts": {
+      "answered": 49,
+      "protocol_error": 1
+    },
+    "budget_exhausted_count": 0,
+    "budget_exhausted_rate": 0.0,
+    "protocol_error_count": 1,
+    "model_error_count": 0,
+    "failure_rate": 0.02,
+    "mean_steps": 4.04,
+    "mean_pages_read": 3.36,
+    "answerable_cases": 43,
+    "unanswerable_cases": 7,
+    "multi_hop_cases": 38,
+    "read_evidence_recall": 0.9720930232558139,
+    "access_evidence_recall": 0.9767441860465116,
+    "source_precision": 0.7550000000000001,
+    "multi_hop_success_rate": 0.868421052631579,
+    "verified_multi_hop_success_rate": 0.868421052631579,
+    "verified_answer_accuracy": 0.9,
+    "answerable_accuracy": 0.8837209302325582,
+    "unanswerable_handling": 1.0,
+    "missing_metric_ids": []
+  }
+}

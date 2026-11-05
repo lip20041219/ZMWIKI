@@ -1,0 +1,88 @@
+{
+  "status": "completed",
+  "stem": "stage9_full50_20261031_185801",
+  "expected_config": {
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-flash",
+    "temperature": 0.0,
+    "max_steps": 8,
+    "search_top_k": 5,
+    "link_source": "manual",
+    "dataset_version": "1.4"
+  },
+  "output": "D:\\desk\\ZMWiki\\benchmark\\results\\stage9_full50_20261031_185801.json",
+  "checkpoint": "D:\\desk\\ZMWiki\\benchmark\\results\\stage9_full50_20261031_185801.checkpoint.jsonl",
+  "metrics": "D:\\desk\\ZMWiki\\benchmark\\results\\stage9_full50_20261031_185801_metrics.json",
+  "dataset": {
+    "path": "D:\\desk\\ZMWiki\\benchmark\\datasets\\multihop_wiki.json",
+    "version": "1.4",
+    "case_count": 50,
+    "unique_ids": 50,
+    "sha256_full": "5f1ea74f4aeb149d57bbb81debab24c41d9c6f7ce8679d27e3a0a555c3279a91",
+    "sha256_16": "5f1ea74f4aeb149d"
+  },
+  "stage8_1_checks": {
+    "mh37_stage8_long_answer_scores": true,
+    "mh37_reference_scores": true,
+    "mh46_missing_indirect_is_rejected": true,
+    "mh46_reference_scores": true
+  },
+  "api_key_present": true,
+  "configured": {
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-flash"
+  },
+  "git": {
+    "head": "1cdd718481c03772867cd924b9f0ebfeb30d71e1",
+    "status_short": " M README.md\n M benchmark/datasets/multihop_wiki.json\n M benchmark/datasets/multihop_wiki_authoring.md\n M benchmark/run_multihop_evaluation.py\n M tests/wiki/test_multihop_evaluation.py\n?? benchmark/results/stage6_multihop_15_20261029.checkpoint.jsonl\n?? benchmark/results/stage6_multihop_15_20261029.json\n?? benchmark/results/stage7_multihop_15_20261029.checkpoint.jsonl\n?? benchmark/results/stage8_smoke5_20261031_172818.checkpoint.jsonl\n?? benchmark/results/stage8_smoke5_20261031_172818.json\n?? benchmark/results/stage8_smoke5_20261031_172818_metrics.json\n?? \"tatus --short\"\n",
+    "working_tree": {
+      "dirty": true,
+      "file_count": 12
+    }
+  },
+  "wall_clock_seconds": 274.362,
+  "exit_code": 0,
+  "error": null,
+  "completed_at": "2026-10-31T19:02:45+0800",
+  "computed_summary": {
+    "answer_correct_count": 44,
+    "answer_correct_rate": 0.88,
+    "grounded_correct_count": 44,
+    "grounded_correct_rate": 0.88,
+    "model_requests": 207,
+    "model_requests_unavailable_cases": [],
+    "total_tokens": {
+      "completion_tokens": 21526,
+      "prompt_cache_hit_tokens": 108416,
+      "prompt_cache_miss_tokens": 66284,
+      "prompt_tokens": 174700,
+      "total_tokens": 196226
+    },
+    "total_latency_seconds": 273.986,
+    "latency_unavailable_cases": [],
+    "status_counts": {
+      "answered": 48,
+      "insufficient_evidence": 1,
+      "model_error": 1
+    },
+    "budget_exhausted_count": 0,
+    "budget_exhausted_rate": 0.0,
+    "protocol_error_count": 0,
+    "model_error_count": 1,
+    "failure_rate": 0.04,
+    "mean_steps": 4.14,
+    "mean_pages_read": 3.0,
+    "answerable_cases": 43,
+    "unanswerable_cases": 7,
+    "multi_hop_cases": 38,
+    "read_evidence_recall": 0.9205426356589146,
+    "access_evidence_recall": 0.9883720930232558,
+    "source_precision": 0.7593333333333334,
+    "multi_hop_success_rate": 0.868421052631579,
+    "verified_multi_hop_success_rate": 0.868421052631579,
+    "verified_answer_accuracy": 0.88,
+    "answerable_accuracy": 0.8837209302325582,
+    "unanswerable_handling": 0.8571428571428571,
+    "missing_metric_ids": []
+  }
+}
