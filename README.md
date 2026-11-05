@@ -565,8 +565,9 @@ on POSIX), and is never returned by any API response, log line or error message
 
 ![ZMWiki first-use model setup](docs/images/zmwiki_web_setup.png)
 
-The same configuration can still come from the CLI or environment, which take
-precedence at startup:
+At startup, explicit CLI settings take precedence over the saved settings file.
+The environment variable supplies a key only when the settings file has no
+saved key:
 
 ```bash
 python -m zmwiki.web.server --workspace my_wiki.json --port 8000 \
@@ -577,8 +578,8 @@ python -m zmwiki.web.server --workspace my_wiki.json --port 8000 \
 Without `--base-url/--model`, the saved settings file is used; a configuration
 saved from the browser applies to the running server and persists for the next
 start. A `ZMWIKI_API_KEY` environment variable is used when no stored key is
-present. Read-only mode rejects model-configuration writes (the connection test
-still works) while Agent Q&A remains available.
+present. Read-only mode rejects model-configuration writes (the connection
+test still works) while Agent Q&A remains available.
 
 The bundled demo workspace is read-only automatically. Pass `--read-only` to
 force read-only mode for any workspace; all page, import, model-configuration
@@ -742,7 +743,7 @@ results = pipeline.retrieve(query="retrieval", top_k=3)
 
 ## zmwiki vs ZMWiki Comparison Benchmark
 
-A 26-case wiki QA dataset with multi-hop emphasis is used to compare two
+A 50-case wiki QA dataset with multi-hop emphasis is used to compare two
 independently configured systems over the same corpus and questions. The
 published result below uses the first 15 cases (`--limit 15`, matching the
 existing `trial_15cases` scope): 14 answerable and 1 unanswerable, including
@@ -762,17 +763,25 @@ metrics are comparable; answer-quality metrics are not.
 
 ### Dataset and scoring
 
-The dataset (`benchmark/datasets/multihop_wiki.json`, version 1.2) has 26 cases
-over 9 synthetic Acme Corp documents: 22 answerable (5 single-hop, 17 two- or
-three-hop) and 4 unanswerable (3 unanswerable + 1 false-premise).
+The dataset (`benchmark/datasets/multihop_wiki.json`, version 1.4) has 50 cases
+over 9 synthetic Acme Corp documents: 43 answerable (5 single-hop, 38 two- to
+five-hop) and 7 unanswerable (6 unanswerable + 1 false-premise). The first 26
+cases (mh01-mh30) are unchanged from version 1.2; mh31-mh54 add 24 extension
+cases covering three-plus-hop chains, cross-topic synthesis, multi-entity
+comparison, complex relation tracking, unanswerable questions, and distractor
+disambiguation.
 
-Answer scoring is deterministic `keyword_group_match`, not semantic accuracy
-and not an LLM judge: for answerable cases every keyword group must contain at
-least one keyword in the normalized answer; unanswerable cases require a refusal
-keyword and no fabrication keyword. Matching is case-insensitive after
-punctuation stripping. A correct paraphrase can score 0 and a verbatim copy can
-score 1. The fabrication guard is a lexical heuristic, so unanswerable cases
-still need manual audit.
+Answer scoring is deterministic `keyword_group_match` plus optional structured
+checks, not semantic accuracy and not an LLM judge: for answerable cases every
+keyword group must contain at least one keyword in the normalized answer;
+selected cases additionally require entity-bound attributes (`answer_bindings`),
+an ordered/direct/indirect relation chain (`relation_chain`), a bounded ratio
+(`ratio_checks`), or a directed comparison (`comparison_checks`). Unanswerable
+cases require a refusal keyword and no fabrication keyword or fabrication regex.
+Matching is case-insensitive after punctuation stripping. A correct paraphrase
+can still score 0 and a verbatim copy can still score 1; the fabrication guard
+remains a lexical heuristic, so cases marked `manual_review` still need a human
+audit.
 
 The published 15-case subset is the first 15 cases of this dataset: 14
 answerable, 1 unanswerable, and 9 answerable multi-hop cases.
@@ -839,6 +848,26 @@ A: The name of the CEO of Acme Corp is not stated in the pages I read.
    but neither page identifies who holds the CEO position.
 sources: bob, building_a, building_b, david, eve
 ```
+
+### Later evaluation stages and reproducibility
+
+The current dataset is v1.4. Stage 10 comparison, Stage 11 ablation, and Stage
+12 three-round results record the current dataset SHA, runner configuration,
+metrics, and outputs. Stage 13 human review, Stage 14 failure analysis, and
+Stage 15 EvidenceAudit reports and artifacts are archived under
+`benchmark/reviews/`, `benchmark/results/`, and `docs/evaluation/`.
+
+Stage 8, Stage 9, and Stage 9.3 are retained as **historical-only results**.
+Their recorded dataset SHA values do not match the available v1.4 dataset, and
+no matching snapshots were found; they cannot be precisely reproduced from
+this repository. Do not compare them as reruns of the current v1.4 baseline.
+Some historical run metadata contains machine-specific Windows paths; those
+records were preserved as written and are not portable run instructions. See
+`docs/evaluation/STAGE8_9_HISTORICAL_DATASET_ARCHIVE_AUDIT.md`.
+
+EvidenceAudit v0.2 is an offline, rule-based calibration on the archived
+synthetic corpus. Coverage is not accuracy, `unverifiable` is not an incorrect
+answer, and this tool is not a production fact-checker or a runtime gate.
 
 The second example is a refusal, not a fabricated name; answering "not stated"
 with cited read pages is part of the benchmark's unanswerable handling. Model
@@ -923,16 +952,20 @@ python -m pytest -q
 The full suite includes TUI tests; install with
 `pip install -e ".[dev,tui]"` (pytest + Textual) before running it.
 
-The last full-suite run before the final Agent regression tests was `1867
-passed, 6 skipped` (Python 3.11.9, Windows). After the final changes, targeted
-local runs were: `tests/wiki` **391 passed**; `tests/web/test_ask.py` plus
-`tests/tui/test_agent_flow.py` **23 passed**. Run the full command above for the
-current total. The suite is fully offline: agent, compiler, TUI and Web tests
-inject fake model transports, so no API key or network is used. The skips are
-optional semantic-profile / real-model integration tests gated behind
-environment variables, not failures. Real online model behavior is only
-exercised by the benchmark `--live` commands above and is not covered by this
-offline suite.
+The last full-suite result in the earlier project snapshot was `1867 passed,
+6 skipped` (Python 3.11.9, Windows); it predates the current evaluation and
+Agent changes and is not a current full-suite result. The current release
+changes were verified with targeted offline commands:
+
+```bash
+python -m pytest -q tests/test_llm_generators.py tests/web tests/tui/test_agent_flow.py tests/wiki/test_wiki_agent.py tests/wiki/test_wiki_compiler.py tests/wiki/test_wiki_index.py
+python -m pytest -q tests/wiki/test_multihop_evaluation.py tests/wiki/test_multihop_scoring.py tests/wiki/test_stage10_comparison.py tests/wiki/test_stage11_ablation.py tests/wiki/test_stage12_multiround.py tests/wiki/test_evidence_audit.py tests/wiki/test_evidence_audit_v02.py
+```
+
+These tests inject fake model transports and do not call a model API. Separate
+manual acceptance covered one real TXT import and one real multi-hop question
+on an isolated temporary workspace; it does not establish a general accuracy,
+latency, or cost guarantee. The full pytest suite was not run for this release.
 
 ## Project Scope
 
