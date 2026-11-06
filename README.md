@@ -13,6 +13,37 @@ package: lexical BM25, dense, hybrid, offline metrics). The RAG pipeline remains
 the retrieval backbone; ZMWiki adds the wiki representation, compiler, agent,
 and terminal UI on top.
 
+## Evaluation Highlights
+
+Head-to-head quantitative results on a 50-question synthetic wiki QA dataset
+(38 multi-hop questions, 9 synthetic Acme Corp documents). Both systems run the
+**same model**: DeepSeek Flash (`deepseek-flash`, temperature 0.0), scored by a
+frozen lexical keyword-group matcher — not a semantic-accuracy judge.
+
+| Metric | WikiAgent | Traditional RAG | Delta |
+| --- | ---: | ---: | ---: |
+| Multi-hop success, 3-round average (Stage 12) | **91.23%** | 68.42% | **+22.81 pp** |
+| Read-evidence recall, Stage 10 (pooled, WikiAgent) | **93.46% (100/107)** | — | — |
+
+Notes on what these numbers mean:
+
+- **Multi-hop success** = correct preset keyword answer AND full required-evidence
+  coverage, over answerable multi-hop questions. It is a preset-answer +
+  necessary-evidence coverage metric, not general semantic accuracy.
+- The three Stage 12 rounds reuse the **same 50 questions** (not 150 independent
+  questions); 91.23% and 68.42% are the per-round means of multi-hop success over
+  the 38 multi-hop questions.
+- 93.46% is the **pooled** Stage 10 WikiAgent read-evidence recall
+  (`|read ∩ required| = 100` out of `|required| = 107` across answerable cases),
+  not the per-case macro-averaged recall.
+- Raw JSON records: [Stage 10 comparison](benchmark/results/stage10_comparison_20261031_211900_metrics.json),
+  [Stage 12 multi-round summary](benchmark/results/stage12_multiround_20261101_120442_summary.json).
+
+> The Stage 7 result table further below is an **early, small-sample, non-controlled**
+> run (15 cases, 2026-10-29): its baseline used a deterministic offline extractive
+> generator rather than the same LLM, so it is not a same-model head-to-head. The
+> Stage 10 / Stage 12 numbers above are the same-model controlled comparison.
+
 ## 宣传片
 
 <p align="center">
@@ -797,7 +828,7 @@ definition), **multi-hop success** (correct keyword answer and full access recal
 over answerable multi-hop cases), and efficiency (steps / pages read). There is
 no separate "page recall" metric.
 
-### Published result (Stage 7, 15 cases, one run)
+### Published result (Stage 7, 15 cases, one run — early small-sample, non-controlled)
 
 `benchmark/results/stage7_multihop_15_20261029.json` records the published
 15-case run: dataset v1.2, `deepseek-flash`, `max_steps=8`, manual links,
