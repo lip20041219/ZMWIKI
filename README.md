@@ -23,19 +23,25 @@ frozen lexical keyword-group matcher — not a semantic-accuracy judge.
 | Metric | WikiAgent | Traditional RAG | Delta |
 | --- | ---: | ---: | ---: |
 | Multi-hop success, 3-round average (Stage 12) | **91.23%** | 68.42% | **+22.81 pp** |
-| Read-evidence recall, Stage 10 (pooled, WikiAgent) | **93.46% (100/107)** | — | — |
+| Read-evidence recall, Stage 10 (pooled) | **93.46% (100/107)** | 89.91% (98/109) | **+3.55 pp** |
 
 Notes on what these numbers mean:
 
+- Row 1 is the **Stage 12 three-round average** of multi-hop success; row 2 is the
+  **Stage 10 single-run** pooled read-evidence recall. The two rows come from
+  different stages and are not the same metric.
 - **Multi-hop success** = correct preset keyword answer AND full required-evidence
   coverage, over answerable multi-hop questions. It is a preset-answer +
   necessary-evidence coverage metric, not general semantic accuracy.
 - The three Stage 12 rounds reuse the **same 50 questions** (not 150 independent
   questions); 91.23% and 68.42% are the per-round means of multi-hop success over
   the 38 multi-hop questions.
-- 93.46% is the **pooled** Stage 10 WikiAgent read-evidence recall
-  (`|read ∩ required| = 100` out of `|required| = 107` across answerable cases),
-  not the per-case macro-averaged recall.
+- Row 2 uses **pooled** recall: WikiAgent `|read ∩ required| = 100` out of
+  `|required| = 107`; Traditional RAG `= 98` out of `= 109` (across answerable
+  cases). These are pooled sums, not per-case macro averages. The denominators
+  differ (107 vs 109), so the +3.55 pp gap is the difference between two pooled
+  recall rates — **not** a per-question lift on an identical evidence set.
+- **pp = percentage points** (百分点), not a relative percentage.
 - Raw JSON records: [Stage 10 comparison](benchmark/results/stage10_comparison_20261031_211900_metrics.json),
   [Stage 12 multi-round summary](benchmark/results/stage12_multiround_20261101_120442_summary.json).
 
